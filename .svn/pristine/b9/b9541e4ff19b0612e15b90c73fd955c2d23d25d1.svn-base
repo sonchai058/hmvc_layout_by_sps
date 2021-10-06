@@ -1,0 +1,97 @@
+<?php
+
+class ES_keyword extends ElasticIndex
+{
+
+    private $false_text = [
+        'กรรมการก', 'เพื่อให้', 'เกี่ยวข้อง',
+        'กองทุนพั', 'ได้เสีย', 'ปฏิบัติ',
+        'ประสานงา', 'ดังนั้น', 'เกี่ยวพัน',
+        'มัติโครงการ', 'เต็มที่', 'ทั้งหมด',
+        'และอนุมั', 'ทั่วถึง', 'หมายความ',
+        'หรือเชื', 'ต้องการ', 'ประเมิน',
+        'มีอำนาจเ', 'แล้วแต่', 'ประโยชน์',
+        'เลขาธิการแ', 'สิ้นสุด', 'มกราคม',
+        'สิบวันนั', 'รู้ความ', '', 'กุมภาพันธ์',
+        'แล่นข้ามเ', 'รู้เห็น', 'มีนาคม',
+        'ให้เป็นไ', 'ว่าเป็น', 'เมษายน',
+        'ประโยชน์ขัดแ', 'วางเงิน', 'พฤษภาคม',
+        'และประเมิ', 'เป็นต้น', 'มิถุนายน',
+        'ณะกรรมการ', 'เปลี่ยน', 'กรกฎาคม',
+        'ให้ผู้รับใ', 'มีเสียง', 'สิงหาคม',
+        'บัติหน้าที่', 'เข้าถึง', 'กันยายน',
+        'หนึ่งเป็', 'ภายหน้า', 'ตุลาคม',
+        'วรรคหนึ่', 'เครื่อง', 'พฤศจิกายน',
+        'แน่นอนให', 'ที่ว่าการ', 'ธันวาคม',
+        'และลักษ', 'เพิ่มเติม', 'กรกฏาคม',
+        'คณะกรรมการเ', 'ระมัดระวัง', 'ที่นั่ง',
+        'มีอยู่ก่', 'ตระหนัก', 'ไลค์และ',
+        'มเสียหายเนื่อง', 'ที่ทำการ',
+        'ส่วนภูมิภาคได้ใ', 'เชื่อถือ',
+        'กิจการพลั', 'อันเป็น',
+        'ห่งชาติ', 'เว้นแต่',
+        'หมายความว่', 'คล่องตัว',
+        'กองทุนมิไ', 'เหมาะสม',
+        'การทุจริตแ', 'หลักการ',
+        'อิเล็คท', 'www.facebook.com',
+        'ประกาศก'
+    ];
+
+
+    private function fnc_analyze($txt)
+    {
+        $url = 'http://localhost:9200/_analyze?analyzer=thai';
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $txt);
+        $output = curl_exec($ch);
+        curl_close($ch);
+
+        $arr = json_decode($output, true);
+
+        if(!is_array($arr) && !isset($arr['tokens'])) return [];
+        return $arr['tokens'];
+    }
+
+
+    public function get($str)
+    {
+        $token = $aa = $this->fnc_analyze($str);
+
+        $token = array_filter($token, function ($ele) {
+            if(in_array($ele['token'], $this->false_text)) return false;
+            $num = mb_strlen($ele['token'], 'UTF-8');
+            return !is_numeric($ele['token']) && $num > 6;
+        });
+
+        $keyword = [];
+
+        foreach ($token as $ele) {
+            $text = $ele['token'];
+            $digest = md5($text);
+
+            if(isset($keyword[$digest])) {
+                $keyword[$digest]['num']++;
+            } else {
+                $keyword[$digest] = [
+                    'txt' => $text,
+                    'num' => 1
+                ];
+            }
+
+        }
+
+        usort($keyword, function ($a, $b) {
+            if($a['num'] == $b['num']) return 0;
+            return ($a['num'] < $b['num']) ? 1 : -1;
+        });
+
+        $slice = array_slice($keyword, 0, 6);
+
+        return array_column($slice, 'txt');
+
+    }
+
+}

@@ -1,0 +1,212 @@
+<div class="main-container">
+  <div class="pd-ltr-20 xs-pd-20-10">
+    <div class="pd-20 card-box mb-30">
+      <div class="clearfix mb-20">
+          <div class="row">
+            <div class="col-4">
+              <h4 class="text-blue h4"><?= $title_page ?></h4>
+            </div>
+
+            <div class="col-8">
+              <div class="pull-right">
+                <nav aria-label="breadcrumb" role="navigation">
+                  <ol class="breadcrumb pd-0">
+                    <li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+                    <li class="breadcrumb-item">จัดการเจ้าหน้าที่</li>
+                    <li class="breadcrumb-item"><a href="<?= $action_link ?>">จัดการข้อมูลเจ้าหน้าที่</a></li>
+                    <li class="breadcrumb-item active" aria-current="page"><?= $title_page ?></li>
+                  </ol>
+                </nav>
+              </div>
+            </div>
+          </div>
+      </div>
+
+      <div class="clearfix mb-20">
+        <?php if(validation_errors() != ''): ?>
+            <div class="alert alert-danger">
+                <?php echo validation_errors(); ?>
+            </div>
+        <?php endif; ?>
+        <form id="post" method="post" action="<?= $action_link . 'form/' . $id . '/'.$backProfile ?>">
+            <input type="hidden" name="id" value="<?= $id ?>"/>
+            <div class="form-group">
+              <h5 class="form-set">ข้อมูลบัญชี</h5>
+            </div>
+            <div class="form-group">
+                <label for="username"><strong>บัญชีผู้ใช้</strong>&nbsp;<span
+                        class="red">*</span></label>
+                <input type="text" class="form-control validate[required]" id="username" name="username"
+                       placeholder="บัญชีผู้ใช้..." value="<?= $getForm['username'] ?>" maxlength="250">
+            </div>
+
+            <div class="form-group">
+                <label for="password"><strong>รหัสผ่าน</strong>&nbsp;<span
+                        class="red">*</span></label>
+                <div class="input-group mb-3">
+                  <input type="password" class="form-control <?= (!empty($getForm['password']) ? 'validate[required]' : '')?>"
+                  id="password" name="password"
+                  value="<?= $getForm['password'] ?>" placeholder="รหัสผ่าน" maxlength="49">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="basic-addon1">
+                      <input id="show-pass" type="checkbox"/>
+                      &nbsp;&nbsp;
+                      <label for="show-pass" class="my-auto">แสดงรหัสผ่าน</label>
+                    </span>
+                  </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="grp_id"><strong>กลุ่มผู้ใช้</strong>&nbsp;<span
+                        class="red">*</span></label>
+                <select id="grp_id" name="grp_id" class="form-control">
+                    <?php foreach ($group as $ele): ?>
+                        <option <?= $ele['grp_id'] == $getForm['grp_id'] ? ' selected ' : '' ?>
+                                value="<?= $ele['grp_id'] ?>">
+                            <?= $ele['grp_name'] ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="allow-status"><strong>สถานะ</strong> : </label>
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                <input <?= $getForm['status'] == 1 ? ' checked ' : '' ?>
+                       id="allow-status" name="status"
+                       type="radio" value="1" class="my-auto">
+                <label for="allow-status" id="allow-label" class="status-label my-auto">
+                    อนุญาตใช้งาน
+                </label>
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                <input <?= $getForm['status'] == 0 ? ' checked ' : '' ?>
+                       id="prohibit-status" name="status"
+                       type="radio" value="0" class="my-auto">
+                <label for="prohibit-status" id="prohibit-label" class="status-label my-auto">
+                    ระงับการใช้งาน
+                </label>
+            </div>
+
+            <div class="form-group">
+              <h5 class="form-set">ข้อมูลผู้ใช้</h5>
+            </div>
+
+            <div class="form-group">
+                <label for="prename"><strong>คำนำหน้า</strong></label>
+                <input type="text" class="form-control"
+                       id="prename" name="prename"
+                       placeholder="คำนำหน้า" value="<?= $getForm['prename'] ?>" maxlength="50">
+            </div>
+
+            <div class="form-group">
+                <label for="fname"><strong>ชื่อ</strong>&nbsp;<span class="red">*</span></label>
+                <input type="text" class="form-control validate[required]"
+                       id="fname" name="fname"
+                       placeholder="ชื่อ" value="<?= $getForm['fname'] ?>" maxlength="199">
+            </div>
+
+            <div class="form-group">
+                <label for="lname"><strong>นามสกุล</strong>&nbsp;<span class="red">*</span></label>
+                <input type="text" class="form-control validate[required]"
+                       id="lname" name="lname"
+                       placeholder="นามสกุล" value="<?= $getForm['lname'] ?>" maxlength="199">
+            </div>
+
+            <div class="form-group">
+                <label for="email"><strong>อีเมล</strong></label>
+                <input type="text" class="form-control validate[custom[email]]"
+                       id="email" name="email"
+                       placeholder="อีเมล" value="<?= $getForm['email'] ?>" maxlength="250">
+            </div>
+
+            <div class="form-group">
+                <label for="affiliation"><strong>สังกัด</strong></label>
+                <input type="text" class="form-control" id="affiliation" name="affiliation"
+                placeholder="สังกัด" value="<?= (!empty($getForm['affiliation']) ? $getForm['affiliation'] : '') ?>">
+            </div>
+
+            <div class="form-group text-center">
+
+                <a href="<?= (!empty($backProfile) ? base_url().'management/Index' : $action_link) ?>">
+                    <button type="button" class="btn btn-danger"><i class="fa fa-times"></i>&nbsp;ยกเลิก
+                    </button>
+                </a>
+                &nbsp;&nbsp;
+                <button type="submit" class="btn btn-success"><i class="fa fa-save"></i>&nbsp;บันทึก
+                </button>
+
+            </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<style>
+
+    #allow-label {
+        color: #008000;
+    }
+
+    .red, #prohibit-label {
+        color: #f02323
+    }
+
+    .form-set {
+        color: #666;
+        border-bottom: #ff9810 solid 2px;
+        padding-bottom: 6px;
+    }
+
+    .status-label {
+        font-weight: bold;
+        margin-left: 10px !important;
+    }
+</style>
+
+<script language="javascript" type="text/javascript">
+    function checkIDcard(idcard) {
+        if (idcard.length != 13)
+            return false;
+        for (i = 0, sum = 0; i < 12; i++)
+            sum += parseFloat(idcard.charAt(i)) * (13 - i);
+        if ((11 - sum % 11) % 10 != parseFloat(idcard.charAt(12)))
+            return false;
+        return true;
+    }
+
+    $(function () {
+        $("#post").validationEngine();
+
+        $(window).dblclick(function () {
+            jQuery('#post').validationEngine('hide');
+        });
+
+        $('#show-pass').on('click', function () {
+            var type = $(this).is(':checked') ? 'text' : 'password';
+            $('#password').attr('type', type);
+        });
+
+        $('#cardcode').change(function () {
+            var id_card = $(this).val();
+            var IDcard = id_card.trim();
+            check = checkIDcard(IDcard);
+            if (!check && IDcard.length == 13) {
+                $('button[type=submit]').prop('disabled', true);
+                $('#cardcode').validationEngine('showPrompt', '* รหัสประชาชนไม่ถูกต้อง', 'anything else', 'topRight', false);
+                $("#cardcode").focus();
+
+                $("#error_cardcode").remove();
+                $("label[for=cardcode]").after(" <span id='error_cardcode' class='red' > รหัสประชาชนไม่ถูกต้อง</span>");
+
+            } else {
+                $("#error_cardcode").remove();
+                check = true;
+                $('button[type=submit]').prop('disabled', false);
+            }
+        });
+
+    });
+</script>

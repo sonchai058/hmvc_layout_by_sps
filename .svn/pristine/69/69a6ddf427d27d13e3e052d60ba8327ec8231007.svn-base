@@ -1,0 +1,322 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class NewArrival_model extends CI_Model 
+{
+	private $users_tbl = 'users';
+    private $session_data = 'cmu_web_session';
+    private $book_tbl = 'manage_book';
+    private $language = 'th';
+
+    private $month_th = [
+            '1' => 'มกราคม',
+            '2' => 'กุมภาพันธ์',
+            '3' => 'มีนาคม',
+            '4' => 'เมษายน',
+            '5' => 'พฤษภาคม',
+            '6' => 'มิถุนายน',
+            '7' => 'กรกฎาคม',
+            '8' => 'สิงหาคม',
+            '9' => 'กันยายน',
+            '10' => 'ตุลาคม',
+            '11' => 'พฤศจิกายน',
+            '12' => 'ธันวาคม'
+        ];
+
+    private $month_en = [
+            '1' => 'January',
+            '2' => 'February',
+            '3' => 'March',
+            '4' => 'April',
+            '5' => 'May',
+            '6' => 'June',
+            '7' => 'July',
+            '8' => 'August',
+            '9' => 'September',
+            '10' => 'October',
+            '11' => 'November',
+            '12' => 'December'
+        ];
+
+    ##Pagination
+    private $per_page = 10;
+
+    ## Search
+    // private $s_element = array('stext' => FALSE, 'smonth' => '04', 'syear' => '2021');
+    private $s_element = array('stext' => FALSE, 'smonth' => FALSE, 'syear' => FALSE);
+
+    function __construct()
+    {
+        parent::__construct();
+        $this->load->library('session');
+
+        if (!empty($_SESSION['LANGUAGE'])) {
+            $this->language = strtolower($_SESSION['LANGUAGE']);
+        }else{
+            $this->language = 'th';
+
+        }
+
+    }
+	
+	public function getArrival($page)
+	{
+		$this->fnc_setElementSearchFromSession();
+		$this->fnc_calPageOffset($page);
+
+        $this->db->where('MONTH(time_create)', $this->s_element['smonth']);
+        $this->db->where('YEAR(time_create)', $this->s_element['syear']);
+		// $this->db->where('show_status', 1);
+		$this->db->order_by('s_order', 'asc');
+		$rs = $this->db->get($this->book_tbl)->result_array();
+		// _print_r($this->db->last_query());
+		$getData = [];
+        if (!empty($rs)) {
+            foreach ($rs as $key => $value) {
+                if ($this->language == 'en') {
+                    if (!empty($value['book_title_en'])) {
+                        $value['book_title'] = $value['book_title_en'];
+                    }
+                    if (!empty($value['author_en'])) {
+                        $value['author'] = $value['author_en'];
+                    }
+                    if (!empty($value['description_en'])) {
+                        $value['description'] = $value['description_en'];
+                    }
+                    if (!empty($value['time_create'])) {
+                        $value['time_create'] = General::dayEng($value['time_create']);
+                    }
+                }else{
+               		$value['time_create'] = General::dayThai2($value['time_create']);
+                }
+                $getData[] = $value;
+            }
+            // _print_r($getData);
+            return $getData;
+        }
+        return $getData;
+	}
+
+	public function getCountArrival()
+	{
+		$this->fnc_setElementSearchFromSession();
+
+		$this->db->where('MONTH(time_create)', $this->s_element['smonth']);
+        $this->db->where('YEAR(time_create)', $this->s_element['syear']);
+		// $this->db->where('show_status', 1);
+		$rs = $this->db->get($this->book_tbl)->num_rows();
+
+		return $rs;
+	}
+
+	public function getCountArrivalForPaginate()
+	{
+		$this->fnc_setElementSearchFromSession();
+
+		$this->db->where('MONTH(time_create)', $this->s_element['smonth']);
+        $this->db->where('YEAR(time_create)', $this->s_element['syear']);
+		// $this->db->where('show_status', 1);
+		$data = $this->db->get($this->book_tbl)->num_rows();
+
+		$rs = $data / $this->per_page;
+        return ceil($rs);
+	}
+
+	public function getMonth()
+	{
+		if ($this->language == 'th') {
+			return $this->month_th;
+		}else{
+			return $this->month_en;
+		}
+	}
+
+	// public function getYear()
+	// {
+	// 	$minYear = date('Y') - 5";
+	// 	$maxYear = date('Y);
+	// 	return $this->year;
+	// }
+
+	public function getTopicFilter()
+    {
+        $data = [];
+        $data['month'] = $this->fnc_getFilterMonth();
+        $data['year'] = $this->fnc_getFilterYear();
+
+        return $data;
+    }
+
+    private function fnc_getFilterMonth()
+    {
+        if ($this->s_element['syear'] == date('Y')) {
+            for ($i = 1; $i <= (date('m')); $i++) {
+                if($this->language == 'th') {
+                	$data[$i] = $this->month_th[$i];
+		     	} else {
+                	$data[$i] = $this->month_en[$i];
+		     	}
+            }
+        } else {
+            for ($i = 1; $i <= 12; $i++) {
+                if($this->language == 'th') {
+                	$data[$i] = $this->month_th[$i];
+		     	} else {
+                	$data[$i] = $this->month_en[$i];
+		     	}
+            }
+        }
+
+        return $data;
+    }
+
+    private function fnc_getFilterYear()
+    {
+        // $this->db->select('YEAR(time_create) as yearDate');
+        // $this->db->group_by('yearDate');
+        // $data = $this->db->get($this->book_tbl)->result_array();
+
+        // if (!empty($data)) {
+        //     $getData = [];
+        //     foreach ($data as $key => $value) {
+        //         $getData[$value['yearDate']] = $value['yearDate'] + 543;
+        //     }
+        //     return $getData;
+        // } else {
+        //     return [0 => (date('Y') + 543)];
+        // }
+
+        $minYear = date('Y') - 5;
+		$maxYear = date('Y');
+
+        $yearData = [];
+		for ($i = $minYear; $i <= $maxYear; $i++) {
+	      	if($this->language == 'th') {
+	        	$yearData[$i] = $i + 543;
+	     	} else {
+	        	$yearData[$i] = $i;
+	     	}
+		      
+		}
+
+		return $yearData;
+    }
+
+	## Search
+    private function fnc_setElementSearchFromSession()
+    {
+        $form_search_element = $this->session->userdata('form_search_element');
+
+
+        if($form_search_element == null) {
+            $this->s_element['stext'] = FALSE;
+            $this->s_element['smonth'] = date('m');
+            $this->s_element['syear'] = date('Y');
+            return $this->s_element;
+        }
+
+        foreach($this->s_element as $key => $value) {
+            if(isset($form_search_element['element'][$key]))
+                $this->s_element[$key] = $form_search_element['element'][$key];
+        }
+
+        $stext = trim($this->db->escape_str($this->s_element['stext']));
+        $smonth = trim($this->db->escape_str($this->s_element['smonth']));
+        $syear = trim($this->db->escape_str($this->s_element['syear']));
+        // _print_r($stext);
+        // $status = $this->s_element['status'];
+        if($stext != '') {
+            $this->db->group_start();
+            $this->db->where("(book_title LIKE '%{$stext}%')");
+            $this->db->or_where("(book_title_en LIKE '%{$stext}%')");
+            $this->db->or_where("(author LIKE '%{$stext}%')");
+            $this->db->or_where("(author_en LIKE '%{$stext}%')");
+            $this->db->group_end();
+        }
+
+        if ($smonth != '') {
+           $this->db->where('MONTH(time_create)', $smonth);
+       	}
+
+       	if ($syear != '') {
+           $this->db->where('YEAR(time_create)', $syear);
+       	}
+    }
+
+    public function getSElement()
+    {
+        return $this->s_element;
+    }
+
+	##Pagination
+
+    public function getPerPage()
+    {
+        return $this->per_page;
+    }
+
+    private function fnc_calPageOffset($page)
+    {
+        $offset = ($page * $this->per_page) - $this->per_page;
+
+        $this->db->limit($this->per_page, $offset);
+    }
+
+    public function order($page)
+    {
+        // $offset = ($page * $this->per_page) - $page;
+        $offset = (($page * $this->per_page) - $this->per_page);
+        // print_r($offset);
+        return $offset;
+    }
+
+    public function newsPagination($cur_page, $all_page)
+    {
+        $start = $cur_page;
+        $end = $all_page;
+        $paginationData = [];
+        $check_start = ($cur_page - 2);
+        $check_end = ($cur_page + 2);
+
+        if($cur_page < 3) {
+            $start = 1;
+        } elseif($all_page < ($cur_page + 3)){
+            if(($cur_page + 3) > $all_page) {
+                $start = $all_page - 4;
+                if ($start < 1) {
+                    $start = 1;
+                }
+            } else {
+                $start = 1;
+            }
+        } else {
+            $start = $check_start;
+        }
+
+        $maxStart = 0;
+
+        for ($i=$start; $i <= ($start + 2); $i++) {
+            if ($all_page >= $i) {
+                array_push($paginationData, $i);
+                $maxStart = $i;
+            } 
+        }
+
+        if(COUNT($paginationData) == 3) {
+            if($end >= $maxStart) {
+               for ($i= ($maxStart + 1); $i < ($maxStart + 3); $i++) { 
+                    if($end >= $i) {
+                        array_push($paginationData, $i);
+                    }
+                } 
+            }
+        }
+        // _print_r($paginationData);
+        return $paginationData;
+
+    }
+
+}
+
+/* End of file NewArrival_model.php */
+/* Location: ./application/models/NewArrival_model.php */

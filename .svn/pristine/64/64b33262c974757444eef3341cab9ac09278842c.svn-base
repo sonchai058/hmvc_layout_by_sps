@@ -1,0 +1,430 @@
+<div class="main-container">
+  <div class="pd-ltr-20 xs-pd-20-10">
+    <div class="pd-20 card-box mb-30">
+      <div class="clearfix mb-20">
+          <div class="row">
+            <div class="col-4">
+              <h4 class="text-blue h4"><?= $title_page ?></h4>
+            </div>
+
+            <div class="col-8">
+              <div class="pull-right">
+                <nav aria-label="breadcrumb" role="navigation">
+                  <ol class="breadcrumb pd-0">
+                    <li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+                    <li class="breadcrumb-item"><a href="<?= $action_link ?>"><?= $title ?></a></li>
+                    <li class="breadcrumb-item"><a href="<?= $action_link.'MenuSub/'.$menu_id ?>">จัดการเมนูรอง</a></li>
+                    <li class="breadcrumb-item active" aria-current="page"><?= $title_page ?></li>
+                  </ol>
+                </nav>
+              </div>
+            </div>
+          </div>
+      </div>
+
+      <div class="clearfix mb-20">
+        <?php if(validation_errors() != ''): ?>
+            <div class="alert alert-danger">
+                <?php echo validation_errors(); ?>
+            </div>
+        <?php endif; ?>
+        <form role="form" id="post" method="post"
+              action="<?= $action_link . 'InsertSub/' . $menu_id . '/' . $getForm['menu_id'] ?>"
+              enctype="multipart/form-data">
+              <input type="hidden" id="parent_id" name="parent_id" value="<?= $menu_id ?>">
+              <input type="hidden" id="menu_id" name="menu_id" value="<?= $getForm['menu_id'] ?>">
+            <div class="form-group">
+                <label for="menu_name"><strong>ชื่อเมนูรอง</strong>&nbsp;
+                  <span class="red">*</span>
+                </label>
+                <input type="text" class="form-control validate[required]" id="menu_name"
+                       name="menu_name" placeholder="ชื่อเมนูรอง" value="<?= $getForm['menu_name'] ?>"
+                       maxlength="250">
+            </div>
+
+            <div class="form-group">
+                <label for="menu_name_en"><strong>ชื่อเมนูรองภาษาอังกฤษ</strong></label>
+                <input type="text" class="form-control" id="menu_name_en"
+                       name="menu_name_en" placeholder="ชื่อเมนูรองภาษาอังกฤษ"
+                       value="<?= $getForm['menu_name_en'] ?>" maxlength="250">
+            </div>
+
+            <div class="form-group mb-0">
+                <label for="type_menu0"><strong>การเชื่อมโยง</strong></label>&nbsp;<span class="red">*</span>
+                <div class="jumbotron radio p-3 pt-4 mb-3">
+                    <input class="validate[required] radio type_menu" at-id="link_none" type="radio"
+                           name="type_menu" id="type_menu0"
+                           value="0"
+                        <?= ($getForm['type_menu'] == null) || $getForm['type_menu'] == 0 ? 'checked' : '' ?>>
+                    <label for="type_menu0">
+                        ไม่เชื่อมโยง
+                    </label>
+                    &nbsp;&nbsp;
+                    <input class="validate[required] radio type_menu" at-id="link_html" type="radio"
+                           name="type_menu" id="type_menu1"
+                           value="1"
+                        <?= isset($getForm) && $getForm['type_menu'] == 1 ? 'checked' : '' ?>>
+                    <label for="type_menu1">
+                        เชื่อมโยงเนื้อหา HTML
+                    </label>
+                    &nbsp;&nbsp;
+                    <input class="validate[required] radio type_menu" at-id="url" type="radio"
+                           name="type_menu" id="type_menu2"
+                           value="2"
+                        <?= isset($getForm) && $getForm['type_menu'] == 2 ? 'checked' : '' ?>>
+                    <label for="type_menu2">
+                        เชื่อมโยง URL ภายนอก
+                    </label>
+                    <?php if (!empty($module)): ?>
+                      &nbsp;&nbsp;
+                        <input class="validate[required] radio type_menu" at-id="link_module"
+                               type="radio"
+                               name="type_menu" id="type_menu3"
+                               value="3"
+                            <?= isset($getForm) && $getForm['type_menu'] == 3 ? 'checked' : '' ?>>
+                        <label for="type_menu3">
+                            เชื่อมโยงโมดูลระบบ
+                        </label>
+                    <?php
+                    endif;
+                    ?>
+                </div>
+            </div>
+
+            <div id="link_html" class="form-group mb-0 link_menu">
+                <div class="mb-3">
+                    <label for="description"><strong> เนื้อหา HTML</strong></label>&nbsp;<span class="red">*</span>
+                    <div class="well">
+                        <textarea class="form-control tinymceEdit" id="description"
+                                  name="description" rows="3"><?= $getForm['description'] ?></textarea>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="description_en"><strong> เนื้อหา HTML ภาษาอังกฤษ</strong></label>
+                    <div class="well">
+                        <textarea class="form-control tinymceEdit" id="description_en"
+                                  name="description_en"
+                                  rows="3"><?= $getForm['description_en'] ?></textarea>
+                    </div>
+                </div>
+            </div>
+            <div id="link_module" class="form-group mb-0 link_menu">
+                <label><strong>เชื่อมโยงโมดูลระบบ</strong></label>&nbsp;<span class="red">*</span>
+                <div class="jumbotron radio p-3 pt-4 mb-3">
+                    <?php if (!empty($module)):foreach ($module as $key => $value): ?>
+                        <ul class="col-md-6">
+                            <ul>
+                                <li>
+                                    <?php if (!empty($value)):foreach ($value as $k => $v): ?>
+                                        <div class="radio ">
+                                            <input class="validate[required] radio" type="radio"
+                                                   name="module_id" id="module_id<?= $v['module_id'] ?>"
+                                                   value="<?= $v['module_id'] ?>"
+                                                <?= $getForm['module_id'] == $v['module_id'] ? 'checked' : '' ?>>
+                                            <label for="module_id<?= $v['module_id'] ?>">
+                                                <?= $v['module_name'] ?>
+                                            </label>
+                                        </div>
+                                    <?php
+                                    endforeach;
+                                    endif;
+                                    ?>
+                                </li>
+                            </ul>
+
+                        </ul>
+                    <?php
+                    endforeach;
+                    endif;
+                    ?>
+
+                </div>
+            </div>
+            <div id="link_none" class="form-group mb-0 link_menu">
+            </div>
+
+            <div id="url" class="form-group mb-0 link_menu"
+                 style="<?= $getForm['type_menu'] == null || $getForm['type_menu'] == 1 ? 'display: none;' : '' ?>">
+                <label><strong>Url</strong>&nbsp;<span class="red">*</span></label>
+                <div class="well">
+                    <input type="text" class="form-control validate[required,custom[url]]"
+                           id="menu_link" name="menu_link" placeholder="Url"
+                           value="<?= $getForm['menu_link'] ?>">
+                    <p style="padding-top: 10px;"><span class="red">*</span>Ex. <span class="red">https://</span>www.exemple.com</p>
+                </div>
+            </div>
+
+            <div class="form-group mb-0" id="status">
+                <label><strong>สถานะ</strong></label>&nbsp;
+                <span class="red">*</span>
+                <div class="jumbotron radio p-3 pt-4">
+                    <input type="radio" name="show_status" id="show_status1"
+                           value="1"
+                        <?= ($getForm['show_status'] == null) || $getForm['show_status'] == 1 ? 'checked' : '' ?>>
+                    <label for="show_status1">
+                        เผยแพร่
+                    </label>
+                    &nbsp;&nbsp;
+                    <input type="radio" name="show_status" id="show_status2"
+                           value="2"
+                        <?= isset($getForm) && $getForm['show_status'] == 2 ? 'checked' : '' ?>>
+                    <label for="show_status2">
+                        ไม่เผยแพร่
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group mb-0" id="usage_level">
+                <label for="usage_level_1"><strong>ระดับการใช้งาน</strong></label>&nbsp;
+                <span class="red">*</span>
+                <div class="jumbotron radio p-3 pt-4">
+                    <input type="radio" name="usage_level" id="usage_level_1"
+                           value="1"
+                        <?= ($getForm['usage_level'] == null) || $getForm['usage_level'] == 1 ? 'checked' : '' ?>>
+                    <label for="usage_level_1">
+                        ผู้ใช้งานทั้งหมด
+                    </label>
+                    &nbsp;&nbsp;
+                    <input type="radio" name="usage_level" id="usage_level_2"
+                           value="2"
+                        <?= isset($getForm) && $getForm['usage_level'] == 2 ? 'checked' : '' ?>>
+                    <label for="usage_level_2">
+                        เฉพาะเจ้าหน้าที่
+                    </label>
+                    &nbsp;&nbsp;
+                    <input type="radio" name="usage_level" id="usage_level_3"
+                           value="3"
+                        <?= isset($getForm) && $getForm['usage_level'] == 3 ? 'checked' : '' ?>>
+                    <label for="usage_level_3">
+                        เฉพาะกลุ่มเจ้าหน้าที่ (กำหนด)
+                    </label>
+
+                    <div class="form-group row blockSelect2">
+                        <label class="col-md-12 col-12 col-sm-12 my-auto"><strong>ระดับการใช้งาน</strong></label>
+                        <div class="col-md-12 col-12 col-sm-12">
+                            <select class="js-example-basic-single form-control" name="user_grp[]" multiple="multiple">
+                            <?php if (!empty($getUserGroup)): ?>
+                                <?php foreach ($getUserGroup as $key => $value): ?>
+                                        <option value="<?= $value['grp_id'] ?>" <?= (in_array($value['grp_id'],$getForm['user_grp'])) ? "selected" : ""; ?>>
+                                            <?= $value['grp_name'] ?>
+                                        </option>
+                                <?php endforeach ?>
+                            <?php endif ?>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group mb-0" id="date_show">
+                <label for="type_date_show_1"><strong>กำหนดวันและเวลาในการแสดงผล</strong></label>&nbsp;
+                <span class="red">*</span>
+                <div class="jumbotron radio p-3 pt-4">
+                    <input type="radio" name="type_date_show" id="type_date_show_1"
+                           value="1"
+                        <?= ($getForm['type_date_show'] == null) || $getForm['type_date_show'] == 1 ? 'checked' : '' ?>>
+                    <label for="type_date_show_1">
+                        แสดงผลตลอดเวลา
+                    </label>
+                    &nbsp;&nbsp;
+                    <input type="radio" name="type_date_show" id="type_date_show_2"
+                           value="2"
+                        <?= isset($getForm) && $getForm['type_date_show'] == 2 ? 'checked' : '' ?>>
+                    <label for="type_date_show_2">
+                        แสดงผลตามช่วงเวลา
+                    </label>
+
+                    <div class="form-group row blockDate">
+                        <label class="col-md-3 col-4 col-sm-3 my-auto text-right"><strong>ช่วงเวลา : </strong></label>
+                        <div class="col-md-2 col-4 col-sm-3">
+                            <input type="text" name="date_show_start"
+                                   class="form-control text-center" id="date_show_start"
+                                   value="<?= (!empty($getForm['date_show_start']) ? $getForm['date_show_start'] : '')?>" readonly
+                                   placeholder="วันที่เริ่มต้น" autocomplete="off">
+                        </div>
+                        <label class="col-md-1 col-4 col-sm-1 my-auto text-center"><strong>ถึง</strong></label>
+                        <div class="col-md-2 col-8 col-sm-3">
+                            <input type="text" name="date_show_end"
+                                   class="form-control text-center" id="date_show_end"
+                                   value="<?= (!empty($getForm['date_show_end']) ? $getForm['date_show_end'] : '')?>" readonly
+                                   placeholder="วันที่สิ้นสุด" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group text-center">
+                <a href="<?= $action_link . 'MenuSub/' . $menu_id ?>">
+                    <button type="button" class="btn btn-danger"><i class="fa fa-times"></i>&nbsp;ยกเลิก
+                    </button>
+                </a>
+                &nbsp;&nbsp;
+                <button type="submit" class="btn btn-success"><i class="fa fa-save"></i>&nbsp;บันทึก
+                </button>
+            </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script language="javascript" type="text/javascript">
+    $(document).ready(function () {
+
+        $('.js-example-basic-single').select2({
+            placeholder: "กรุณาเลือกกลุ่มเจ้าหน้าที่",
+            allowClear: true
+        });
+        
+        $('#post').submit(function() {
+          if($("input[name=show_status]:checked").val() == 1 && $("input[name=type_date_show]:checked").val() == 2) {
+            var valid = $("#post").validationEngine('validate');
+
+            if(valid) {
+              var date_start = $('#date_show_start').val();
+              var date_end = $('#date_show_end').val();
+
+              if(date_start == '' || date_end == '') {
+                alert('กรุณาระบุช่วงเวลาให้ครบ');
+                return false;
+              }
+
+              if(date_start > date_end) {
+                alert('กรุณาระบุช่วงเวลาให้ถูกต้อง');
+                return false;
+              }
+            }
+          }
+
+        });
+
+        var today = new Date();
+        today.setDate(today.getDate() + 1);
+
+        $.datetimepicker.setLocale('th');
+        $('#date_show_start, #date_show_end').datetimepicker({
+            timepicker: true,
+            yearOffset: 543,
+            format: 'd-m-Y H:i',
+            scrollInput: false,
+            scrollMonth: false,
+            formatDate: 'd-m-Y H:i',
+            defaultTime: '00:00',
+        });
+
+        $("#post").validationEngine();
+
+        $(window).dblclick(function () {
+            jQuery('#post').validationEngine('hide');
+        });
+
+        $('.link_menu').hide();
+
+        var type_menu = '<?= $getForm['type_menu'] ?>';
+        $('input[name=type_menu]').each(function (index, el) {
+            var check = $(this).prop("checked");
+            if (check == true) {
+                var val = $(this).val();
+                var at_id = $(this).attr('at-id');
+                if (type_menu != '' && type_menu != 0) {
+                    $('#' + at_id).show(500);
+                }
+            }
+        });
+
+        $("input[name=type_menu]").change(function () {
+            var val = $(this).val();
+            var at_id = $(this).attr('at-id');
+            $('.link_menu').hide(500);
+            $('#' + at_id).show(500);
+        });
+
+        var show_status = '<?= $getForm['show_status'] ?>';
+        $('input[name=show_status]').each(function (index, el) {
+            var check = $(this).prop("checked");
+            if (check == true) {
+              if($(this).val() == 1) {
+                  $('#date_show').show(500);
+                  $('#usage_level').show(500);
+              } else {
+                  $('#date_show').hide(500);
+                  $('#usage_level').hide(500);
+              }
+            }
+        });
+
+        $("input[name=show_status]").change(function () {
+            if($(this).val() == 1) {
+                $('#date_show').show(500);
+                $('#usage_level').show(500);
+            } else {
+                $('#date_show').hide(500);
+                $('#usage_level').hide(500);
+            }
+        });
+
+        $('.blockDate').hide(500);
+        var type_date_show = '<?= $getForm['type_date_show'] ?>';
+        $('input[name=type_date_show]').each(function (index, el) {
+            var check = $(this).prop("checked");
+            if (check == true) {
+              if($(this).val() == 2) {
+                  $('.blockDate').show(500);
+              } else {
+                  $('.blockDate').hide(500);
+              }
+            }
+        });
+
+        $('.blockSelect2').hide(500);
+        var usage_level = '<?= $getForm['usage_level'] ?>';
+        $('input[name=usage_level]').each(function (index, el) {
+            var check = $(this).prop("checked");
+            if (check == true) {
+              if($(this).val() == 3) {
+                  $('.blockSelect2').show(500);
+              } else {
+                  $('.blockSelect2').hide(500);
+              }
+            }
+        });
+
+        $("input[name=usage_level]").change(function () {
+            if($(this).val() == 3) {
+                $('.blockSelect2').show(500);
+            } else {
+                $('.blockSelect2').hide(500);
+            }
+        });
+
+        $("input[name=type_date_show]").change(function () {
+            if($(this).val() == 2) {
+                $('.blockDate').show(500);
+            } else {
+                $('.blockDate').hide(500);
+            }
+        });
+
+        $("#menu_name").change(function () {
+            var menu_id = $('#menu_id').val();
+            var parent_id = $('#parent_id').val();
+            var menu_name = $(this).val();
+            $.ajax({
+                type: 'post',
+                url: '<?= LINK . 'ManageMenu/checkTitleSub' ?>',
+                data: {
+                    menu_id: menu_id,
+                    parent_id: parent_id,
+                    menu_name: menu_name
+                },
+                success: function (data) {
+                    if (data == false) {
+                        $('#menu_name').validationEngine('showPrompt', '* ชื่อเมนูรอง ' + menu_name + ' ซ้ำในระบบ', 'anything else', 'topRight', true);
+                        $("#menu_name").focus();
+                    }
+                }
+            });
+        });
+
+    });
+</script>

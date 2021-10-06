@@ -1,0 +1,64 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class Calendar extends MDL_Controller
+{
+
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    public function index()
+    {
+        $data['id'] = array();
+        $data['title'] = 'จัดการข้อมูลปฏิทิน Online';
+        $data['title_page'] = 'จัดการข้อมูลปฏิทิน Online';
+        $data['title_sub'] = 'จัดการข้อมูลปฏิทิน Online';
+//            $data['detail'] = $tmp['detail'];
+        parent::view('calendar/form', $data);
+    }
+
+    public function getData()
+    {
+        $data = $this->model->getData();
+        // _print_r($data);
+        echo json_encode($data);
+    }
+
+    public function getDataGroup()
+    {
+        $data = $this->model->getDataGroup();
+        // _print_r($data);
+        echo json_encode($data);
+    }
+
+    public function saveData($id = false)
+    {
+        $data = $this->model->saveData($id);
+
+        echo $data;
+    }
+
+    public function deleteData($id)
+    {
+        $data = $this->model->deleteData($id);
+        echo $data;
+    }
+
+    public function getListNews()
+    {
+        $data = $this->model->getListNews();
+
+        echo json_encode($data); die();
+    }
+
+    public function getListGallery()
+    {
+        $data = $this->model->getListGallery();
+
+        echo json_encode($data); die();
+    }
+}

@@ -1,0 +1,222 @@
+<?php
+
+include("application/libraries/ElasticIndex.php");
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class CategoryNews_model extends CI_Model
+{
+    #เรียกตารางจากฐานข้อมูล
+
+    private $category_news_tbl = 'category_news';
+    private $news_tbl = 'news';
+
+    ##Pagination
+    private $per_page = 10;
+
+    ## Search
+    private $s_element = array('stext' => FALSE, 'scategory' => '');
+
+    ## Match data
+    // private $category = array('1' => 'ข่าวประชาสัมพันธ์', '2' => 'ข่าวจัดซื้อจัดจ้าง');
+    private $category = array('1' => 'ข่าวประชาสัมพันธ์');
+    private $status = array('1' => 'เผยแพร่', '2' => 'ไม่เผยแพร่');
+
+    public function __construct()
+    {
+        parent::__construct();
+        #path สำหรับ insert Database
+        $this->path = 'file_upload/news/';
+        $this->path_upload = 'file_upload/news/';
+        $this->user_id = $this->session->cmu_web_session['id'];
+
+        $this->Elastic = new ElasticIndex();
+        $this->fnc_createTbl();
+    }
+
+    private function fnc_createTbl()
+    {
+        $this->load->library('CreateTable');
+
+        $this->createtable->createTable('category_news','
+          `category_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+          `category_name` varchar(255) DEFAULT NULL,
+          `category_name_en` varchar(255) DEFAULT NULL,
+          PRIMARY KEY (`category_id`)');
+    }
+
+    #ดึงข้อมูลข่าวมาแสดงหน้า Main
+    public function getCategoryNews($page = 1)
+    {
+        $this->fnc_calPageOffset($page);
+        $this->fnc_setElementSearchFromSession();
+        $this->db->order_by('s_order','asc');
+        $this->db->order_by('category_id','desc');
+        $data = $this->db->get($this->category_news_tbl)->result_array();
+
+        $getData = array();
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                $value['disable'] = $this->fnc_getDisableDelete($value['category_id']);
+                $getData[] = $value;
+            }
+        }
+        return $getData;
+    }
+
+    #นับจำนวนข้อมูลข่าวในหมวดหมู่ เพื่อนำไปเช็คในการลบหมวดหมู่
+    private function fnc_getDisableDelete($category_id)
+    {
+        $this->db->where('news_category', $category_id);
+        return $this->db->count_all_results($this->news_tbl);
+    }
+
+    #นับข้อมูลข่าวที่ดึงออกมา แสดงการแบ่งหน้า
+    public function getCategoryCount()
+    {
+        $this->fnc_setElementSearchFromSession();
+        // $this->db->order_by('category_id', 'desc');
+        $data = $this->db->get($this->category_news_tbl)->result_array();
+
+        $getData = array();
+        if (!empty($data)) {
+            $getData = $data;
+        }
+        return count($getData);
+    }
+
+    #ดึงข้อมูลแสดงฟอร์มเพิ่ม - แก้ไข
+    public function getForm($category_id)
+    {
+        $getData = [];
+        if (!empty($category_id)) {
+            $this->db->where('category_id', $category_id);
+            $data = $this->db->get($this->category_news_tbl)->row_array();
+            // _print_r($data);
+            $getData = $data;
+        }else{
+            $getData = array(
+                'category_id'=>"",
+                'category_name'=>"",
+                'category_name_en'=>""
+                );
+            return $getData;
+        }
+
+        return $getData;
+
+    }
+
+    #เพิ่ม - แก้ไขข้อมูล
+    public function insert($category_id)
+    {
+        $post = $this->input->post();
+
+        $data = array(
+            'category_name' => $post['category_name'],
+            'category_name_en' => $post['category_name_en'],
+            's_order' => 0
+        );
+
+        if ($category_id == '') {
+            $this->db->insert($this->category_news_tbl, $data);
+
+            $Counter = new Counter;
+            $Counter->logAction($post['category_name'], 0, 0, 'category_news', '57', $this->user_id);
+        }else{
+            $this->db->where('category_id', $category_id);
+            $this->db->update($this->category_news_tbl, $data);
+
+            $Counter = new Counter;
+            $Counter->logAction($post['category_name'], $category_id, 0, 'category_news', '58', $this->user_id);
+        }
+    }
+
+    #ลบข้อมูล
+    public function delete($category_id)
+    {
+        $dataByID = $this->fnc_getDataById($category_id);
+
+        $this->db->where('category_id', $category_id);
+        $this->db->delete($this->category_news_tbl);
+
+        $Counter = new Counter;
+        $Counter->logAction($dataByID['category_name'], $category_id, 0, 'category_news', '59', $this->user_id);
+    }
+
+    private function fnc_getDataById($category_id)
+    {
+        $this->db->select('category_id, category_name');
+        $this->db->where('category_id', $category_id);
+        $data = $this->db->get($this->category_news_tbl)->row_array();
+
+        if (!empty($data)) {
+            return $data;
+        } else {
+            return [];
+        }
+    }
+
+    ## Search
+    private function fnc_setElementSearchFromSession()
+    {
+        $form_search_element = $this->session->userdata('form_search_element');
+
+
+        if ($form_search_element == null) {
+            return;
+        }
+        foreach ($this->s_element as $key => $value) {
+            if (isset($form_search_element['element'][$key]))
+                $this->s_element[$key] = $form_search_element['element'][$key];
+        }
+
+        $stext = trim($this->db->escape_str($this->s_element['stext']));
+        $scategory = trim($this->db->escape_str($this->s_element['scategory']));
+
+        if ($stext != '') {
+            $this->db->group_start();
+            $this->db->like('category_name', $stext);
+            $this->db->or_like('category_name_en', $stext);
+            $this->db->group_end();
+        }
+
+//        if ($scategory != 'all') {
+//            $this->db->where('news_category', $scategory);
+//        }
+    }
+
+    public function getSElement()
+    {
+        return $this->s_element;
+    }
+
+    ##Pagination
+    public function getPerPage()
+    {
+        return $this->per_page;
+    }
+
+    private function fnc_calPageOffset($page)
+    {
+        $offset = ($page * $this->per_page) - $this->per_page;
+
+        $this->db->limit($this->per_page, $offset);
+    }
+
+    public function saveOrder($category_id, $order)
+    {
+        $data = array(
+            's_order' => $order
+        );
+
+        $this->db->where('category_id', $category_id);
+        $this->db->update($this->category_news_tbl, $data);
+
+        return 'เรียงลำดับข้อมูลแล้ว';
+    }
+}
+
+/* End of file New_model.php */
+/* Location: ./application/models/New_model.php */

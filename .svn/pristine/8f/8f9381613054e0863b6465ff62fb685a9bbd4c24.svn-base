@@ -1,0 +1,320 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class ManageRecommendResources_model extends CI_Model {
+
+	#เรียกตารางจากฐานข้อมูล
+
+    private $main_tbl = 'recommend_e_resources';
+
+    ##Pagination
+    private $per_page = 10;
+
+    ## Search
+    private $s_element = array('stext' => FALSE, 'scategory' => '');
+
+    ## Match data
+    // private $category = array('1' => 'ข่าวประชาสัมพันธ์', '2' => 'ข่าวจัดซื้อจัดจ้าง');
+    private $status = array('1' => 'เผยแพร่', '2' => 'ไม่เผยแพร่');
+
+    public function __construct()
+    {
+        parent::__construct();
+        #path สำหรับ insert Database
+        $this->path = 'file_upload/e_resources/';
+        $this->path_upload = 'file_upload/e_resources/';
+        $this->user_id = $this->session->cmu_web_session['id'];
+
+        $this->Elastic = new ElasticIndex();
+        $this->fnc_createTbl();
+    }
+
+    private function fnc_createTbl()
+    {
+
+        $this->load->library('CreateTable');
+
+        $this->createtable->createTable('recommend_e_resources', '
+          `rs_id` INT (11) NOT NULL AUTO_INCREMENT,
+          `rs_title` VARCHAR(255),
+          `rs_title_en` VARCHAR(255),
+          `rs_link` TEXT,
+          `rs_path` VARCHAR(255),
+          `rs_image` VARCHAR(255),
+          `rs_date` DATETIME,
+          `show_status` INT(1),
+          `time_update` DATETIME,
+          PRIMARY KEY (rs_id)');
+    }
+	
+    public function getResources($page)
+    {
+        $this->fnc_calPageOffset($page);
+        $this->fnc_setElementSearchFromSession();
+        $this->db->order_by('time_update', 'desc');
+    	$data = $this->db->get($this->main_tbl)->result_array();
+        // _print_r($this->db->last_query());
+        return $data;
+    }
+
+    public function getCountResources()
+    {
+        $data = $this->db->get($this->main_tbl)->num_rows();
+        return $data;
+    }
+
+    #ดึงข้อมูลแสดงฟอร์มเพิ่ม - แก้ไข
+
+    public function getForm($rs_id)
+    {
+        if ($rs_id != '') {
+            $data = $this->fnc_getFormEdit($rs_id);
+        } else {
+            $data = $this->fnc_getFormInsert();
+        }
+
+        return $data;
+    }
+
+    #ดึงข้อมูลแสดงฟอร์มแก้ไข
+
+    private function fnc_getFormEdit($rs_id)
+    {
+        $this->db->where('rs_id', $rs_id);
+        $data = $this->db->get($this->main_tbl)->result_array();
+
+        $getData = null;
+        if (!empty($data)) {
+
+            $getData = reset($data);
+            if (!empty($getData['rs_image']) && file_exists($this->path . $getData['rs_image'])) {
+                $getData['img'] = base_url() . $getData['rs_path'] . $getData['rs_image'];
+            } else {
+                $getData['img'] = null;
+            }
+        }
+        // _print_r($getData);
+        return $getData;
+    }
+
+
+    #ดึงข้อมูลแสดงฟอร์มเพิ่ม
+    private function fnc_getFormInsert()
+    {
+        $data = array(
+            'rs_id' => null,
+            'rs_title' => null,
+            'rs_title_en' => null,
+            'rs_link' => null,
+            'rs_path' => null,
+            'rs_image' => null,
+            'rs_date' => null,
+            'img' => null,
+            'show_status' => 1,
+            'time_update' => null,
+        );
+
+        return $data;
+    }
+
+    #เพิ่ม - แก้ไขข้อมูล
+
+    public function insertResources($rs_id)
+    {
+        $img = null;
+        if (!empty($_FILES)) {
+            $img = $this->fnc_uploadImg($_FILES['rs_image']);
+        }
+        if ($rs_id != '') {
+            $data = $this->fnc_editResources($rs_id, $img);
+            return $data;
+        } else {
+            $data = $this->fnc_insertResources($img);
+            return $data;
+        }
+    }
+
+    #เพิ่มข้อมูล
+
+    private function fnc_insertResources($img)
+    {
+        if ($_FILES["rs_image"]["name"] != "") {
+            if ($img['type'] == '.jpg' || $img['type'] == '.png' || $img['type'] == '.gif') {
+                if (move_uploaded_file($_FILES["rs_image"]["tmp_name"], $img['path'])) {
+                    $data = array(
+                        'rs_path' => $this->path_upload,
+                        'rs_image' => $img['file_name']
+                    );
+                }
+            } else {
+                $alert = 'ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด';
+                return $alert;
+            }
+        }
+
+        // $data['news_category'] = $this->input->post('news_category');
+
+        $dateUpdate = date('Y-m-d H:i:s');
+        $data['rs_title'] = $this->input->post('rs_title');
+        $data['rs_title_en'] = $this->input->post('rs_title_en');
+        $data['rs_link'] = $this->input->post('rs_link');
+        $data['rs_date'] = $dateUpdate;
+        $data['show_status'] = $this->input->post('show_status');
+        $data['time_update'] = $dateUpdate;
+
+        // _print_r($data);
+
+        $this->db->insert($this->main_tbl, $data);
+        $rs_id = $this->db->insert_id();
+
+
+
+        // if (!empty($this->input->post('fld'))) {
+        //     foreach ($this->input->post('fld') as $key => $value) {
+        //         $value = json_decode($value, true);
+        //         $value['rs_id'] = $rs_id;
+        //         $value['user_upload'] = $this->user_id;
+        //         $this->db->insert('news_doc', $value);
+        //     }
+        // }
+
+        $Counter = new Counter;
+        $Counter->logAction($data['rs_title'], $rs_id, 0, 'Recommend e-Resources', '68', $this->user_id);
+    }
+
+    #แก้ไขข้อมูล
+
+    private function fnc_editResources($rs_id, $img)
+    {
+        $delete_img = $this->fnc_getImg($rs_id);
+
+        if ($_FILES["rs_image"]["name"] != "") {
+            if ($img['type'] == '.jpg' || $img['type'] == '.png' || $img['type'] == '.gif') {
+                if (move_uploaded_file($_FILES["rs_image"]["tmp_name"], $img['path'])) {
+                    $data = array(
+                        'rs_path' => $this->path_upload,
+                        'rs_image' => $img['file_name']
+                    );
+
+                    if ($delete_img != '') {
+                        @unlink($delete_img['delete']);
+                    }
+                }
+            } else {
+                $alert = 'ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด';
+                return $alert;
+            }
+        }
+
+        $dateUpdate = date('Y-m-d H:i:s');
+        $data['rs_title'] = $this->input->post('rs_title');
+        $data['rs_title_en'] = $this->input->post('rs_title_en');
+        $data['rs_link'] = $this->input->post('rs_link');
+        $data['show_status'] = $this->input->post('show_status');
+        $data['time_update'] = $dateUpdate;
+
+
+        $this->db->where('rs_id', $rs_id);
+        $this->db->update($this->main_tbl, $data);
+
+
+        $Counter = new Counter;
+        $Counter->logAction($data['rs_title'], $rs_id, 0, 'Recommend e-Resources', '69', $this->user_id);;
+    }
+
+    public function delete($rs_id)
+    {
+        $delete_img = $this->fnc_getImg($rs_id);
+        if ($delete_img != '') {
+            @unlink($delete_img['delete']);
+            $Counter = new Counter;
+            $Counter->logAction($delete_img['rs_title'], $rs_id, 0, 'Recommend e-Resources', '70', $this->user_id);
+        }
+        $this->db->delete($this->main_tbl, array('rs_id' => $rs_id));
+    }
+
+    #แปลงชื่อก่อนอัพโหลด
+
+    private function fnc_uploadImg($rs_image)
+    {
+        $exp = explode('.', $rs_image['name']);
+        $ext = end($exp);
+
+        $data['file_name'] = md5(date('Y-m-dh:i:s')) . '.' . $ext;
+        $data['path'] = $this->path . $data['file_name'];
+        $new_file = strtolower($data['file_name']);
+        $data['type'] = strrchr($new_file, '.');
+
+        return $data;
+    }
+
+    #ดึงข้อมูล เพื่อลบรูป
+
+    private function fnc_getImg($rs_id)
+    {
+        // $this->db->limit(1);
+        // $this->db->select('*');
+        $this->db->where('rs_id', $rs_id);
+        $data = $this->db->get($this->main_tbl)->result_array();
+
+        $getData = NULL;
+        if (!empty($data)) {
+            $getData = reset($data);
+            $getData['delete'] = $this->path . $getData['rs_image'];
+        }
+
+        return $getData;
+    }
+
+    //     ## Search
+
+    private function fnc_setElementSearchFromSession()
+    {
+        $form_search_element = $this->session->userdata('form_search_element');
+
+
+        if($form_search_element == null) {
+            return;
+        }
+        foreach($this->s_element as $key => $value) {
+            if(isset($form_search_element['element'][$key]))
+                $this->s_element[$key] = $form_search_element['element'][$key];
+        }
+
+        $stext = trim($this->db->escape_str($this->s_element['stext']));
+        // $status = $this->s_element['status'];
+
+        if($stext != '') {
+            $this->db->group_start();
+            $this->db->where("(rs_title LIKE '%{$stext}%')");
+            $this->db->or_where("(rs_title_en LIKE '%{$stext}%')");
+            $this->db->group_end();
+        }
+
+        // if($status != 'all') {
+        //     $this->db->where('show_status', $status);
+        // }
+    }
+
+	public function getSElement()
+    {
+        return $this->s_element;
+    }
+
+    ##Pagination
+
+    public function getPerPage()
+    {
+        return $this->per_page;
+    }
+
+    private function fnc_calPageOffset($page)
+    {
+        $offset = ($page * $this->per_page) - $this->per_page;
+
+        $this->db->limit($this->per_page, $offset);
+    }
+}
+
+/* End of file ManageRecommendResources_model.php */
+/* Location: ./application/modules/management/models/ManageRecommendResources_model.php */

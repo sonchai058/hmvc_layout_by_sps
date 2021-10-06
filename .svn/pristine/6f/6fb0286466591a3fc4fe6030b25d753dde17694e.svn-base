@@ -1,0 +1,59 @@
+<?php
+
+/**
+ *
+ */
+class HtmlDetail_model extends CI_model
+{
+    private $users_tbl = 'users';
+    private $session_data = 'cmu_web_session';
+    private $prev_tbl = 'um_app_priv';
+    private $prev_group_tbl = 'um_app_priv_group';
+    private $menu_tbl = 'manage_menu';
+    private $menu_top_tbl = 'manage_menu_top';
+    private $language = 'th';
+
+    function __construct()
+    {
+        parent::__construct();
+        $this->load->library('session');
+
+        if (!empty($_SESSION['LANGUAGE'])) {
+            $this->language = strtolower($_SESSION['LANGUAGE']);
+        }else{
+            $this->language = 'th';
+
+        }
+
+    }
+
+    public function getHtmlDetail($menu_id)
+    {
+        $this->db->where('menu_id', $menu_id);
+        $rs = $this->db->get($this->menu_tbl)->row_array();
+
+        if (!empty($rs)) {
+            $rs['time_update'] = General::getDateFormatCMU($rs['time_update']);
+
+            if ($this->language == 'en') {
+                if (!empty($rs['menu_name_en'])) {
+                    $rs['menu_name'] = $rs['menu_name_en'];
+                }
+
+                if (!empty($rs['description_en'])) {
+                    $rs['description'] = $rs['description_en'];
+                }
+            }
+
+        }
+        return $rs;
+    }
+
+    public function getHtmlDetailTop($menu_id)
+    {
+        $this->db->where('menu_id', $menu_id);
+        return $this->db->get($this->menu_top_tbl)->row_array();
+    }
+}
+
+?>

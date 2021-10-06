@@ -1,0 +1,106 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Sarawut
+ * Date: 27/6/2018 AD
+ * Time: 10:36
+ */
+
+class Login extends MY_Controller
+{
+
+    function __construct()
+    {
+        parent::__construct();
+        $this->load->library('session');
+    }
+
+    public function index()
+    {
+        $this->load->library('CmuLogin');
+        $this->cmulogin->login();
+        
+    }
+
+    public function LoginNoneAD()
+    {
+        $data['csrfmiddlewaretoken'] = $this->createToken();
+        $_SESSION['csrfmiddlewaretoken'] = $data['csrfmiddlewaretoken'];
+
+        parent::view('login', $data);
+    }
+
+    public function checkLogin()
+    {
+        if (!empty($this->input->post('csrfmiddlewaretoken'))) {
+            if ($this->input->post('csrfmiddlewaretoken') == $_SESSION['csrfmiddlewaretoken']) {
+                $success = $this->model->checkLogin();
+                if ((!empty($success['check']) || $success['check'] == 'true') && $success['check'] != 'Suspend') {
+                    $session = $this->session->userdata($this->session_data);
+                    if (!empty($session)) {
+                        redirect(base_url() . 'management/Index');
+                    } else {
+                        redirect(base_url() . 'Login/LoginNoneAD');
+                    }
+
+                } else {
+                    if ($success['check'] == 'Suspend') {
+                        $data['error_login'] = 'Suspend';
+                    } else {
+                        $data['error_login'] = 'true';
+                    }
+                }
+
+                $data['csrfmiddlewaretoken'] = $this->createToken();
+                $_SESSION['csrfmiddlewaretoken'] = $data['csrfmiddlewaretoken'];
+
+                parent::view('login', $data);
+            }else{
+                show_404();
+            }
+        }
+    }
+
+    public function logout()
+    {
+
+        if(!empty($_SESSION[$this->session_data]['id'])) {
+          $Counter = new Counter;
+          $Counter->logAction('ออกจากระบบ', 0, 0, 'login', '2', $_SESSION[$this->session_data]['id']);
+        }
+
+        $this->session->unset_userdata($this->session_data);
+        $this->session->sess_destroy();
+
+        /// clear cookie after logout
+        if (isset($_COOKIE[session_name()])) {
+            setcookie(session_name(), '', time() - 7000000, '/');
+        }
+
+        redirect(base_url());
+        // parent::view('login', $data);
+    }
+
+    public function ADCallback()
+    {
+        $this->load->library('CmuLogin');
+        $rs = $this->cmulogin->callback();
+        if (isset($rs['user']['firstname_TH']) && !empty($rs['user']) && !empty($rs['status'])) {
+            $authen = $this->saveData(@$rs['user']);
+        } else {
+            $data['csrfmiddlewaretoken'] = $this->createToken();
+            $_SESSION['csrfmiddlewaretoken'] = $data['csrfmiddlewaretoken'];
+            parent::view('login', $data);
+        }
+    }
+
+    public function saveData($ret = [])
+    {
+        $user = $this->model->addAdMember($ret);
+        if (!empty($user)) {
+            redirect(base_url() . 'management/Index');
+        } else {
+            redirect(base_url() . 'Login/LoginNoneAD');
+        }
+    }
+}

@@ -1,0 +1,120 @@
+<?php
+
+if(!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class ReportAction extends MDL_Controller
+{
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->path = 'file_upload/temp_export_csv/';
+        @mkdir($this->path);
+    }
+
+    #หน้าบทความ
+
+    public function index($page = 1, $export = FALSE)
+    {
+        ## Search
+        parent::setSearchSession();
+
+        $data['title'] = 'รายงานและสถิติ';
+        $data['title_page'] = 'รายงานผู้ใช้งานระบบ';
+        $data['page'] = $page;
+        ##Pagination
+        $num = $this->model->countData();
+        $per_page = $this->model->getPerPage();
+        $data['per_page'] = $per_page;
+        parent::pagination($page, $num, $per_page, 4);
+        $data['count'] = $num;
+        $data['getData'] = $this->model->getData($page);
+        $data['form_search_element'] = $this->model->getSElement();
+        $data['status_action'] = $this->status_action;
+        parent::view('report_action/index', $data);
+    }
+
+    public function export()
+    {
+        $raw = json_decode($_POST['send_data'], true);
+        $token = $raw['token'];
+        $page = $raw['page'];
+        $search = $raw['search'];
+        $numPage = $raw['numPage'];
+        $file_name = 'ReportAction_'.date('Y_m_d').$token;
+        $head = array(
+            'n' => 'ลำดับ',
+            'title' => 'รายการ',
+            'type_action' => 'การกระทำ',
+            'user_id' => 'ผู้กระทำ',
+            'c_date_time' => 'วันที่สร้าง',
+            'ip' => 'IP Address',
+        );
+
+        $data = $this->model->getDataCSV($page, $head, $search, $this->status_action);
+        if($page == 1) {
+            $data[0] = $head;
+        }
+        ksort($data); //sort key
+
+        $result['math'] = $this->model->mathData($page, $numPage);
+        $result['file_path'] = $this->exportTocsv($file_name, $data, $page);
+        $result['next_page'] = number_format($page + 1);
+
+        echo json_encode($result);
+        die();
+    }
+
+    #library Export CSV
+
+    public function exportTocsv($curent_file, $data, $page = 1)
+    {
+
+        $file_creat = $this->path.basename($curent_file, '.php').'.csv';
+
+        if($page == 1) {
+            @unlink($file_creat);
+            fopen($file_creat, "w");
+            chmod($file_creat, 0777);
+        }
+
+        if(!empty($data)) {
+            foreach($data as $line => $vv) {
+                foreach($vv as $kk => $value_data) {
+
+                    $value_data = str_replace("'", '', $value_data);
+                    // $value_data = iconv("utf-8", "tis-620//TRANSLIT", $value_data);
+                    $data_csv[$line][$kk] = (string) $value_data;
+                }
+            }
+
+            $this->exportPutCSV($file_creat, $data_csv);
+            return $file_creat;
+        }
+
+        return '';
+    }
+
+    function exportPutCSV($filepath, $data, $header = array())
+    {
+        if($fp = fopen($filepath, 'a')) {
+            fputs($fp, "\xEF\xBB\xBF");
+            // fopen a : เขียนต่อท้าย โดยเปิดขึ้นมาแล้วเขียนต่อท้ายไฟล์ ถ้าไม่มีไฟล์จะสร้างไฟล์
+            foreach($data as $line) {
+                fputcsv($fp, $line);
+                fseek($fp, -1, SEEK_CUR);
+                fwrite($fp, "");
+            }
+            fclose($fp);
+        } else {
+            return false;
+        }
+        return true;
+    }
+
+}
+
+/* End of file News.php */
+/* Location: ./application/controllers/News.php */

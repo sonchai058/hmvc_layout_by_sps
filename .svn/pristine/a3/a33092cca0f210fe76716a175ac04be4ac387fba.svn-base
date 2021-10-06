@@ -1,0 +1,89 @@
+<?php
+
+if(!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class ManageBanner extends MDL_Controller
+{
+
+    private $status = array(1 => 'เผยแพร่', 2 => 'ไม่เผยแพร่', '-' =>'-');    
+
+    public function __construct()
+    {
+        parent::__construct();
+        ## Search
+        parent::setSearchSession();
+    }
+    public function index($page = 1)
+    {
+        $data['title'] = 'จัดการ Online Library Course';
+        $data['title_page'] = 'จัดการ Online Library Course';    
+        $data['list'] = $this->model->getTableList($page);
+        $num = $this->model->getCountTableList();
+        $per_page = $this->model->getPerPage();
+        parent::pagination($page, $num, $per_page, 4);
+        $data['form_search_element'] = $this->model->getSElement();
+        $data['status'] = $this->status;
+        ## Search
+        parent::view('manage_banner/index', $data);
+    }
+
+    public function form($slide_id = FALSE)
+    {
+        if ($slide_id != FALSE) {
+            $data['title'] = 'แก้ไขหลักสูตร';
+            $data['title_page'] = 'แก้ไขหลักสูตร';
+        }else{
+            $data['title'] = 'เพิ่มหลักสูตร';
+            $data['title_page'] = 'เพิ่มหลักสูตร';
+        }
+
+        if (empty($slide_id)){
+            $data['data'] = $this->model->getForm();    
+        }
+        else{
+            $data['data'] = $this->model->getSelectData($slide_id);
+        }        
+        $data['title_sub'] = $slide_id != FALSE ? 'แก้ไขหลักสูตร' : 'เพิ่มหลักสูตร';
+        // _print_r($data['data']);
+        parent::view('manage_banner/form', $data);
+    }
+
+    public function manage($slide_id = FALSE)
+    {  
+        if (empty($slide_id)){
+            $alert=$this->model->getInsert();    
+        }
+        else{
+            $alert=$this->model->getEdit($slide_id);
+        }  
+        if (!empty($alert)) {
+            echo "<script>alert('".$alert."')</script>";
+            echo "<script>window.history.back()</script>";
+        }
+        else{
+            redirect(base_url().'management/ManageBanner/index');
+        }
+    }
+    public function delete($slide_id = FALSE)
+    {
+        $this->model->getdelete($slide_id);
+        redirect(base_url().'management/ManageBanner/index');
+    }
+
+   
+    public function updateOrder($id = false, $order = false)
+    {
+        if($id == false || $order == false) {
+            $result = 'ไม่สามารถเรียงลำดับข้อมูลได้';
+        } else {
+            $result = $this->model->saveOrder($id, $order);
+        }
+
+        echo $result;
+    }
+
+}
+
+/* End of file News.php */
+    /* Location: ./application/controllers/News.php */

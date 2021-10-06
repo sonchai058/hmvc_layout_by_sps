@@ -1,0 +1,98 @@
+<div class="d-flex align-items-center flex-wrap justify-content-center">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-12 col-md-12">
+                <div class="detailBox position-relative">
+                    <div class="mb-3">
+                        <h2 class="title-html-detail" itemprop="name"><?= $menu_name ?></h2>
+                    </div>
+                    <?php if(!empty($list)):?>
+                        <?php 
+                            if(!empty($list) && !empty($list[0])) {
+                                $dataResume = $list[0];
+                            } else {
+                                $dataResume = [];
+                            }
+                        ?>
+                        <div class="row">
+                            <div class="col-lg-5 col-md-5 mt-2 text-center text-lg-right">
+                                <?php if(!empty($dataResume['img'])):?>
+                                    <img src="<?= $dataResume['img']?>" class="rounded imgResume" alt="imageResume">
+                                <?php endif;?>
+                            </div>
+                            <div class="col-lg-7 col-md-7 mt-4">
+                                <div class="resumeName">
+                                    <label><i class="fas fa-user"></i><?= $dataResume['prename'].$dataResume['first_name'].' '.$dataResume['last_name'] ?></label>
+                                </div>
+                                <div>
+                                    <label class="resumeTopic"><?= _po('Position')?></label> : <span class="resumeData"><?= $dataResume['position']?></span>
+                                </div>
+                                <!-- <div>
+                                    <label class="resumeTopic"><?= _po('Affiliation')?></label> : <span class="resumeData"><?= $dataResume['affiliated']?></span>
+                                </div> -->
+                                <div>
+                                    <label class="resumeTopic"><?= _po('Email')?></label> : <span class="resumeData"><a href="mailto:<?= $dataResume['email']?>"><?= $dataResume['email']?></a></span>
+                                </div>
+
+                                <?php if(!empty($dataResume['tel_work'])):?>
+                                    <div>
+                                        <label class="resumeTopic"><?= _po('Internal phone number')?></label> : <span class="resumeData"><?= $dataResume['tel_work']?></span>
+                                    </div>
+                                <?php endif;?>
+
+                                <?php if (!empty($dataResume['education']) || !empty($dataResume['experience']) || !empty($dataResume['academic']) || !empty($dataResume['award'])): ?>
+                                    <div class="text-center text-lg-left text-md-left">
+                                        <a target="_blank" href="<?= base_url().'DataResume/index/'.$dataResume['id'] ?>" class="btn bgCmuResume mt-2"><?= _po('Resume and Workings') ?></a>
+                                    </div>
+                                <?php endif;?>
+                            </div>
+                        </div>
+                        <div class="clearfix"></div>
+                        <?php if (!empty($list)): ?>
+                            <div class="row">
+                                <?php foreach ($list as $key => $value): ?>
+                                    <?php if ($key > 0): ?>
+                                        <div class="col-lg-4 col-md-6 col-12 mt-5 blockDataResumeData">
+                                            <div class="blockImgResume">
+                                                <img src="<?= $value['img'] ?>" alt="imageResume" class="rounded imgResume">
+                                            </div>
+                                            <div class="blockDataResume">
+                                                <div class="resumeName">
+                                                    <label><i class="fas fa-user"></i><?= $value['prename'].$value['first_name'].' '.$value['last_name'] ?></label>
+                                                </div>
+                                                <div>
+                                                    <label class="resumeTopic"><?= _po('Position')?></label> : <span class="resumeData"><?= $value['position']?></span>
+                                                </div>
+                                                <!-- <div>
+                                                    <label class="resumeTopic"><?= _po('Affiliation')?></label> : <span class="resumeData"><?= $value['affiliated']?></span>
+                                                </div> -->
+                                                <div>
+                                                    <label class="resumeTopic"><?= _po('Email')?></label> : <span class="resumeData"><a href="mailto:<?= $value['email']?>"><?= $value['email']?></a></span>
+                                                </div>
+                                                <?php if(!empty($value['tel_work'])):?>
+                                                    <div>
+                                                        <label class="resumeTopic"><?= _po('Internal phone number')?></label> : <span class="resumeData"><?= $value['tel_work']?></span>
+                                                    </div>
+                                                <?php endif;?>
+
+                                                <?php if (!empty($value['education']) || !empty($value['experience']) || !empty($value['academic']) || !empty($value['award'])): ?>
+                                                    <div class="mt-2">
+                                                        <a target="_blank" href="<?= base_url().'DataResume/index/'.$value['id'] ?>" class="btn bgCmuResume"><?= _po('Resume and Workings') ?></a>
+                                                    </div>
+                                                <?php endif;?>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <div class="alert alert-danger text-center" role="alert">
+                            <b>- <?= _po('No data found')?> -</b>
+                        </div>
+                    <?php endif;?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

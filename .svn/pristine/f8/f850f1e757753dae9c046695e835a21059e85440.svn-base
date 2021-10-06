@@ -1,0 +1,25 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class DataExecutiveDirector extends MY_Controller {
+
+	public function __construct()
+    {
+        parent::__construct();
+        ## Search
+        parent::setSearchSession();
+    }
+
+	public function index()
+	{
+		$data['list'] = $this->model->getDataExecutiveDirector();
+		$data['menu_name'] = $this->model->getMenuName();
+		parent::view('data_executive_director', $data);
+		$Counter = new Counter;
+        $Counter->counterPageInfo('data_executive_director', 0, 0);
+	}
+
+}
+
+/* End of file DataExecutive.php */
+/* Location: ./application/controllers/DataExecutive.php */

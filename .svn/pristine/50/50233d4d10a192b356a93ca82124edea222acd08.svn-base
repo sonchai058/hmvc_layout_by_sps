@@ -1,0 +1,264 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class ReportAction_model extends CI_Model
+{
+    #เรียกตารางจากฐานข้อมูล
+
+    private $log_action_tbl = 'log_action';
+    private $users_tbl = 'users';
+
+    ##Pagination
+    private $per_page = 10;
+    private $per_page_csv = 1000;
+
+    ## Search
+    private $s_element = array('text' => FALSE, 'type_action' => 'all', 'startdate' => FALSE, 'enddate' => FALSE);
+
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    #ดึงข้อมูลข่าวมาแสดงหน้า Main
+
+    public function getData($page = 1)
+    {
+        $offset = $this->fnc_calPageOffset($page);
+        $this->fnc_setElementSearchFromSession();
+        $this->db->order_by('c_date_time', 'DESC');
+        $data = $this->db->get($this->log_action_tbl)->result_array();
+
+        if (!empty($data)) {
+            $getData = [];
+            // $user_action = array_column($data, 'user_id');
+            // $user_action = $this->fnc_getUser($user_action);
+            foreach ($data as $key => $value) {
+                // $value['user_id'] = (!empty($user_action[$value['user_id']]) ? $user_action[$value['user_id']] : 'บุคคลภายนอก');
+                $value['user_id'] = (!empty($value['name']) ? $value['name'] : 'บุคคลภายนอก');
+
+                $value['c_date_time'] = general::dateTimeThai($value['c_date_time']);
+                $getData[] = $value;
+            }
+
+            return $getData;
+        } else {
+            return [];
+        }
+
+    }
+
+    private function fnc_getUser($id)
+    {
+        if(!empty($id)) {
+            $this->db->where_in('id', $id);
+            $data = $this->db->get($this->users_tbl)->result_array();
+
+            if (!empty($data)) {
+                $getData = [];
+                foreach ($data as $key => $value) {
+                    $getData[$value['id']] = $value['prename'] . $value['fname'] . ' ' . $value['lname'];
+                }
+
+                return $getData;
+            } else {
+                return [];
+            }
+        } else {
+            return [];
+        }
+    }
+
+
+    public function countData()
+    {
+        $this->fnc_setElementSearchFromSession();
+        return $this->db->count_all_results($this->log_action_tbl);
+    }
+
+
+    ## Search
+
+    private function fnc_setElementSearchFromSession()
+    {
+        $form_search_element = $this->session->userdata('form_search_element');
+
+        foreach ($this->s_element as $key => $value) {
+            if (isset($form_search_element['element'][$key]))
+                $this->s_element[$key] = $form_search_element['element'][$key];
+        }
+
+        $text = trim($this->db->escape_str($this->s_element['text']));
+        $type_action = $this->s_element['type_action'];
+
+        $startdate = $this->s_element['startdate'];
+        $enddate = $this->s_element['enddate'];
+
+        if ($text != '') {
+            $this->db->group_start();
+            $this->db->like('title', $text);
+            $this->db->or_where("user_id IN (SELECT id FROM ".$this->users_tbl." WHERE CONCAT(REPLACE(prename,' ',''),REPLACE(fname,' ',''),REPLACE(lname,' ','')) LIKE '%".$text."%')");
+            // $this->db->or_where_in('user_id', $this->fnc_searchUserID($text));
+            $this->db->group_end();
+        }
+
+        if ($startdate != '') {
+            $sdate = explode('/', $startdate);
+            $startdate = ($sdate[2] - 543) . '-' . $sdate[1] . '-' . $sdate[0];
+            $this->db->where('DATE(c_date) >=', $startdate);
+
+        }
+        if ($enddate != '') {
+            $edate = explode('/', $enddate);
+            $enddate = ($edate[2] - 543) . '-' . $edate[1] . '-' . $edate[0];
+            $this->db->where('DATE(c_date) <=', $enddate);
+        }
+
+
+        if ($type_action != 'all') {
+            $this->db->where('type_action', $type_action);
+        }
+    }
+
+    private function fnc_searchUserID($text)
+    {
+        if(!empty($text)) {
+            $this->db->where("CONCAT(REPLACE(prename,' ',''),REPLACE(fname,' ',''),REPLACE(lname,' ','')) LIKE '%".str_replace(' ', '', $text)."%'");
+            $data = $this->db->get($this->users_tbl)->result_array();
+            $this->db->reset_query();
+            if (!empty($data)) {
+                return $user_action = array_column($data, 'id');
+
+            } else {
+                return [];
+            }
+        } else {
+            return [];
+        }
+    }
+
+    private function fnc_CSVsetElementSearchFromSession($search)
+    {
+
+        foreach ($this->s_element as $key => $value) {
+            if (isset($search[$key]))
+                $this->s_element[$key] = $search[$key];
+        }
+
+        $text = trim($this->db->escape_str($this->s_element['text']));
+        $type_action = $this->s_element['type_action'];
+
+        $startdate = $this->s_element['startdate'];
+        $enddate = $this->s_element['enddate'];
+
+        if ($text != '') {
+            $this->db->group_start();
+            $this->db->like('title', $text);
+            $this->db->or_where("user_id IN (SELECT id FROM ".$this->users_tbl." WHERE CONCAT(REPLACE(prename,' ',''),REPLACE(fname,' ',''),REPLACE(lname,' ','')) LIKE '%".$text."%')");
+            $this->db->group_end();
+        }
+
+        if ($startdate != '') {
+            $sdate = explode('/', $startdate);
+            $startdate = ($sdate[2] - 543) . '-' . $sdate[1] . '-' . $sdate[0];
+            $this->db->where('DATE(c_date) >=', $startdate);
+
+        }
+        if ($enddate != '') {
+            $edate = explode('/', $enddate);
+            $enddate = ($edate[2] - 543) . '-' . $edate[1] . '-' . $edate[0];
+            $this->db->where('DATE(c_date) <=', $enddate);
+        }
+
+
+        if ($type_action != 'all') {
+            $this->db->where('type_action', $type_action);
+        }
+    }
+
+
+    public function getSElement()
+    {
+        return $this->s_element;
+    }
+
+
+    ##Pagination
+
+    public function getPerPage()
+    {
+        return $this->per_page;
+    }
+
+    private function fnc_calPageOffset($page)
+    {
+        $offset = ($page * $this->per_page) - $this->per_page;
+        $this->db->limit($this->per_page, $offset);
+    }
+
+    public function getDataCSV($page = '1', $header = array(), $search = array(), $status_action = array())
+    {
+        $this->fnc_CSVcalPageOffset($page);
+        $this->fnc_CSVsetElementSearchFromSession($search);
+        $this->db->order_by('c_date_time', 'DESC');
+        $rs = $this->db->get($this->log_action_tbl)->result_array();
+        $n = $this->per_page_csv * ($page - 1);
+        $data = array();
+        if (!empty($rs)) {
+            // $user_action = array_column($rs, 'user_id');
+            // $user_action = $this->fnc_getUser($user_action);
+            foreach ($rs as $key => $value) {
+
+                $n++;
+                $i = 1;
+                $value['type_action'] = $status_action[$value['type_action']];
+                $value['user_id'] = (!empty($value['name']) ? $value['name'] : 'บุคคลภายนอก');
+                $value['c_date_time'] = general::dayThai2($value['c_date_time']);
+                //pass data
+                $data[$n][0] = $n;
+                foreach ($header as $k => $v) {
+                    if ($k != 'n') {
+                        $data[$n][$i] = $value[$k];
+                        $i++;
+                    }
+                }
+            }
+        }
+        return $data;
+    }
+
+    public function mathData($page = 1, $numPage = 0)
+    {
+        $numPage = $numPage == 0 ? 1 : $numPage;
+        $all_page = ceil($numPage / $this->per_page_csv);
+        $percent = ceil($page * 100) / $all_page;
+
+        if ($percent >= 100) {
+            $percent = 99.99;
+        }
+
+        if ($page > $all_page) {
+            $percent = 100;
+        }
+
+        $data['all_row'] = $numPage;
+        $data['all_page'] = $all_page;
+        $data['percent'] = number_format($percent, 2);
+
+
+        return $data;
+    }
+
+
+    private function fnc_CSVcalPageOffset($page)
+    {
+        $offset = ($page * $this->per_page_csv) - $this->per_page_csv;
+        $this->db->limit($this->per_page_csv, $offset);
+    }
+
+}
+
+/* End of file New_model.php */
+/* Location: ./application/models/New_model.php */

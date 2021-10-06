@@ -1,0 +1,116 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class ManageDatabaseStore extends MDL_Controller
+{
+
+    private $status = array(1 => 'เผยแพร่', 2 => 'ไม่เผยแพร่', '-' => '-');
+
+    public function __construct()
+    {
+        parent::__construct();
+        ## Search
+        parent::setSearchSession();
+    }
+
+    public function index($page = 1)
+    {
+        $data['title'] = 'จัดการฐานข้อมูลอิเล็กทรอนิกส์';
+        $data['title_page'] = 'จัดการฐานข้อมูลอิเล็กทรอนิกส์';
+        $data['list'] = $this->model->getData($page);
+        $data['form_search_element'] = $this->model->getSElement();
+        $data['status'] = $this->status;
+        ## Search
+        parent::view('manage_database_store/index', $data);
+    }
+
+    public function formData($id = FALSE)
+    {
+        $data['title'] = 'จัดการฐานข้อมูลอิเล็กทรอนิกส์';
+        $data['title_page'] = 'จัดการฐานข้อมูลอิเล็กทรอนิกส์';
+        $data['data'] = $this->model->getForm($id);
+        $data['title_sub'] = $id != FALSE ? 'แก้ไขฐานข้อมูลอิเล็กทรอนิกส์' : 'เพิ่มฐานข้อมูลอิเล็กทรอนิกส์';
+        parent::view('manage_database_store/form', $data);
+    }
+
+    public function insertData($id = FALSE)
+    {
+        $alert = $this->model->insertData($id);
+        redirect(base_url() . 'management/ManageDatabaseStore/index');
+    }
+
+    public function deleteData($id = FALSE)
+    {
+        $this->model->deleteData($id);
+        redirect(base_url() . 'management/ManageDatabaseStore/index');
+    }
+
+
+    public function updateOrder($id = false, $order = false)
+    {
+        if ($id == false || $order == false) {
+            $result = 'ไม่สามารถเรียงลำดับข้อมูลได้';
+        } else {
+            $result = $this->model->saveOrder($id, $order);
+        }
+
+        echo $result;
+    }
+
+    public function insertDataTypeStore()
+    {
+        $data = $this->model->insertDataTypeStore();
+
+        echo $data; die();
+    }
+
+    public function toolsInsert()
+    {
+        $this->db->select('title, d, d_en, url, r, b_th, s');
+        $data = $this->db->get('tempData')->result_array();
+
+        foreach ($data as $key => $value) {
+            $this->db->insert('manage_database_store', ['title' => $value['title'], 'description' => $value['d'], 'description_en' => $value['d_en'], 'url' => $value['url'], 'show_status' => 1, 'time_create' => DATE('Y-m-d H:i:s'), 's_order' => ($key + 1)]);
+            $id = $this->db->insert_id();
+
+            $setDataInsert = [];
+            $setDataInsert['resource_type'] = explode(' , ', $value['r']);
+            $setDataInsert['branch'] = explode(' , ', $value['b_th']);
+            $setDataInsert['subscription'] = explode(' , ', $value['s']);
+            $dataInsert = ['resource_type', 'branch', 'subscription'];
+            foreach($dataInsert as $key => $value) {
+                if(!empty($setDataInsert[$value])) {
+                    foreach($setDataInsert[$value] as $k => $v) {
+                        if(!empty($v)) {
+                            if($v == 'e-books, e-Journals') {
+                                $this->db->insert('manage_database_store_data', ['id' => $id, 'id_store' => $this->fnc_replaceTextToId($value, 'e-books'), 'type_store' => $value]);
+                                $this->db->insert('manage_database_store_data', ['id' => $id, 'id_store' => $this->fnc_replaceTextToId($value, 'e-Journals'), 'type_store' => $value]);
+                            } else {
+                                $this->db->insert('manage_database_store_data', ['id' => $id, 'id_store' => $this->fnc_replaceTextToId($value, $v), 'type_store' => $value]);
+                            }
+                            
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private function fnc_replaceTextToId($type_store, $text)
+    {
+        $this->db->where('type_store', trim($type_store));
+        $this->db->where('fld_value', trim($text));
+        $data = $this->db->get('manage_database_store_type')->row_array();
+        if(!empty($data)) {
+            return $data['id'];
+        } else {
+            return null;
+        }
+    }
+
+}
+
+/* End of file News.php */
+/* Location: ./application/controllers/News.php */

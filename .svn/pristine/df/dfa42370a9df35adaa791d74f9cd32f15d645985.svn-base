@@ -1,0 +1,88 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Sarawut
+ * Date: 27/6/2018 AD
+ * Time: 10:36
+ */
+
+class Search extends MY_Controller
+{
+
+    public function __construct()
+    {
+        parent::__construct();
+        ## Search
+        parent::setSearchSession();
+    }
+
+
+    public function index()
+    {
+        $data['searchIndex'] = '';
+        $method = $this->input->server('REQUEST_METHOD');
+        if($method == 'GET') {
+            $stext = $this->input->get('searchIndex');
+            $data['searchIndex'] = trim($stext);
+        }
+
+        parent::view('search_page', $data);
+
+        $Counter = new Counter;
+        $Counter->counterPageInfo('search', 0, 0);
+    }
+
+
+    public function find($offset = 0)
+    {
+
+        if($offset < 0 || (int)$offset != (float)$offset) show_404();
+        $offset = (int)$offset;
+
+        $method = $this->input->server('REQUEST_METHOD');
+        if($method != 'POST') show_404();
+        $post = $this->input->post('data');
+        $data = json_decode($post, true);
+        if(gettype($data) != 'array') show_404();
+
+        $query = $this->model->getCommand($data['command'], $data['per_page']);
+        $query = $this->model->filter($query, $data['filter']);
+
+        $result = $this->model->find($query, $offset);
+
+        $stext = trim($data['command']['stext']);
+
+        $json = [
+            'total' => $result['total'],
+            'list' => $result['list'],
+        ];
+
+        if($data['aggregate']) {
+            $json['aggs'] = [];
+            $json['aggs']['menu'] = $this->model->aggMenu($query, 'menu');
+            $menu_top = $this->model->aggMenu($query, 'menu_top');
+            if(!empty($menu_top)) {
+                if(!empty($json['aggs']['menu'])) {
+                    $json['aggs']['menu'] = array_merge($json['aggs']['menu'], $menu_top);
+                } else {
+                    $json['aggs']['menu'] = $menu_top;
+
+                }
+            }
+            $online_library_course = $this->model->aggOnline($query);
+            if(!empty($online_library_course)) {
+                if(!empty($json['aggs']['menu'])) {
+                    $json['aggs']['menu'] = array_merge($json['aggs']['menu'], $online_library_course);
+                } else {
+                    $json['aggs']['menu'] = $online_library_course;
+                }
+            }
+            $json['aggs']['news'] = $this->model->aggNews($query);
+            $json['aggs']['pubyear'] = $this->model->aggPubyear($query);
+
+        }
+
+        echo json_encode($json);
+
+    }
+}

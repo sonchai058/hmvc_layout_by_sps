@@ -1,0 +1,55 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Sarawut
+ * Date: 27/6/2018 AD
+ * Time: 10:36
+ */
+
+class DataExpert extends MY_Controller
+{
+
+    public function __construct()
+    {
+        parent::__construct();
+        ## Search
+        parent::setSearchSession();
+    }
+
+
+    public function index()
+    {
+        $data['menu_name'] = $this->model->getMenuName();
+        parent::view('data_expert', $data);
+        $Counter = new Counter;
+        $Counter->counterPageInfo('data_expert', 0, 0);
+    }
+
+
+    public function find($offset = 0)
+    {
+
+        if($offset < 0 || (int)$offset != (float)$offset) show_404();
+        $offset = (int)$offset;
+
+        $method = $this->input->server('REQUEST_METHOD');
+        if($method != 'POST') show_404();
+        $post = $this->input->post('data');
+        $data = json_decode($post, true);
+        if(gettype($data) != 'array') show_404();
+        $this->model->getPerPage($data['per_page']);
+
+        $json = [
+            'total' => $this->model->getTotal($data),
+            'list' => $this->model->find($data, $offset),
+        ];
+
+        if($data['aggregate']) {
+            $json['aggs'] = [];
+            $json['aggs']['name_filter'] = $this->model->aggNameFilter();
+        }
+
+        echo json_encode($json);
+
+    }
+}

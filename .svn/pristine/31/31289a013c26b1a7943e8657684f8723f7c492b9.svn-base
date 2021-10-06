@@ -1,0 +1,42 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class LibraryCourse extends MY_Controller 
+{
+
+	function __construct()
+    {
+        parent::__construct();
+        $this->load->library('session');
+        ## Search
+        parent::setSearchSession();
+    }
+
+	public function index($page = 1)
+	{
+		//Pagination
+        $num = $this->model->getCountBannerForPaginate();
+
+        $per_page = $this->model->getPerPage();
+        $data['paginate'] = $this->model->newsPagination($page, $num);
+
+        $data['num'] = $num;
+        $data['per_page'] = $per_page;
+        $data['page'] = $page;
+		$data['list'] = $this->model->getBanner($page);
+        $data['num_list'] = $this->model->getCountArrival();
+        $data['No'] = $this->model->order($page);
+        // _print_r($data['list']);
+		// $data['filter'] = $this->model->getTopicFilter();
+
+		$data['form_search_element'] = $this->model->getSElement();
+		parent::view('library_course_list', $data);
+
+        // $Counter = new Counter;
+        // $Counter->counterPageInfo('library_course', 0, 0);
+	}
+
+}
+
+/* End of file NewArrival.php */
+/* Location: ./application/controllers/NewArrival.php */

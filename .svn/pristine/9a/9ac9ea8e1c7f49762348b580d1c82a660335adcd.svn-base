@@ -1,0 +1,42 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class NewArrival extends MY_Controller 
+{
+
+	function __construct()
+    {
+        parent::__construct();
+        $this->load->library('session');
+        ## Search
+        parent::setSearchSession();
+    }
+
+	public function index($page = 1)
+	{
+		//Pagination
+        $num = $this->model->getCountArrivalForPaginate();
+        // _print_r($num);
+        $per_page = $this->model->getPerPage();
+        $data['paginate'] = $this->model->newsPagination($page, $num);
+        // _print_r($data['paginate']);
+        $data['num'] = $num;
+        $data['per_page'] = $per_page;
+        $data['page'] = $page;
+		$data['list'] = $this->model->getArrival($page);
+        $data['num_list'] = $this->model->getCountArrival();
+		// $data['month'] = $this->model->getMonth();
+		$data['filter'] = $this->model->getTopicFilter();
+		$data['No'] = $this->model->order($page);
+		// _print_r($data['test']);
+		$data['form_search_element'] = $this->model->getSElement();
+		parent::view('new_arrival_list', $data);
+
+		// $Counter = new Counter;
+  //       $Counter->counterPageInfo('new_arrival', 0, 0);
+	}
+
+}
+
+/* End of file NewArrival.php */
+/* Location: ./application/controllers/NewArrival.php */

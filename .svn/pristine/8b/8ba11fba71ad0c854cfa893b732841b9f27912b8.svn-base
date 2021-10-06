@@ -1,0 +1,348 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class ManageBook_model extends CI_Model {
+
+	#เรียกตารางจากฐานข้อมูล
+
+    private $main_tbl = 'manage_book';
+
+    ##Pagination
+    private $per_page = 200;
+
+    ## Search
+    private $s_element = array('stext' => FALSE, 'status' => 'all');
+
+    ## Match data
+    private $status = array('1' => 'เผยแพร่', '2' => 'ไม่เผยแพร่');
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->user_id = $this->session->cmu_web_session['id'];
+
+        $this->fnc_createTbl();
+        $this->path = 'file_upload/book/';
+        $this->path_upload = 'file_upload/book/';
+
+
+    }
+    private function fnc_createTbl()
+    {
+        $this->load->library('CreateTable');
+
+        $this->createtable->createTable($this->main_tbl,'
+          `book_id` INT NOT NULL AUTO_INCREMENT,
+          `book_title` VARCHAR(250),
+          `book_title_en` VARCHAR(250),
+          `author` VARCHAR(250),
+          `author_en` VARCHAR(250),
+          `call_nmbr` VARCHAR(20),
+          `book_image` VARCHAR(250),
+          `img_path` VARCHAR(250),
+          `description` TEXT,
+          `description_en` TEXT,
+          `show_status` INT(1),
+          `time_create` DATETIME,
+          `time_update` DATETIME,
+          `s_order` INT(11),
+          PRIMARY KEY (book_id)');
+
+          $this->createtable->addColumn($this->main_tbl, 'url', 'VARCHAR(250)');
+    }
+
+    public function getBook($page)
+    {
+      $this->fnc_calPageOffset($page);
+      $this->fnc_setElementSearchFromSession();
+      $this->db->order_by('s_order', 'asc');
+      $this->db->order_by('time_create', 'desc');
+      $data = $this->db->get($this->main_tbl)->result_array();
+      // _print_r($this->db->last_query());
+      return $data;
+    }
+
+    public function getCountBook()
+    {
+        $this->fnc_setElementSearchFromSession();
+        return $this->db->count_all_results($this->main_tbl);
+    }
+
+    #ดึงข้อมูลแสดงฟอร์มเพิ่ม - แก้ไข
+
+    public function getForm($book_id)
+    {
+        if ($book_id != '') {
+            $data = $this->fnc_getFormEdit($book_id);
+        } else {
+            $data = $this->fnc_getFormInsert();
+        }
+
+        return $data;
+    }
+
+    #ดึงข้อมูลแสดงฟอร์มแก้ไข
+
+    private function fnc_getFormEdit($book_id)
+    {
+        $this->db->where('book_id', $book_id);
+        $data = $this->db->get($this->main_tbl)->result_array();
+        // _print_r($data);
+        $getData = null;
+        if (!empty($data)) {
+
+            $getData = reset($data);
+            if (!empty($getData['book_image']) && file_exists($this->path . $getData['book_image'])) {
+                $getData['img'] = base_url() . $getData['img_path'] . $getData['book_image'];
+            } else {
+                $getData['img'] = null;
+            }
+        }
+        // _print_r($getData);
+        return $getData;
+    }
+
+
+    #ดึงข้อมูลแสดงฟอร์มเพิ่ม
+    private function fnc_getFormInsert()
+    {
+        $data = array(
+            'book_id' => null,
+            'book_title' => null,
+            'book_title_en' => null,
+            'author' => null,
+            'author_en' => null,
+            'call_nmbr' => null,
+            'img_path' => null,
+            'book_image' => null,
+            'description' => null,
+            'description_en' => null,
+            'img' => null,
+            'show_status' => 1,
+            'time_create' => null,
+            'time_update' => null,
+            'url' => null,
+        );
+
+        return $data;
+    }
+
+    #เพิ่ม - แก้ไขข้อมูล
+
+    public function insertBook($book_id)
+    {
+        $img = null;
+        if (!empty($_FILES)) {
+            $img = $this->fnc_uploadImg($_FILES['book_image']);
+        }
+        if ($book_id != '') {
+            $data = $this->fnc_editBook($book_id, $img);
+            return $data;
+        } else {
+            $data = $this->fnc_insertBook($img);
+            return $data;
+        }
+    }
+
+    #เพิ่มข้อมูล
+
+    private function fnc_insertBook($img)
+    {
+        if ($_FILES["book_image"]["name"] != "") {
+            if ($img['type'] == '.jpg' || $img['type'] == '.jpeg' || $img['type'] == '.png' || $img['type'] == '.gif') {
+                if (move_uploaded_file($_FILES["book_image"]["tmp_name"], $img['path'])) {
+                    $data = array(
+                        'img_path' => $this->path_upload,
+                        'book_image' => $img['file_name']
+                    );
+                }
+            } else {
+                $alert = 'ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด';
+                return $alert;
+            }
+        }
+
+        $dateUpdate = date('Y-m-d H:i:s');
+        $data['book_title'] = $this->input->post('book_title');
+        $data['book_title_en'] = $this->input->post('book_title_en');
+        $data['author'] = $this->input->post('author');
+        $data['author_en'] = $this->input->post('author_en');
+        $data['call_nmbr'] = $this->input->post('call_nmbr');
+        $data['description'] = $this->input->post('description');
+        $data['description_en'] = $this->input->post('description_en');
+        $data['show_status'] = $this->input->post('show_status');
+        $data['url'] = $this->input->post('url');
+        $data['time_create'] = $dateUpdate;
+        $data['time_update'] = $dateUpdate;
+        $data['s_order'] = 0;
+
+        $this->db->insert($this->main_tbl, $data);
+        $book_id = $this->db->insert_id();
+
+        $Counter = new Counter;
+        $Counter->logAction($data['book_title'], $book_id, 0, 'Book', '71', $this->user_id);
+    }
+
+    #แก้ไขข้อมูล
+
+    private function fnc_editBook($book_id, $img)
+    {
+        $delete_img = $this->fnc_getImg($book_id);
+
+        if ($_FILES["book_image"]["name"] != "") {
+            if ($img['type'] == '.jpg' || $img['type'] == '.png' || $img['type'] == '.gif') {
+                if (move_uploaded_file($_FILES["book_image"]["tmp_name"], $img['path'])) {
+                    $data = array(
+                        'img_path' => $this->path_upload,
+                        'book_image' => $img['file_name']
+                    );
+
+                    if ($delete_img != '') {
+                        @unlink($delete_img['delete']);
+                    }
+                }
+            } else {
+                $alert = 'ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด';
+                return $alert;
+            }
+        }
+
+        $dateUpdate = date('Y-m-d H:i:s');
+        $data['book_title'] = $this->input->post('book_title');
+        $data['book_title_en'] = $this->input->post('book_title_en');
+        $data['author'] = $this->input->post('author');
+        $data['author_en'] = $this->input->post('author_en');
+        $data['call_nmbr'] = $this->input->post('call_nmbr');
+        $data['description'] = $this->input->post('description');
+        $data['description_en'] = $this->input->post('description_en');
+        $data['show_status'] = $this->input->post('show_status');
+        $data['url'] = $this->input->post('url');
+        $data['time_update'] = $dateUpdate;
+
+        $this->db->where('book_id', $book_id);
+        $this->db->update($this->main_tbl, $data);
+
+
+        $Counter = new Counter;
+        $Counter->logAction($data['book_title'], $book_id, 0, 'Book', '72', $this->user_id);;
+    }
+
+    public function delete($book_id)
+    {
+        $delete_img = $this->fnc_getImg($book_id);
+        if ($delete_img != '') {
+            @unlink($delete_img['delete']);
+            $Counter = new Counter;
+            $Counter->logAction($delete_img['book_title'], $book_id, 0, 'Book', '73', $this->user_id);
+        }
+        $this->db->delete($this->main_tbl, array('book_id' => $book_id));
+    }
+
+    #แปลงชื่อก่อนอัพโหลด
+
+    private function fnc_uploadImg($rs_image)
+    {
+        $exp = explode('.', $rs_image['name']);
+        $ext = end($exp);
+
+        $data['file_name'] = md5(date('Y-m-dh:i:s')) . '.' . $ext;
+        $data['path'] = $this->path . $data['file_name'];
+        $new_file = strtolower($data['file_name']);
+        $data['type'] = strrchr($new_file, '.');
+
+        return $data;
+    }
+
+    #ดึงข้อมูล เพื่อลบรูป
+
+    private function fnc_getImg($book_id)
+    {
+        // $this->db->limit(1);
+        // $this->db->select('*');
+        $this->db->where('book_id', $book_id);
+        $data = $this->db->get($this->main_tbl)->result_array();
+
+        $getData = NULL;
+        if (!empty($data)) {
+            $getData = reset($data);
+            $getData['delete'] = $this->path . $getData['book_image'];
+        }
+
+        return $getData;
+    }
+
+    public function saveOrder($book_id, $order)
+    {
+        $data = array(
+            's_order' => $order
+        );
+        // _print_r($book_id);
+        $this->db->where('book_id', $book_id);
+        $this->db->update($this->main_tbl, $data);
+
+        return 'เรียงลำดับข้อมูลแล้ว';
+    }
+
+    public function updateShowStatus($book_id)
+    {
+        $show_status = $this->input->post('show_status');
+        $this->db->where('book_id', $book_id);
+        $this->db->update($this->main_tbl, ['show_status' => $show_status]);
+    }
+
+    //     ## Search
+    private function fnc_setElementSearchFromSession()
+    {
+        $form_search_element = $this->session->userdata('form_search_element');
+
+
+        if($form_search_element == null) {
+            return;
+        }
+        foreach($this->s_element as $key => $value) {
+            if(isset($form_search_element['element'][$key]))
+                $this->s_element[$key] = $form_search_element['element'][$key];
+        }
+
+        $stext = trim($this->db->escape_str($this->s_element['stext']));
+        // $status = $this->s_element['status'];
+
+        if($stext != '') {
+            $this->db->group_start();
+            $this->db->where("(book_title LIKE '%{$stext}%')");
+            $this->db->or_where("(book_title_en LIKE '%{$stext}%')");
+            $this->db->group_end();
+        }
+
+        // if($status != 'all') {
+        //     $this->db->where('show_status', $status);
+        // }
+    }
+
+    public function getStatus()
+    {
+      return $this->status;
+    }
+
+    public function getSElement()
+    {
+        return $this->s_element;
+    }
+
+    ##Pagination
+
+    public function getPerPage()
+    {
+        return $this->per_page;
+    }
+
+    private function fnc_calPageOffset($page)
+    {
+        $offset = ($page * $this->per_page) - $this->per_page;
+
+        $this->db->limit($this->per_page, $offset);
+    }
+}
+
+/* End of file ManageBook_model.php */
+/* Location: ./application/modules/management/models/ManageBook_model.php */

@@ -1,0 +1,672 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class ReportVisitor_model extends CI_Model
+{
+    #เรียกตารางจากฐานข้อมูล
+
+    private $log_action_tbl = 'log_action';
+    private $counter_main_tbl = 'counter_main';
+    private $counter_page_tbl = 'counter_page_info';
+    private $book_tbl = 'manage_book';
+    private $news_tbl = 'news';
+    private $calendar_tbl = 'calendar';
+    private $manage_banner_tbl = 'manage_banner';
+    private $category_news_tbl = 'category_news';
+    private $recommend_resources_tbl = 'recommend_e_resources';
+    private $related_agencies_tbl = 'manage_related_agencies';
+
+    private $users_tbl = 'users';
+
+    ##Pagination
+    private $per_page = 10;
+    private $per_page_csv = 1000;
+
+    ## Search
+    private $s_element = array('yearSearch' => FALSE);
+
+    private $monthData = [
+      1 => 'มกราคม',
+      2 => 'กุมภาพันธ์',
+      3 => 'มีนาคม',
+      4 => 'เมษายน',
+      5 => 'พฤษภาคม',
+      6 => 'มิถุนายน',
+      7 => 'กรกฎาคม',
+      8 => 'สิงหาคม',
+      9 => 'กันยายน',
+      10 => 'ตุลาคม',
+      11 => 'พฤศจิกายน',
+      12 => 'ธันวาคม',
+    ];
+
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    #ดึงข้อมูลข่าวมาแสดงหน้า Main
+
+    public function getYear()
+    {
+      $this->db->select('YEAR(c_date) as yearDate');
+      $this->db->order_by('YEAR(c_date)', 'DESC');
+      $this->db->group_by('YEAR(c_date)');
+      $data = $this->db->get($this->counter_main_tbl)->result_array();
+      // _print_r($data);
+      if(!empty($data)) {
+        $getData = [];
+        foreach($data as $key => $value) {
+          $getData[$value['yearDate']] = $value['yearDate'] + 543;
+        }
+
+        return $getData;
+      } else {
+        return [date('Y') => date('Y') + 543];
+      }
+    }
+
+    public function getData()
+    {
+        $this->fnc_setElementSearchFromSession();
+        $this->db->select('MONTH(c_date) as monthDate, YEAR(c_date) as yearDate, SUM(num) as Total');
+        $this->db->order_by('MONTH(c_date)', 'ASC');
+        $this->db->group_by('MONTH(c_date), YEAR(c_date)');
+        $data = $this->db->get($this->counter_main_tbl)->result_array();
+        // _print_r($this->db->last_query());
+        if (!empty($data)) {
+            $getData = [];
+            $setData = [];
+            foreach ($data as $key => $value) {
+                $setData[$value['monthDate']] = $value;
+            }
+
+            foreach ($this->monthData as $key => $value) {
+                $MDate = intval($key);
+                $YDate = $this->s_element['yearSearch'];
+
+                if(date('Y') == $this->s_element['yearSearch']) {
+                  if(intval(DATE('m')) >= intval($key)) {
+                    $monthName = $value;
+                    if(!empty($setData[intval($key)])) {
+                      $value = $setData[intval($key)];
+                    } else {
+                      $value = [
+                        'monthDate' => intval($key),
+                        'yearDate' => $this->s_element['yearSearch'] + 543,
+                        'Total' => 0,
+                        'monthName' => $monthName
+                      ];
+                    }
+
+                    $value['monthName'] = $monthName;
+                    $value['DataPage'] = $this->fnc_getCountDataPage($MDate,$YDate);
+                    $getData[intval($key)] = $value;
+                  }
+                } else {
+                  $monthName = $value;
+                  if(!empty($setData[intval($key)])) {
+                    $value = $setData[intval($key)];
+                  } else {
+                    $value = [
+                      'monthDate' => intval($key),
+                      'yearDate' => $this->s_element['yearSearch'] + 543,
+                      'Total' => 0,
+                      'monthName' => $monthName
+                    ];
+                  }
+                  $value['monthName'] = $monthName;
+                  $value['DataPage'] = $this->fnc_getCountDataPage($MDate,$YDate);
+                  $getData[intval($key)] = $value;
+                }
+            }
+            $mainData = [];
+            if(!empty($getData)) {
+              $cate_news = $this->fnc_getNewsCategory();
+              $i = 0;
+              $DataPage = array_column($getData, 'DataPage');
+                // _print_r(array_column($getData, 'DataPage'));
+              $mainData['chartData']['data'][$i]['name'] = 'จำนวนผู้เข้าชมเว็บไซต์';
+              $mainData['chartData']['data'][$i++]['data'] = array_column($getData, 'Total'); 
+              $mainData['chartData']['data'][$i]['name'] = 'เมนู';
+              $mainData['chartData']['data'][$i++]['data'] = array_column($DataPage, 'html_detail');
+              $mainData['chartData']['data'][$i]['name'] = 'เมนูด้านบน';
+              $mainData['chartData']['data'][$i++]['data'] = array_column($DataPage, 'html_detail_top');
+              $mainData['chartData']['data'][$i]['name'] = 'Recommend e-Resources';
+              $mainData['chartData']['data'][$i++]['data'] = array_column($DataPage, 'recommend_resource');
+              $mainData['chartData']['data'][$i]['name'] = 'หนังสือ';
+              $mainData['chartData']['data'][$i++]['data'] = array_column($DataPage, 'new_arrival');
+
+              $DataNews = array_column($DataPage, 'news_type');
+              // _print_r(array_column($DataNews, 1));
+              foreach ($cate_news as $key => $value) {
+                $mainData['chartData']['data'][$i]['name'] = $value;
+                $mainData['chartData']['data'][$i++]['data'] = array_column($DataNews, $key);
+              }
+              $mainData['chartData']['data'][$i]['name'] = 'ปฏิทิน';
+              $mainData['chartData']['data'][$i++]['data'] = array_column($DataPage, 'calendar');
+              $mainData['chartData']['data'][$i]['name'] = 'Online Library Course';
+              $mainData['chartData']['data'][$i++]['data'] = array_column($DataPage, 'library_course');
+              $mainData['chartData']['data'][$i]['name'] = 'เว็บไซต์ที่เกี่ยวข้อง';
+              $mainData['chartData']['data'][$i++]['data'] = array_column($DataPage, 'related_agencies');
+              $mainData['chartData']['data'][$i]['name'] = 'ฐานข้อมูลอิเล็กทรอนิกส์';
+              $mainData['chartData']['data'][$i++]['data'] = array_column($DataPage, 'database_store');
+              $mainData['chartData']['data'][$i]['name'] = 'ประวัติส่วนตัว';
+              $mainData['chartData']['data'][$i++]['data'] = array_column($DataPage, 'data_resume');
+              // $mainData['chartData']['data'][1] = array_column($getData, 'Total');
+              // $mainData['chartData']['data'][0]['data'] = array_column($getData, 'Total');
+              // $mainData['chartData']['data'][0]['name'] = 'จำนวนผู้เข้าชม';
+
+              $mainData['chartData']['categories'] = array_column($getData, 'monthName');
+              $mainData['data'] = $getData;
+            }
+            // _print_r($mainData['chartData']);
+            return $mainData;
+        } else {
+            return [
+              'chartData' => ['data' => [], 'categories' => []],
+              'data' => []
+            ];
+        }
+
+    }
+
+    public function fnc_getCountDataPage($MonthDate,$YearDate)
+    {
+      $this->db->select('type, ,record_id, site_id, MONTH(c_date) as monthDate, YEAR(c_date) as yearDate, SUM(num) as Total');
+      $this->db->where('MONTH(c_date)', $MonthDate);
+      $this->db->where('YEAR(c_date)', $YearDate);
+      $this->db->where('record_id <>', 0);
+      // $this->db->where('site_id <>', 0);
+      $this->db->group_by('type, site_id, MONTH(c_date), YEAR(c_date)');
+      $data = $this->db->get($this->counter_page_tbl)->result_array();
+      // _print_r($this->db->last_query());
+      // _print_r($data);
+      $getData = [];
+      $cate_news = $this->fnc_getNewsCategory();
+      $getData['html_detail'] = 0;
+      $getData['html_detail_tol'] = 0;
+      $getData['library_course'] = 0;
+      $getData['recommend_resource'] = 0;
+      $getData['new_arrival'] = 0;
+      $getData['calendar'] = 0;
+      $getData['related_agencies'] = 0;
+      $getData['database_store'] = 0;
+      $getData['data_resume'] = 0;
+
+      if (!empty($data)) {
+        foreach ($cate_news as $key => $value) {
+          $getData['news_type'][$key] = 0;
+        }
+        foreach ($data as $key => $value) {
+          if ($value['type'] != 'news') {
+            $getData[$value['type']] = $value['Total'];
+          }else {
+            if (!empty($cate_news[$value['site_id']])) {
+              $getData['news_type'][$value['site_id']] = $value['Total'];
+            }
+          }
+        }
+      }else{
+        foreach ($cate_news as $key => $value) {
+          $getData['news_type'][$key] = 0;
+        }
+      }
+
+      return $getData;
+    }
+
+    private function fnc_getNewsCategory()
+    {
+      $this->db->order_by('s_order', 'asc');
+      $data = $this->db->get($this->category_news_tbl)->result_array();
+      $getData = [];
+      if (!empty($data)) {
+        foreach ($data as $key => $value) {
+          $getData[$value['category_id']] = $value['category_name'];
+        }
+      }
+
+      return $getData;
+    }
+
+    public function getHeadTable()
+    {
+      $getData = [];
+      $cate_news = $this->fnc_getNewsCategory();
+      $i = 0;
+      
+      $getData['Total'] = 'จำนวนผู้เข้าชมเว็บไซต์';
+      $getData['html_detail'] = 'เมนู';
+      $getData['html_detail_top'] = 'เมนูด้านบน';
+      $getData['recommend_resource'] = 'Recommend e-Resources';
+      $getData['new_arrival'] = 'หนังสือ';
+      foreach ($cate_news as $key => $value) {
+        $getData['news_'.$key] = $value;
+      }
+      $getData['calendar'] = 'ปฏิทิน';
+      $getData['library_course'] = 'Online Library Course';
+      $getData['related_agencies'] = 'เว็บไซต์ที่เกี่ยวข้อง';
+      $getData['database_store'] = 'ฐานข้อมูลอิเล็กทรอนิกส์';
+      $getData['data_resume'] = 'ประวัติส่วนตัว';
+      return $getData;
+    }
+
+    public function getHeadTableCSV()
+    {
+      $getData = [];
+      $cate_news = $this->fnc_getNewsCategory();
+      $i = 0;
+      
+      $getData['monthName'] = 'เดือน';
+      $getData['Total'] = 'จำนวนผู้เข้าชมเว็บไซต์';
+      $getData['html_detail'] = 'เมนู';
+      $getData['html_detail_top'] = 'เมนูด้านบน';
+      $getData['recommend_resource'] = 'Recommend e-Resources';
+      $getData['new_arrival'] = 'หนังสือ';
+      foreach ($cate_news as $key => $value) {
+        $getData['news_'.$key] = $value;
+      }
+      $getData['calendar'] = 'ปฏิทิน';
+      $getData['library_course'] = 'Online Library Course';
+      $getData['related_agencies'] = 'เว็บไซต์ที่เกี่ยวข้อง';
+      $getData['database_store'] = 'ฐานข้อมูลอิเล็กทรอนิกส์';
+      $getData['data_resume'] = 'ประวัติส่วนตัว';
+      return $getData;
+    }
+    ## Search
+
+    private function fnc_setElementSearchFromSession()
+    {
+        $form_search_element = $this->session->userdata('form_search_element');
+
+        if(empty($form_search_element)) {
+          $this->s_element['yearSearch'] = date('Y');
+        }
+
+        foreach ($this->s_element as $key => $value) {
+            if (isset($form_search_element['element'][$key]))
+                $this->s_element[$key] = $form_search_element['element'][$key];
+        }
+
+        $yearSearch = $this->s_element['yearSearch'];
+
+        if(!empty($yearSearch)) {
+          $this->db->where('YEAR(c_date)', $yearSearch);
+        }
+    }
+
+
+    private function fnc_CSVsetElementSearchFromSession($search)
+    {
+
+        foreach ($this->s_element as $key => $value) {
+            if (isset($search[$key]))
+                $this->s_element[$key] = $search[$key];
+        }
+
+        $yearSearch = trim($this->db->escape_str($this->s_element['yearSearch']));
+
+        if(!empty($yearSearch)) {
+          $this->db->where('YEAR(c_date)', $yearSearch);
+        }
+
+    }
+
+
+    public function getSElement()
+    {
+        return $this->s_element;
+    }
+
+
+    ##Pagination
+
+    public function getPerPage()
+    {
+        return $this->per_page;
+    }
+
+    private function fnc_calPageOffset($page)
+    {
+        $offset = ($page * $this->per_page) - $this->per_page;
+        $this->db->limit($this->per_page, $offset);
+    }
+
+    public function getDataCSV($page = '1', $header = array(), $search = array())
+    {
+        $this->fnc_CSVsetElementSearchFromSession($search);
+        $this->db->select('MONTH(c_date) as monthDate, YEAR(c_date) as yearDate, SUM(num) as Total');
+        $this->db->order_by('MONTH(c_date)', 'ASC');
+        $this->db->group_by('MONTH(c_date), YEAR(c_date)');
+        $data = $this->db->get($this->counter_main_tbl)->result_array();
+        $n = 1;
+        $getData = [];
+        $mainData = [];
+
+        if (!empty($data)) {
+          $setData = [];
+          foreach ($data as $key => $value) {
+              $setData[$value['monthDate']] = $value;
+          }
+
+          foreach ($this->monthData as $key => $value) {
+              $n++;
+              $i = 1;
+              $MDate = intval($key);
+              $YDate = $this->s_element['yearSearch'];
+
+              if(date('Y') == $search['yearSearch']) {
+                if(intval(DATE('m')) >= intval($key)) {
+                  $monthName = $value;
+                  if(!empty($setData[intval($key)])) {
+                    $value = $setData[intval($key)];
+                  } else {
+                    $value = [
+                      'monthDate' => intval($key),
+                      'yearDate' => $search['yearSearch'] + 543,
+                      'Total' => 0,
+                      'monthName' => $monthName
+                    ];
+                  }
+                  $value['DataPage'] = $this->fnc_getCountDataPage($MDate,$YDate);
+                  $value['monthName'] = $monthName;
+                  foreach ($header as $k => $v) {
+                      if ($k != 'n') {
+                        if ($k == 'monthName' || $k == 'Total') {
+                          $mainData[$n][$i] = $value[$k];
+                        }else{
+                          $news_id = substr($k,(strlen($k) - 1));
+                          if (is_numeric($news_id)) {
+                            $mainData[$n][$i] = (!empty($value['DataPage']['news_type'][$news_id]) ? $value['DataPage']['news_type'][$news_id] : 0);
+                          }else{
+                            $mainData[$n][$i] = (!empty($value['DataPage'][$k]) ? $value['DataPage'][$k] : 0);
+                          }
+                        }
+                        $i++;
+                      }
+                  }
+                }
+              } else {
+                $monthName = $value;
+                if(!empty($setData[intval($key)])) {
+                  $value = $setData[intval($key)];
+                } else {
+                  $value = [
+                    'monthDate' => intval($key),
+                    'yearDate' => $search['yearSearch'] + 543,
+                    'Total' => 0,
+                    'monthName' => $monthName
+                  ];
+                }
+
+                $value['DataPage'] = $this->fnc_getCountDataPage($MDate,$YDate);
+                $value['monthName'] = $monthName;
+                // _print_r($value);
+                foreach ($header as $k => $v) {
+                    if ($k != 'n') {
+                        if ($k == 'monthName' || $k == 'Total') {
+                          $mainData[$n][$i] = $value[$k];
+                        }else{
+                          $news_id = substr($k,(strlen($k) - 1));
+                          if (is_numeric($news_id)) {
+                            $mainData[$n][$i] = (!empty($value['DataPage']['news_type'][$news_id]) ? $value['DataPage']['news_type'][$news_id] : 0);
+                          }else{
+                            $mainData[$n][$i] = (!empty($value['DataPage'][$k]) ? $value['DataPage'][$k] : 0);
+                          }
+                        }
+                        $i++;
+                      }
+                }
+              }
+          }
+        }
+
+        return $mainData;
+    }
+
+    public function mathData($page = 1, $numPage = 0)
+    {
+        $numPage = $numPage == 0 ? 1 : $numPage;
+        $all_page = ceil($numPage / $this->per_page_csv);
+        $percent = ceil($page * 100) / $all_page;
+
+        if ($percent >= 100) {
+            $percent = 99.99;
+        }
+
+        if ($page >= $all_page) {
+            $percent = 100;
+        }
+
+        $data['all_row'] = $numPage;
+        $data['all_page'] = $all_page;
+        $data['percent'] = number_format($percent, 2);
+
+
+        return $data;
+    }
+
+    public function getDataDetail($type,$monthDate,$site_id)
+    {
+      // _print_r($monthDate);
+      $this->db->select('type, record_id, site_id, MONTH(c_date) as monthDate, YEAR(c_date) as yearDate, SUM(num) as Total, c_date');
+      $this->db->where('type', $type);
+
+      if ($type == 'recommend_resource') { //recommend_resource
+        $this->db->where('record_id <>', 0);
+      }
+
+      if ($type == 'new_arrival') { //book
+        $this->db->where('record_id <>', 0);
+      }
+
+      if ($type == 'news') { //news
+        $this->db->where('record_id <>', 0);
+        $this->db->where('site_id', $site_id);
+      }
+
+      if ($type == 'library_course') {
+        $this->db->where('record_id <>', 0);
+      }
+
+      if ($type == 'calendar') {
+        $this->db->where('record_id <>', 0);
+      }
+
+      if ($type == 'related_agencies') {
+        $this->db->where('record_id <>', 0);
+      }
+
+      if ($type == 'database_store') {
+        $this->db->where('record_id <>', 0);
+      }
+
+      $this->db->where('MONTH(c_date)', $monthDate);
+      $this->db->order_by('c_date', 'desc');
+      $this->db->order_by('Total', 'desc');
+      $this->db->group_by('record_id, DAY(c_date)');
+      $data = $this->db->get($this->counter_page_tbl)->result_array();
+
+      // _print_r($data);
+      $getData = [];
+      if (!empty($data)) {
+        foreach ($data as $key => $value) {
+
+          if ($type == 'recommend_resource') {
+            $value['name'] = $this->fnc_getRecommendResource($value['record_id']);
+          }
+
+          if ($type == 'new_arrival') {
+            $value['name'] = $this->fnc_getBookName($value['record_id']);
+          }
+
+          if ($type == 'news') {
+            $value['name'] = $this->fnc_getNewsName($value['record_id']);
+          }
+
+          if ($type == 'calendar') {
+            $value['name'] = $this->fnc_getCalendarName($value['record_id']);
+          }
+
+          if ($type == 'library_course') {
+            $value['name'] = $this->fnc_getLibCourseName($value['record_id']);
+          }
+
+          if ($type == 'related_agencies') {
+            $value['name'] = $this->fnc_getRelatedAgenciesName($value['record_id']);
+          }
+
+          if($type == 'database_store') {
+            $value['name'] = $this->fnc_getFieldTitleData('manage_database_store', 'id', $value['record_id'], 'title');
+          }
+
+          if($type == 'html_detail') {
+            $value['name'] = $this->fnc_getFieldTitleData('manage_menu', 'menu_id', $value['record_id'], 'menu_name');
+            if(empty($value['name'])) {
+              $value['name'] = $this->fnc_getFieldTitleData('manage_menu', 'menu_id', $value['record_id'], 'menu_name');
+            }
+          }
+
+          if($type == 'html_detail_top') {
+              $value['name'] = $this->fnc_getFieldTitleData('manage_menu_top', 'menu_id', $value['record_id'], 'menu_name');
+          }
+
+          if($type == 'data_resume') {
+              $value['name'] = $this->fnc_getFieldTitleData('manage_resume', 'id', $value['record_id'], 'CONCAT(prename, first_name, " ", last_name, " (", position , ")")', 'name');
+          }
+
+
+          $value['c_date'] = General::daythai2($value['c_date']);
+
+          $getData[] = $value;
+        }
+      }
+      // _print_r($getData);
+      return $getData;
+    }
+
+    private function fnc_getRecommendResource($record_id)
+    {
+      $this->db->select('rs_title');
+      $this->db->where('rs_id', $record_id);
+      $rs = $this->db->get($this->recommend_resources_tbl)->row_array();
+
+      if (!empty($rs)) {
+       return $rs['rs_title'];
+      }
+      else{
+        return '- ไม่พบข้อมูล -';
+      }
+    }
+
+    private function fnc_getBookName($record_id)
+    {
+      $this->db->select('book_title');
+      $this->db->where('book_id', $record_id);
+      $rs = $this->db->get($this->book_tbl)->row_array();
+
+      if (!empty($rs)) {
+       return $rs['book_title'];
+      }
+      else{
+        return '- ไม่พบข้อมูล -';
+      }
+    }
+
+    private function fnc_getNewsName($record_id)
+    {
+      $this->db->select('news_title');
+      $this->db->where('news_id', $record_id);
+      $rs = $this->db->get($this->news_tbl)->row_array();
+
+      if (!empty($rs)) {
+       return $rs['news_title'];
+      }
+      else{
+        return '- ไม่พบข้อมูล -';
+      }
+    }
+
+    private function fnc_getCalendarName($record_id)
+    {
+      $this->db->select('title');
+      $this->db->where('id', $record_id);
+      $rs = $this->db->get($this->calendar_tbl)->row_array();
+
+      if (!empty($rs)) {
+       return $rs['title'];
+      }
+      else{
+        return '- ไม่พบข้อมูล -';
+      }
+    }
+
+    private function fnc_getLibCourseName($record_id)
+    {
+      $this->db->select('banner_title');
+      $this->db->where('banner_id', $record_id);
+      $rs = $this->db->get($this->manage_banner_tbl)->row_array();
+
+      if (!empty($rs)) {
+       return $rs['banner_title'];
+      }
+      else{
+        return '- ไม่พบข้อมูล -';
+      }
+    }
+
+    private function fnc_getRelatedAgenciesName($record_id)
+    {
+      $this->db->select('title');
+      $this->db->where('id', $record_id);
+      $rs = $this->db->get($this->related_agencies_tbl)->row_array();
+
+      if (!empty($rs)) {
+       return $rs['title'];
+      }
+      else{
+        return '- ไม่พบข้อมูล -';
+      }
+    }
+
+    private function fnc_getFieldTitleData($table, $id, $record_id, $field, $asName = false)
+    {
+      if(!empty($asName)) {
+        $this->db->select($field.' as '.$asName, false);
+      } else {
+        $this->db->select($field, false);
+      }
+      $this->db->where($id, $record_id);
+      $rs = $this->db->get($table)->row_array();
+
+      if (!empty($rs)) {
+        if(!empty($rs[$asName])) {
+          return $rs[$asName];
+        } else {
+          return $rs[$field];
+        }
+      }
+      else{
+        return '- ไม่พบข้อมูล -';
+      }
+    }
+
+    public function getTypeNews($site_id)
+    {
+      $this->db->select('category_name');
+      $this->db->where('category_id', $site_id);
+      $rs = $this->db->get($this->category_news_tbl)->row_array();
+
+      if (!empty($rs)) {
+        return $rs['category_name'];
+      }else{
+        return '';
+      }
+    }
+}
+
+/* End of file New_model.php */
+/* Location: ./application/models/New_model.php */

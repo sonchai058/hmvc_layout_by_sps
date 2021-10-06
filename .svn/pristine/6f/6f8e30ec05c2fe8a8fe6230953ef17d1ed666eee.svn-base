@@ -1,0 +1,265 @@
+<?php
+$widthImg = 250;
+$heightImg = 300;
+$max_upload = min(ini_get('post_max_size'), ini_get('upload_max_filesize'));
+$max_upload = str_replace('M', '', $max_upload);
+$max_upload = ($max_upload * 1024) * 1024;
+?>
+<script language="javascript" type="text/javascript">
+    var widthImg = '<?= $widthImg?>';
+    var heightImg = '<?= $heightImg?>';
+    var maxUpload = '<?= $max_upload?>';
+
+    function bytesToSize(bytes) {
+        var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        if (bytes == 0) return '0 Byte';
+        var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+        return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+    }
+
+    function readURL(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $('#previewImage').show();
+                $('#previewIframe').show();
+                $('#previewImage').attr('src', e.target.result);
+            }
+
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function previewImg() {
+        var src = $('#previewImage').attr('src');
+        $.fancybox.showLoading();
+        $.fancybox.helpers.overlay.open({parent: $('body'), closeClick: false});
+        $.post('<?= APP_HOST_ADDRESS . 'Index/setSessionIframe'?>', {
+            'imgPreview': src,
+            'type': 'banner'
+        }, function (data) {
+            $.fancybox({
+                href: '<?= APP_HOST_ADDRESS?>?iframe=true',
+                maxWidth: 1200,
+                maxHeight: 1024,
+                fitToView: false,
+                width: '100%',
+                height: '100%',
+                autoSize: false,
+                closeClick: false,
+                openEffect: 'none',
+                closeEffect: 'none',
+                type: 'iframe',
+                padding: 0,
+                afterClose: function () {
+                    $.post('<?= APP_HOST_ADDRESS . 'Index/clearSessionIframe'?>');
+                }
+            });
+        });
+    }
+
+    $(function () {
+        $("#post").validationEngine();
+        $(window).dblclick(function () {
+            jQuery('#post').validationEngine('hide');
+        });
+
+        if ($('#previewImage').attr('src') == '') {
+            $('#previewIframe').hide();
+            $('#previewImage').hide();
+        }
+
+        var sizeMax = bytesToSize(maxUpload);
+        var sizeMax = sizeMax.split(' ');
+        $('#maxSizeFile').html('<strong><u>' + sizeMax[0] + '</u></strong> ' + sizeMax[1]);
+
+        var _URL = window.URL || window.webkitURL;
+        $("#new_image").change(function (e) {
+            var file, img;
+            var current = this;
+            if ((file = this.files[0])) {
+                img = new Image();
+                img.onload = function () {
+                    // if (file.size > maxUpload) {
+                    //     alert($('#textSizeFile').text());
+                    //     $('#new_image').val('');
+                    //     $('#new_image').removeClass('validate[required]');
+                    //     $('#new_image').addClass('validate[required]');
+                    //     $('#previewImage').hide();
+                    // } else if (this.width < widthImg || this.height < heightImg) {
+                    //     alert($('#textWidthHeightFile').text());
+                    //     $('#new_image').val('');
+                    //     $('#new_image').removeClass('validate[required]');
+                    //     $('#new_image').addClass('validate[required]');
+                    //     $('#previewImage').hide();
+                    // } else {
+                    //     readURL(current);
+                    // }
+
+                    readURL(current);
+                };
+
+                img.src = _URL.createObjectURL(file);
+            }
+
+        });
+    });
+</script>
+<style>
+    .white {
+        white-space: nowrap;
+    }
+
+    .input_search {
+        width: 100% !important;
+    }
+
+    .label_search {
+        min-height: 33px;
+        padding-top: 8px;
+        font-size: 15px;
+    }
+
+    .img-slide img {
+        width: 100%;
+        height: <?=$heightImg?>px;
+        padding: 2%;
+    }
+
+    .btn-sm, .btn-group-sm > .btn {
+        padding: 3px 10px !important;
+        font-size: 14px !important;
+        line-height: 1.5;
+        border-radius: 3px;
+    }
+
+    #new_image {
+        float: left;
+        margin-top: 5px;
+    }
+</style>
+
+<div class="main-container">
+    <div class="pd-ltr-20 xs-pd-20-10">
+        <div class="pd-20 pb-40 card-box mb-30">
+            <div class="row">
+                <div class="col-md-12">
+
+                   <div class="clearfix mb-20">
+                      <div class="row">
+                        <div class="col-6">
+                          <h4 class="text-blue h4"><?= $title_page ?></h4>
+                        </div>
+
+                        <div class="col-6">
+                          <div class="pull-right">
+                            <nav aria-label="breadcrumb" role="navigation">
+                              <ol class="breadcrumb pd-0">
+                                <li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+                                <li class="breadcrumb-item active" aria-current="page"><?= $title_page ?></li>
+                              </ol>
+                            </nav>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="main-box clearfix">
+                                <!-- <header class="main-box-header clearfix">
+                                    <h2><?= $title_sub ?></h2>
+                                </header> -->
+
+                                <div class="main-box-body clearfix">
+                                    <form role="form" id="post" method="post"
+                                          action="<?= $action_link . 'manage/' . $data['banner_id'] ?>"
+                                          enctype="multipart/form-data">
+                                        <div class="form-group">
+                                            <label for="banner_title"><strong>ชื่อหลักสูตร</strong>
+                                                &nbsp;<span style="color: #f02323">*</span></label>
+                                            <input type="text" class="form-control validate[required]" id="banner_title"
+                                                   name="banner_title"
+                                                   placeholder="ชื่อหลักสูตร" value="<?= $data['banner_title'] ?>" maxlength="250">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="banner_title_en"><strong>ชื่อหลักสูตรภาษาอังกฤษ</strong></label>
+                                            <input type="text" class="form-control" id="banner_title_en"
+                                                   name="banner_title_en"
+                                                   placeholder="ชื่อหลักสูตรภาษาอังกฤษ" value="<?= $data['banner_title_en'] ?>" maxlength="250">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="url"><strong>ลิงก์เชื่อมโยง</strong>&nbsp;<span style="color: #f02323">*</span></label>
+                                            <input type="text" class="form-control validate[required]" id="url" name="url"
+                                                   placeholder="https://example.com" value="<?= $data['url'] ?>" maxlength="250">
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="new_image">
+                                                <strong>รูปภาพ</strong>&nbsp;
+                                                <span style="color: #f02323">*</span>
+                                            </label>
+                                            <input type="hidden" name="old_image" id="old_image"
+                                                   value="<?= $data['banner_image'] ?>">
+                                            <div class="img-slide">
+                                                <img style="max-width: <?= $widthImg ?>px;max-height: <?= $heightImg ?>px; width:100%; height: 100%; margin-top: 10px;margin-bottom: 15px;" id="previewImage" src="<?= $data['banner_image'] ?>" alt="imgPreview">
+                                            </div>
+                                            <div>
+                                                <input type="file"
+                                                       class="<?= $data['banner_id'] == '' ? 'validate[required]' : '' ?>"
+                                                       id="new_image" name="new_image" accept=".jpg, .jpeg, .png, .gif">
+
+                                                <!-- <button id="previewIframe" type="button" class="btn btn-primary btn-sm"
+                                                        onclick="previewImg()">
+                                                    <i class="fa fa-eye" aria-hidden="true"></i>
+                                                    แสดงตัวอย่าง
+                                                </button> -->
+                                            </div>
+                                            <div class="clearfix"></div>
+                                            <br>
+                                            <span style="color: #f02323">*</span>&nbsp;<span>อัพโหลดไฟล์ได้เฉพาะไฟล์นามสกุล .jpg .jpeg .png .gif</span>
+                                            &nbsp;&nbsp;<span style="color: #f02323">*</span>&nbsp;<span id="textSizeFile">ขนาดไฟล์ ไม่เกิน <span
+                                                        id="maxSizeFile"></span></span>
+                                            <br>
+                                            <span style="color: #f02323">*</span>&nbsp;<span id="textWidthHeightFile">ขนาดความกว้าง (Width) ไม่น้อยกว่าหรือเท่ากับ <strong><u><?= $widthImg ?></u></strong> พิกเซล (pixels) และ ขนาดความสูง (Height) ไม่น้อยกว่าหรือเท่ากับ <strong><u><?= $heightImg ?></u></strong> พิกเซล (pixels)</span>
+                                            <br>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label><strong>สถานะ</strong></label>&nbsp;<span style="color: #f02323">*</span>
+                                            <div class="well radio radioformError">
+                                                <input class="validate[required] radio" type="radio" name="show_status" id="status1"
+                                                       value="1"
+                                                       <?= $data['show_status'] == 1 || $data['show_status'] == null ? 'checked' : '' ?>>
+                                                <label for="status1">
+                                                    เผยแพร่
+                                                </label>
+                                                <input class="validate[required] radio" type="radio" name="show_status" id="status2"
+                                                       value="2" <?= $data['show_status'] == 2 ? 'checked' : '' ?>>
+                                                <label for="status2">
+                                                    ไม่เผยแพร่
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group text-center">
+                                            <button type="button" class="btn btn-danger"
+                                                    onclick="window.location='<?= $action_link ?>index'">
+                                                <i class="fa fa-times"></i>&nbsp;ยกเลิก
+                                            </button>
+                                            &nbsp;&nbsp;
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fa fa-save"></i>&nbsp;บันทึก
+                                            </button>
+
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>      
+        </div>
+    </div>
+</div>

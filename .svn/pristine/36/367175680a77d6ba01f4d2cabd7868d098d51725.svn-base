@@ -1,0 +1,608 @@
+<?php
+
+/**
+ *
+ */
+class Index_model extends CI_model
+{
+    private $session_data = 'cmu_web_session';
+    private $news_tbl = 'news';
+    private $category_news_tbl = 'category_news';
+    private $manage_banner_tbl = 'manage_banner';
+    private $menu_tbl = 'manage_menu';
+    private $menu_top_tbl = 'manage_menu_top';
+    private $module_tbl = 'manage_menu_module';
+    private $manage_user_group_tbl = 'manage_user_group';
+    private $bg_search_tbl = 'bg_search';
+    private $resources_tbl = 'recommend_e_resources';
+    private $book_tbl = 'manage_book';
+    private $language = 'th';
+    private $calendar_tbl = 'calendar';
+    private $calendar_group_tbl = 'calendar_group';
+    private $calendar_news_tbl = 'calendar_news';
+    private $calendar_gallery_tbl = 'calendar_gallery';
+    private $gallery_category_tbl = 'gallery_category';
+    private $news_doc_tbl = 'news_doc';
+
+    function __construct()
+    {
+        parent::__construct();
+        $this->load->library('session');
+        $this->user_id = $this->session->cmu_web_session['id'];
+
+        if (!empty($_SESSION['LANGUAGE'])) {
+            $this->language = strtolower($_SESSION['LANGUAGE']);
+        }else{
+            $this->language = 'th';
+
+        }
+        
+    }
+
+    public function getBgSearch()
+    {
+        $rs = $this->db->get($this->bg_search_tbl)->row_array();
+
+        if(!empty($rs)) {
+            if(!empty($rs['time_night'])) {
+                $timeCurrent = date('H:i:s');
+                $timeCurrent = strtotime($timeCurrent);
+                $timeDb = strtotime($rs['time_night']);
+                if ($timeCurrent >= $timeDb) {
+                    if (!empty($rs['file_name_night'])) {
+                        $rs['file_name'] = $rs['file_name_night'];
+                    }
+                }
+            }
+        }
+        return $rs;
+    }
+
+    ##ดึงข้อมูลหมวดหมู่ข่าวมาแสดงหน้า index
+    public function getCategoryNews()
+    {
+        $this->db->order_by('s_order', 'asc');
+        $this->db->order_by('category_id','desc');
+        $rs = $this->db->get($this->category_news_tbl)->result_array();
+
+        // $getData = [];
+        if (!empty($rs)) {
+            foreach ($rs as $key => $value) {
+                $value['news'] = $this->fnc_getNews($value['category_id']);
+                
+                if ($this->language == 'en') {
+                    if (!empty($value['category_name_en'])) {
+                        $value['category_name'] = $value['category_name_en'];
+                    }
+                }
+
+                $rs[$key] = $value;
+            }
+        }
+        return $rs;
+    }
+
+    private function fnc_getNews($category_id)
+    {
+        $date = date('Y-m-d H:i:s');
+        $this->db->select('*,date(news_date) as datePublished');
+        $this->db->where('show_status', 1);
+        $this->db->where('news_category', $category_id);
+        $this->db->where('(
+            `type_date_show` = 1
+        OR ( `type_date_show` = 2 AND ( `date_show_start` <= "'.$date.'" AND `date_show_end` >= "'.$date.'") )
+        )');
+        $this->db->order_by('s_order', 'asc');
+        $this->db->order_by('time_update', 'desc');
+        $this->db->limit(6);
+        $data = $this->db->get($this->news_tbl)->result_array();
+        // _print_r($this->db->last_query());
+        // _print_r($data);
+        $getData = array();
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                $value['time_update'] = General::getDateFormatCMU($value['time_update']);
+                $value['news_image'] = $this->fnc_getImgCover($value['news_id'], $category_id);
+                if ($this->language == 'en') {
+                    if (!empty($value['news_title_en'])) {
+                        $value['news_title'] = $value['news_title_en'];
+                    }
+                }
+                $getData[] = $value;
+            }
+            return$getData;
+        }
+        return$getData;
+    }
+
+    private function fnc_getImgCover($news_id, $category_id)
+    {
+        $this->db->where('news_id', $news_id);
+        $this->db->where('is_cover', 1);
+        $data = $this->db->get($this->news_doc_tbl)->row_array();
+
+        if(!empty($data)) {
+            if(file_exists('file_upload/news/'.$data['file_name'])) {
+                return $data['file_name'];
+            } else {
+                if($category_id == 1) {
+                    return 'CMUL_CoverPR.jpg';
+                } else {
+                    return 'CMUL_Activity.jpg';
+                }
+            }
+        } else {
+            if($category_id == 1) {
+                return 'CMUL_CoverPR.jpg';
+            } else {
+                return 'CMUL_Activity.jpg';
+            }
+        }
+    }
+
+    public function getOnlineLibCourse()
+    {
+        // $this->db->limit(4);
+        $this->db->select('*,date(time_create) as datePublished');
+        $this->db->order_by('s_order','asc');
+        $this->db->order_by('time_create','desc');
+        $rs = $this->db->get($this->manage_banner_tbl)->result_array();
+
+        $getData = [];
+        if (!empty($rs)) {
+            foreach ($rs as $key => $value) {
+                if ($this->language == 'en') {
+                    if (!empty($value['banner_title_en'])) {
+                        $value['banner_title'] = $value['banner_title_en'];
+                    }
+                }
+                $getData[] = $value;
+            }
+            return $getData;
+        }
+        return $getData;
+    }
+
+    ##ดึงข้อมูลเมนูด้านบนมาแสดงหน้า index
+    public function getTopMenu()
+    {
+        $date = date('Y-m-d H:i:s');
+        $this->db->where('(
+            `type_date_show` = 1
+        OR ( `type_date_show` = 2 AND ( `date_show_start` <= "'.$date.'" AND `date_show_end` >= "'.$date.'") )
+        )');
+        $this->db->order_by('-(menu_order)', 'desc');
+        $rs = $this->db->get($this->menu_top_tbl)->result_array();
+        // _print_r($this->db->last_query());
+        $getData = [];
+        if (!empty($rs)) {
+            foreach ($rs as $key => $value) {
+                $value['manage_user_group'] = $this->fnc_getTopSubMenu($value['menu_id']);
+
+                if (!empty($value['module_id'])) {
+                    $value['url_module'] = $this->fnc_getSubMenuModule($value['module_id']);
+                }
+                
+                if ($this->language == 'en') {
+                    if (!empty($value['menu_name_en'])) {
+                        $value['menu_name'] = $value['menu_name_en'];
+                    }
+                }
+
+                if ($value['show_status'] == 1) {
+                    $getData[] = $value;
+                }
+            }
+            return $getData;
+        }
+        return $getData;
+    }
+    ##เมนูรองด้านบน
+    private function fnc_getTopSubMenu($menu_id)
+    {
+        $this->db->where('menu_id', $menu_id);
+        $rs = $this->db->get($this->manage_user_group_tbl)->result_array();
+        return $rs;
+    }
+
+    ##ดึงข้อมูลเมนูมาแสดงหน้า index
+    public function getMainMenu()
+    {
+        $date = date('Y-m-d H:i:s');
+        $this->db->where('parent_id', '');
+        $this->db->or_where('parent_id is null');
+        $this->db->where('show_status', 1);
+        $this->db->where('(
+            `type_date_show` = 1
+        OR ( `type_date_show` = 2 AND ( `date_show_start` <= "'.$date.'" AND `date_show_end` >= "'.$date.'") )
+        )');
+        $this->db->order_by('-(menu_order)', 'desc');
+        
+        $rs = $this->db->get($this->menu_tbl)->result_array();
+
+        // _print_r($this->db->last_query());
+        // _print_r($rs);
+        $getData = [];
+        $sub = false;
+        $staff = false;
+        if (!empty($rs)) {
+            foreach ($rs as $key => $value) {
+
+                if (!empty($value['module_id'])) {
+                    $value['url_module'] = $this->fnc_getSubMenuModule($value['module_id']);
+                }
+                // _print_r($this->language);
+                if ($this->language == 'en') {
+                    if (!empty($value['menu_name_en'])) {
+                        $value['menu_name'] = $value['menu_name_en'];
+                    }
+                }
+
+                if (!empty($value['is_staff'])) {
+                    $staff = true;
+                }
+
+                // $getData['check_staff'] = $staff;
+
+                if ($staff == true) {
+                    $getData[] = $value;
+                }else{
+                    $value['sub_menu'] = $this->fnc_getSubMenu($value['menu_id']);
+                    $getData[] = $value;
+                }
+            }
+            // _print_r($getData);
+            return $getData;
+        }
+        return $getData;
+    }
+    ##เมนูรอง
+    private function fnc_getSubMenu($menu_id)
+    {
+        $date = date('Y-m-d H:i:s');
+        $this->db->where('parent_id', $menu_id);
+        $this->db->where('show_status', 1);
+        $this->db->where('(
+            `type_date_show` = 1
+        OR ( `type_date_show` = 2 AND ( `date_show_start` <= "'.$date.'" AND `date_show_end` >= "'.$date.'") )
+        )');
+        $this->db->order_by('-(menu_order)', 'desc');
+
+        $rs = $this->db->get($this->menu_tbl)->result_array();
+
+        $getData = [];
+        $unit = false;
+        $staff = false;
+        $i = 1;
+        if (!empty($rs)) {
+            foreach ($rs as $key => $value) {
+                if (!empty($value['module_id'])) {
+                    $value['url_module'] = $this->fnc_getSubMenuModule($value['module_id']);
+                }
+
+
+                if (!empty($value['is_staff'])) {
+                    $staff = true;
+                }
+
+                // $getData['check_staff'] = $staff;
+                $getData['count_sub'] = count($rs);
+                // _print_r($getData['count_sub']);
+
+                if ($this->language == 'en') {
+                    if (!empty($value['menu_name_en'])) {
+                        $value['menu_name'] = $value['menu_name_en'];
+                    }
+                }
+
+                if ($staff == true) {
+                    $getData[] = $value;
+                }else{
+                    $value['unit_menu'] = $this->fnc_getUnitMenu($value['menu_id']);
+                    // $value['countUnit'.$key] = count($value['unit_menu']);
+                    $value['countUnit'] = count($value['unit_menu']);
+                    // _print_r($countUnit);
+                    $getData[] = $value;
+                }
+
+                if (!empty($value['unit_menu'])) {
+                    $unit = true;
+                }
+
+                $getData['check_unit'] = $unit;
+                // $getData[] = $value;
+            }
+            // _print_r($getData);
+            return $getData;
+        }
+
+        return $getData;
+    }
+    ##เมนูย่อย
+    private function fnc_getUnitMenu($menu_id)
+    {
+        $date = date('Y-m-d H:i:s');
+        $this->db->where('parent_id', $menu_id);
+        $this->db->where('show_status', 1);
+        $this->db->where('(
+            `type_date_show` = 1
+        OR ( `type_date_show` = 2 AND ( `date_show_start` <= "'.$date.'" AND `date_show_end` >= "'.$date.'") )
+        )');
+        $this->db->order_by('-(menu_order)', 'desc');
+        $rs = $this->db->get($this->menu_tbl)->result_array();
+
+        $getData = [];
+        if (!empty($rs)) {
+            foreach ($rs as $key => $value) {
+
+                if (!empty($value['module_id'])) {
+                    $value['url_module'] = $this->fnc_getSubMenuModule($value['module_id']);
+                }
+
+                if ($this->language == 'en') {
+                    if (!empty($value['menu_name_en'])) {
+                        $value['menu_name'] = $value['menu_name_en'];
+                    }
+                }
+
+                $getData[] = $value;
+            }
+            return $getData;
+        }
+        return $getData;
+    }
+
+    public function fnc_getUserGroupByMenuId($menu_id)
+    {
+        $this->db->select('grp_id');
+        $this->db->where('menu_id', $menu_id);
+        return $this->db->get($this->manage_user_group_tbl)->result_array();
+    }
+
+    public function fnc_getSubMenuModule($module_id)
+    {
+        $this->db->select('url');
+        $this->db->where('module_id', $module_id);
+        $data = $this->db->get($this->module_tbl)->row_array();
+        return $data['url'];
+    }
+
+    public function getRecommendResources()
+    {
+        $rs = $this->db->get($this->resources_tbl)->result_array();
+
+        $getData = [];
+        if (!empty($rs)) {
+            foreach ($rs as $key => $value) {
+                if ($this->language == 'en') {
+                    if (!empty($value['rs_title_en'])) {
+                        $value['rs_title'] = $value['rs_title_en'];
+                    }
+                }
+                $getData[] = $value;
+            }
+            return $getData;
+        }
+        return $getData;
+    }
+
+    public function getBook()
+    {
+        $this->db->where('show_status', 1);
+        $this->db->order_by('s_order', 'asc');
+        $this->db->order_by('time_create', 'desc');
+        $data =  $this->db->get($this->book_tbl)->result_array();
+        
+        $getData = [];
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                if ($this->language == 'en') {
+                    if (!empty($value['book_title_en'])) {
+                        $value['book_title'] = $value['book_title_en'];
+                    }
+                    if (!empty($value['author_en'])) {
+                        $value['author'] = $value['author_en'];
+                    }
+                    if (!empty($value['description_en'])) {
+                        $value['description'] = $value['description_en'];
+                    }
+                }
+                $getData[] = $value;
+            }
+            return $getData;
+        }
+        return $getData;
+    }
+
+    public function getCalendar()
+    {
+        $this->db->select('id, title, detail, start, end, title_en, detail_en, calendar_group');
+        $data = $this->db->get('calendar')->result_array();
+
+        if (!empty($data)) {
+            $getData = [];
+            foreach ($data as $key => $value) {
+                $value['id'] = intval($value['id']);
+                $value['title'] = $this->language == 'en' && trim($value['title_en'] != '') ? $value['title_en'] : $value['title'];
+                $value['detail'] = $this->language == 'en' && trim($value['detail_en'] != '') ? $value['detail_en'] : $value['detail'];
+                $value['color'] = $this->fnc_getCalendarColor($value['calendar_group']);
+                $getData[] = $value;
+            }
+            // _print_r($getData);
+            return $getData;
+        } else {
+            return [];
+        }
+    }
+
+    public function getCalendarTable()
+    {
+        $get = $this->input->get();
+        // $get = $this->input->post();
+        // _print_r($get); 
+        $start = date('Y-m-d',strtotime($get['start']));
+        $end = date('Y-m-d',strtotime($get['end']));
+
+        $this->db->select('id, title, detail, start, end, title_en, detail_en, calendar_group');
+        $this->db->where('DATE(start) >=', $start);
+        $this->db->where('DATE(end) <=', $end);
+        $this->db->order_by('start', 'asc');
+        $data = $this->db->get('calendar')->result_array();
+        // _print_r($this->db->last_query());
+        if (!empty($data)) {
+            $getData = [];
+            foreach ($data as $key => $value) {
+                $value['id'] = intval($value['id']);
+                $value['title'] = $this->language == 'en' && trim($value['title_en'] != '') ? $value['title_en'] : $value['title'];
+                $value['detail'] = $this->language == 'en' && trim($value['detail_en'] != '') ? $value['detail_en'] : $value['detail'];
+                $value['color'] = $this->fnc_getCalendarColor($value['calendar_group']);
+                $value['start_date'] = $this->language == 'en' ? General::dayEng($value['start']) : General::dayThai2($value['start']);
+                $value['end_date'] = $this->language == 'en' ? General::dayEng($value['end']) : General::dayThai2($value['end']);
+                $getData[] = $value;
+            }
+            // _print_r($getData);
+            return $getData;
+        } else {
+            return [];
+        }
+    }
+
+    private function fnc_getCalendarColor($calendar_group)
+    {
+        $this->db->select('cg_color');
+        $this->db->where('cg_id', $calendar_group);
+        $data = $this->db->get($this->calendar_group_tbl)->row_array();
+
+        return $data['cg_color'];
+    }
+
+    public function getCalendarGroup()
+    {
+        $data = $this->db->get($this->calendar_group_tbl)->result_array();
+
+        if(!empty($data)) {
+            $getData = [];
+            foreach ($data as $key => $value) {
+                if ($this->language == 'en') {
+                    if (!empty($value['cg_name_en'])) {
+                        $value['cg_name'] = $value['cg_name_en'];
+                    }
+                }
+                $getData[] = $value;
+            }
+            return $getData;
+        } else {
+          return [];
+        }
+    }
+
+    public function getCalendarDetail($id)
+    {
+        $this->db->where('id', $id);
+        $rs = $this->db->get($this->calendar_tbl)->row_array();
+        // _print_r($rs);
+        if (!empty($rs)) {
+
+            // $rs['time_update'] = General::getDateFormatCMU($rs['time_update']);
+
+            if ($this->language == 'en') {
+                if (!empty($rs['title_en'])) {
+                    $rs['title'] = $rs['title_en'];
+                }
+
+                if (!empty($rs['detail_en'])) {
+                    $rs['detail'] = $rs['detail_en'];
+                }
+
+                $rs['StartAndEnd'] = str_replace("/", " ", General::getDateFormatCMU($rs['start'])).' - '.str_replace("/", " ", General::getDateFormatCMU($rs['end']));
+
+            }else{
+                $rs['StartAndEnd'] = str_replace("/", " ", General::getDateFormatCMU($rs['start'])).' - '.str_replace("/", " ", General::getDateFormatCMU($rs['end']));
+            }
+
+
+        }
+        // _print_r($rs);
+        return $rs;
+    }
+
+    public function getCookieText()
+    {
+        $getData = array();
+        $this->db->where('show_status',1);
+        $data = $this->db->get('cookie_text')->row_array();
+
+        if(!empty($data)){
+            if ($this->language == 'en') {
+                $data['detail'] = $data['detail_en'];
+                if ($data['type_menu'] == 1) {
+                    if (file_exists($data['file_path'] . $data['file_name'])) {
+                        $data['detail'] .= " <a href=".base_url().$data['file_path'].$data['file_name']." target="."_blank".">Read the terms</a>";
+                    }
+                }elseif($data['type_menu'] == 2){
+                    $data['detail'] .= " <a href=".$data['url']." target="."_blank".">Read the terms</a>";
+                }else{
+                    $data['detail'] = $data['detail'];
+                }
+            }else{
+                if ($data['type_menu'] == 1) {
+                    if (file_exists($data['file_path'] . $data['file_name'])) {
+                        $data['detail'] .= " <a href=".base_url().$data['file_path'].$data['file_name']." target="."_blank".">อ่านข้อกำหนด</a>";
+                    }
+                }elseif($data['type_menu'] == 2){
+                    $data['detail'] .= " <a href=".$data['url']." target="."_blank".">อ่านข้อกำหนด</a>";
+                }else{
+                    $data['detail'] = $data['detail'];
+                }
+            }
+            $getData = $data;
+        }
+        return $getData;
+    }
+
+    public function getRelatedAgencies()
+    {
+        $this->path = 'file_upload/manage_related_agencies/';
+        $this->db->order_by('s_order', 'asc');
+        $this->db->order_by('time_create', 'desc');
+        $this->db->where('show_status', '1');
+        $data = $this->db->get('manage_related_agencies')->result_array();
+        if (!empty($data)) {
+            $get_data = array();
+            foreach ($data as $key => $value) {
+                if (file_exists($this->path . $value['image'])) {
+                    $value['url'] = !empty($value['url']) ? $value['url'] : '#';
+                    $value['title'] = $this->language == 'en' && trim($value['title_en'] != '') ? $value['title_en'] : $value['title'];
+                    $get_data[] = $value;
+                }
+            }
+            return $get_data;
+        }
+        return false;
+    }
+
+
+    public function getPopUp()
+    {
+        $this->path = 'file_upload/pop_up/';
+        $dateCurrent = date('Y-m-d');
+        $this->db->where('is_show', '1');
+        $this->db->where('(
+            type_date_show = 1
+            OR 
+            (type_date_show = 2 AND (DATE(date_show_start) <= "'.$dateCurrent.'" AND date_show_end >= "'.$dateCurrent.'"))
+        )');
+        $data = $this->db->get('pop_up')->row_array();
+        if (!empty($data)) {
+            $getData = array();
+            if (file_exists($this->path . $data['file_name'])) {
+               $getData = $data;
+            }
+            return $getData;
+        } else {
+            return [];
+        }
+    }
+}
+
+?>

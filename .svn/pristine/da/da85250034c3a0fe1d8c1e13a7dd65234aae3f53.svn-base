@@ -1,0 +1,653 @@
+<?php
+
+/**
+ *
+ */
+class Search_model extends CI_model
+{
+    private $manage_menu_module_tbl = 'manage_menu_module';
+    
+    private $proto = [
+        'from' => 0,
+        'size' => 100,
+        'query' => [
+        ]
+    ];
+
+    private $es_type = 'http://localhost:9200/cmu_web/';
+    private $analyzer = 'standard';
+
+    private $default_field = ['title', 'content'];
+    private $val_lang = 'th';
+
+    private $category = [
+        'menu' => 'เมนู',
+        'menu_top' => 'เมนูด้านบน',
+        'news' => 'ข่าว',
+        'online_library_course' => 'Online Library Course',
+    ];
+
+    private $category_en = [
+        'menu' => 'Menu',
+        'menu_top' => 'Menu Top',
+        'news' => 'News',
+        'online_library_course' => 'Online Library Course',
+    ];
+
+
+    private $news_tbl = 'news';
+    private $category_news_tbl = 'category_news';
+
+
+    function __construct()
+    {
+        parent::__construct();
+        $this->load->library('session');
+        $this->user_id = $this->session->cmu_web_session['id'];
+
+        if (!empty($_SESSION['LANGUAGE'])) {
+            $this->val_lang = strtolower($_SESSION['LANGUAGE']);
+        }else{
+            $this->val_lang = 'th';
+
+        }
+        
+    }
+
+    private function fnc_ElasticCurl($query, $url, $verb = 'GET')
+    {
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $verb);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ["Content-type: application/json"]);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($query));
+        $output = curl_exec($ch);
+
+        curl_close($ch);
+
+        return $output;
+    }
+
+    private function fnc_noneNestedQuery($text, $field, $boost = 1)
+    {
+        return [
+            'match' => [
+                $field => [
+                    'query' => $text,
+                    'operator' => 'AND',
+                    'analyzer' => $this->analyzer,
+                    'boost' => $boost
+                ]
+            ]
+        ];
+    }
+
+    private function fnc_wildcardQuery($txt, $option)
+    {
+        return [
+            'wildcard' => [
+                $option => [
+                    "value" => '*' . $txt . '*',
+                    "boost" => 1.0,
+                    "rewrite" => "constant_score"
+                ]
+            ]
+        ];
+    }
+
+    private function fnc_termQuery($text, $default_field)
+    {
+        $set = [
+            'term' => [
+                "{$default_field}" => $text
+            ]
+        ];
+        return $set;
+    }
+
+    private function fnc_textSearch($text)
+    {
+        $should = [
+            'bool' => [
+                'should' => []
+            ]
+        ];
+
+        $should['bool']['should'][] = $this->fnc_noneNestedQuery($text, 'title', 50);
+        $should['bool']['should'][] = $this->fnc_noneNestedQuery($text, 'content');
+        $should['bool']['should'][] = $this->fnc_noneNestedQuery($text, 'title_en', 50);
+        $should['bool']['should'][] = $this->fnc_noneNestedQuery($text, 'content_en');
+
+        $should['bool']['should'][] = $this->fnc_wildcardQuery(strtolower($text), 'title');
+        $should['bool']['should'][] = $this->fnc_wildcardQuery(strtoupper($text), 'title');
+        $should['bool']['should'][] = $this->fnc_wildcardQuery($text, 'content');
+        $should['bool']['should'][] = $this->fnc_wildcardQuery($text, 'title_en');
+        $should['bool']['should'][] = $this->fnc_wildcardQuery($text, 'content_en');
+        return $should;
+
+    }
+
+
+    public function getCommand($command, $size)
+    {
+        $query = $this->proto;
+
+        $query['size'] = (int)$size;
+        $query['sort'] = ['time_update' => 'desc'];
+
+        $query['query']['bool']['must'] = [];
+
+        $text = trim($command['stext']);
+
+        if ($text != '') {
+            $query['query']['bool']['must'][] = $this->fnc_textSearch($text);
+        }
+
+        $start = trim($command['start']);
+        $end = trim($command['end']);
+
+        if ($start != '' || $end != '') {
+
+            if ($start != '' && $end != '') {
+                $start = general::ThaitoDBDateDath($start);
+                $end = general::ThaitoDBDateDath($end);
+                $query['query']['bool']['must'][] = [
+                    'range' => [
+                        'time_update' => [
+                            'gte' => $start,
+                            'lte' => $end,
+                            "format" => "yyyy-MM-dd"
+                        ]
+                    ]
+                ];
+            } else if ($start != '' && $end == '') {
+                $start = general::ThaitoDBDateDath($start);
+                $query['query']['bool']['must'][] = [
+                    'range' => [
+                        'time_update' => [
+                            'gte' => $start,
+                            "format" => "yyyy-MM-dd"
+                        ]
+                    ]
+                ];
+            } else if ($start == '' && $end != '') {
+                $end = general::ThaitoDBDateDath($end);
+                $query['query']['bool']['must'][] = [
+                    'range' => [
+                        'time_update' => [
+                            'lte' => $end,
+                            "format" => "yyyy-MM-dd"
+                        ]
+                    ]
+                ];
+            }
+        }
+
+        if ($command['sub_query']['lvl2']['active']) {
+            $lvl2_pk = $command['sub_query']['lvl2']['pk'];
+            $query['query']['bool']['must'][] = $this->fnc_termQuery($lvl2_pk, 'lvl2_pk');
+
+            $lvl1_pk = $command['sub_query']['lvl2']['parent'];
+            if ($lvl1_pk > 0)
+                $query['query']['bool']['must'][] = $this->fnc_termQuery($lvl1_pk, 'lvl1_pk');
+        }
+
+        if (count($command['sub_query']['keyword']) > 0) {
+            foreach ($command['sub_query']['keyword'] as $keyword) {
+                $query['query']['bool']['must'][] = $this->fnc_termQuery($keyword, 'keyword');
+            }
+        }
+
+        return $query;
+    }
+
+    public function filter($query, $param)
+    {
+        $filter_type = $param['filter_include'] ? 'filter' : 'must_not';
+        $menu_filter = ['bool' => ['should' => []]];
+
+        # กรองตามเมนู
+        $lvl1_pk = $param['data']['menu'];
+        if (count($lvl1_pk) > 0) {
+            $menu_filter['bool']['should'][] = [
+                'bool' => [
+                    'must' => [
+                        ['term' => ['category' => 'menu']],
+                        ['terms' => ['lvl1_pk' => $lvl1_pk]]
+                    ]
+                ]
+            ];
+        }
+
+
+        $menu_top = $param['data']['menu_top'];
+        if (count($menu_top) > 0) {
+            $menu_filter['bool']['should'][] = [
+                'bool' => [
+                    'must' => [
+                        ['term' => ['category' => 'menu_top']],
+                        ['terms' => ['lvl1_pk' => $menu_top]]
+                    ]
+                ]
+            ];
+        }
+
+        # กรองตามข่าว
+        $news = $param['data']['news'];
+        if (count($news) > 0) {
+            $menu_filter['bool']['should'][] = [
+                'bool' => [
+                    'must' => [
+                        ['term' => ['category' => 'news']],
+                        ['terms' => ['lvl1_pk' => $news]]
+                    ]
+                ]
+            ];
+        }
+
+        # กรองตาม Online
+        $online_library_course = $param['data']['online_library_course'];
+        if (count($online_library_course) > 0) {
+            $menu_filter['bool']['should'][] = [
+                'bool' => [
+                    'must' => [
+                        ['term' => ['category' => 'online_library_course']]
+                    ]
+                ]
+            ];
+        }
+
+        # กรองตามแหล่งข้อมูล
+        if (count($menu_filter['bool']['should']) > 0)
+            $query['query']['bool'][$filter_type][] = $menu_filter;
+
+        # กรองตามปี
+        $pubyear = $param['data']['pubyear'];
+        if (count($pubyear) > 0)
+            $query['query']['bool'][$filter_type][] = ['terms' => ['pubyear' => $pubyear]];
+
+        return $query;
+    }
+
+    public function find($query, $offset = 0)
+    {
+        $query['from'] = $offset;
+
+        $query['_source'] = [
+            'includes' => ['pk', 'category', 'lvl1_pk', 'lvl2_pk', 'title', 'title_en', 'author', 'pubyear', 'url', 'create_dt', 'time_update']
+        ];
+
+
+        $post = $this->input->post('data');
+        $textData = json_decode($post, true);
+        $textData = $textData['command']['stext'];
+
+        $query['highlight'] = [
+            'pre_tags' => ["<span class=\"elastic_highlighter\">"],
+            'post_tags' => ["</span>"],
+            'order' => "score",
+            'encoder' => "html",
+            'fragment_size' => 400,
+            'number_of_fragments' => 1,
+            'no_match_size' => 400,
+            'fields' => [
+                'content' => new ArrayObject(),
+                'content_en' => new ArrayObject(),
+            ]
+        ];
+        $url = $this->es_type . '_search';
+        $output = $this->fnc_ElasticCurl($query, $url);
+        $rs = json_decode($output, true);
+        $data = [
+            'total' => 0,
+            'list' => []
+        ];
+
+        if (!isset($rs['hits'])) return $data;
+
+        $data['total'] = $rs['hits']['total'];
+        foreach ($rs['hits']['hits'] as $ele) {
+
+            $source = $ele['_source'];
+
+            if (!empty($ele['highlight'])) {
+                if (!empty($ele['highlight']['content_en']) && !empty($ele['highlight']['content_en'][0])) {
+                    if(!empty($textData) && !empty(strpos($ele['highlight']['content_en'][0], '<span class="elastic_highlighter">'))) {
+                        $highlight['content'] = html_entity_decode($ele['highlight']['content_en'][0]);
+                    } else if(!empty($textData) && empty(strpos($ele['highlight']['content_en'][0], '<span class="elastic_highlighter">'))) {
+                        $highlight['content'] = html_entity_decode($ele['highlight']['content'][0]);
+                    } else {
+                        if($this->val_lang == 'en') {
+                            if(!empty($ele['highlight']['content_en'][0])) {
+                                $highlight['content'] = html_entity_decode($ele['highlight']['content_en'][0]);
+                            } else {
+                                $highlight['content'] = html_entity_decode($ele['highlight']['content'][0]);
+                            }
+                        } else {
+                            $highlight['content'] = html_entity_decode($ele['highlight']['content'][0]);
+                        }
+                    }
+                } else {
+                    if($this->val_lang == 'en') {
+                        if(!empty($ele['highlight']['content_en'][0])) {
+                            $highlight['content'] = html_entity_decode($ele['highlight']['content_en'][0]);
+                        } else {
+                            $highlight['content'] = html_entity_decode($ele['highlight']['content'][0]);
+                        }
+                    } else {
+                        $highlight['content'] = html_entity_decode($ele['highlight']['content'][0]);
+                    }
+                }
+                $highlight['content'] = str_replace('&nbsp;', '', $highlight['content']);
+                $highlight['content'] = str_replace('&amp;', '', $highlight['content']);
+                $highlight['content'] = str_replace('&ldquo;', '', $highlight['content']);
+                $highlight['content'] = str_replace('&rdquo;', '', $highlight['content']);
+                $highlight['content'] = str_replace('nbsp;', '', $highlight['content']);
+                $highlight['content'] = str_replace('amp;', '', $highlight['content']);
+                $highlight['content'] = str_replace('ldquo;', '', $highlight['content']);
+                $highlight['content'] = str_replace('rdquo;', '', $highlight['content']);
+                $highlight['content'] = strip_tags($highlight['content']);
+                $highlight['content'] = str_ireplace('<span class="elastic_highlighter">', '', $highlight['content']);
+                $highlight['content'] = str_ireplace('<span>', '', $highlight['content']);
+                $highlight['content'] = str_ireplace('</span>', '', $highlight['content']);
+                $highlight['content'] = str_ireplace($textData, '<span class="elastic_highlighter">' . $textData . '</span>', $highlight['content']);
+                $source['content'] = $highlight['content'];
+            }
+
+            if (isset($source['lvl1_pk']) && ($source['category'] == 'menu' || $source['category'] == 'menu_top')) {
+                $source['lvl1_title'] = $this->fnc_getMenuTitle($source['lvl1_pk'], $source['category']);
+                $url = $this->fnc_getMenuModuleLink($source['pk'], $source['category']);
+                if (!empty($url)) {
+                    $source['target'] = $url['target'];
+                    $source['url'] = $url['url'];
+                } else {
+                    $source['url'] = base_url() . $source['url'];
+                    $source['target'] = '';
+                }
+            } else if (isset($source['lvl1_pk']) && $source['category'] == 'news') {
+                $source['lvl1_title'] = $this->fnc_getNewsTitle($source['lvl1_pk']);
+                $source['url'] = base_url() . $source['url'];
+                $source['target'] = '';
+            } else if ($source['category'] == 'online_library_course') {
+                $source['url'] = $source['url'];
+                $source['target'] = '_blank';
+            } else {
+                $source['url'] = base_url() . $source['url'];
+                $source['target'] = '';
+            }
+
+
+            if (isset($source['lvl2_pk']) && ($source['category'] == 'menu' || $source['category'] == 'menu_top')) {
+                $source['lvl2_title'] = $this->fnc_getMenuTitle($source['lvl2_pk'], $source['category']);
+            }
+
+            $source['category_name'] = $source['category'];
+            if (isset($this->category[$source['category']])) {
+                if ($this->val_lang == 'en') {
+                    $source['category_name'] = $this->category_en[$source['category']];
+                } else {
+                    $source['category_name'] = $this->category[$source['category']];
+                }
+            }
+
+            $source['create_dt'] = (!empty($source['time_update']) ? general::getDateFormatCMU($source['time_update']) : general::getDateFormatCMU($source['create_dt']));
+
+            if ($this->val_lang == 'en') {
+                if (!empty($source['title_en'])) {
+                    $source['title'] = $source['title_en'];
+                }
+            }
+
+            $data['list'][] = $source;
+        }
+
+        return $data;
+    }
+
+    public function aggPubyear($query)
+    {
+        $query['size'] = 0;
+
+        $query['aggs'] = [
+            'pubyear' => [
+                'terms' => [
+                    'field' => 'pubyear'
+                ]
+            ]
+        ];
+
+        $url = $this->es_type . '_search';
+        $output = $this->fnc_ElasticCurl($query, $url);
+        $rs = json_decode($output, true);
+
+        $result = [];
+        if (isset($rs['aggregations'])) {
+            $aggs = $rs['aggregations']['pubyear']['buckets'];
+
+            $result = array_map(function ($ele) {
+                $ele['key'] = (int)$ele['key'];
+
+                return $ele;
+            }, $aggs);
+        }
+
+        return $result;
+    }
+
+    public function aggOnline($query)
+    {
+        $query['query']['bool']['must'][] = $this->fnc_termQuery('online_library_course', 'category');
+        $query['size'] = 0;
+
+        $query['aggs'] = [
+            'online' => [
+                'terms' => [
+                    'field' => 'category'
+                ]
+            ]
+        ];
+
+        $url = $this->es_type . '_search';
+        $output = $this->fnc_ElasticCurl($query, $url);
+        $rs = json_decode($output, true);
+
+        $result = [];
+        if (isset($rs['aggregations'])) {
+            $aggs = $rs['aggregations']['online']['buckets'];
+            $result = array_map(function ($ele) {
+                $ele['key'] = 1;
+                $ele['label'] = 'Online Library Course';
+                $ele['category'] = 'online_library_course';
+                return $ele;
+            }, $aggs);
+        }
+        return $result;
+    }
+
+
+    public function aggNews($query)
+    {
+        $query['query']['bool']['must'][] = $this->fnc_termQuery('news', 'category');
+
+        $query['size'] = 0;
+
+        $query['aggs'] = [
+            'know' => [
+                'terms' => [
+                    'field' => 'lvl1_pk'
+                ]
+            ]
+        ];
+
+        $url = $this->es_type . '_search';
+        $output = $this->fnc_ElasticCurl($query, $url);
+        $rs = json_decode($output, true);
+
+        $result = [];
+        if (isset($rs['aggregations'])) {
+            $aggs = $rs['aggregations']['know']['buckets'];
+
+            $result = array_map(function ($ele) {
+                $ele['key'] = (int)$ele['key'];
+                $ele['label'] = $this->fnc_getNewsTitle($ele['key']);
+                return $ele;
+            }, $aggs);
+        }
+
+        return $result;
+    }
+
+
+    public function aggMenu($query, $type)
+    {
+        $query['query']['bool']['must'][] = $this->fnc_termQuery($type, 'category');
+
+        $query['size'] = 0;
+
+        $query['aggs'] = [
+            'lvl1' => [
+                'terms' => [
+                    'field' => 'lvl1_pk',
+                    'size' => 50
+                ],
+                'aggs' => [
+                    'lvl2' => [
+                        'terms' => [
+                            'field' => 'lvl2_pk',
+                            'size' => 50
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        $url = $this->es_type . '_search';
+        $output = $this->fnc_ElasticCurl($query, $url);
+        $rs = json_decode($output, true);
+
+        $level1 = [];
+        if (isset($rs['aggregations'])) {
+            $aggs = $rs['aggregations']['lvl1']['buckets'];
+
+            foreach ($aggs as $lvl1) {
+
+                $level2 = [];
+                if (isset($lvl1['lvl2'])) {
+                    if (isset($lvl1['lvl2']['buckets'])) {
+                        foreach ($lvl1['lvl2']['buckets'] as $lvl2) {
+                            $level2[] = [
+                                'key' => (int)$lvl2['key'],
+                                'doc_count' => $lvl2['doc_count'],
+                                'label' => $this->fnc_getMenuTitle($lvl2['key'], $type)
+                            ];
+                        }
+                    }
+                }
+
+                $level1[] = [
+                    'key' => (int)$lvl1['key'],
+                    'doc_count' => $lvl1['doc_count'],
+                    'label' => $this->fnc_getMenuTitle($lvl1['key'], $type),
+                    'lvl2' => $level2,
+                    'category' => $type
+                ];
+
+            }
+
+        }
+
+        return $level1;
+    }
+
+    private function fnc_getMenuTitle($id, $table)
+    {
+
+        $this->db->select('menu_name, menu_name_en');
+        $this->db->where('menu_id', $id);
+        $obj = $this->db->get('manage_'.$table)->row();
+
+        if ($this->val_lang == 'en') {
+            if (is_object($obj)) return $obj->menu_name_en;
+            return 'Other';
+        } else {
+            if (is_object($obj)) return $obj->menu_name;
+            return 'อื่นๆ';
+        }
+
+    }
+
+    private function fnc_getMenuModuleLink($id, $table)
+    {
+        $this->db->where('menu_id', $id);
+        $obj = $this->db->get('manage_'.$table)->row_array();
+        if (!empty($obj) && ($obj['type_menu'] == 2 || $obj['type_menu'] == 3)) {
+            if ($obj['type_menu'] == '2') {
+                return ['target' => '_blank', 'url' => $obj['menu_link']];
+            } else {
+                return ['target' => '', 'url' => $this->fnc_getModuleUrl($obj['module_id'])];
+            }
+        } else {
+            return null;
+        }
+
+    }
+
+    private function fnc_getModuleUrl($id)
+    {
+
+        $this->db->select('url');
+        $this->db->where('module_id', $id);
+        $obj = $this->db->get($this->manage_menu_module_tbl)->row();
+
+        if (is_object($obj)) return base_url() . $obj->url;
+        return null;
+    }
+
+    public function getCategoryTitle($cate_news)
+    {
+        $this->db->select('category_name,category_name_en');
+        $this->db->where('category_id', $cate_news);
+        $rs = $this->db->get($this->category_news_tbl)->row_array();
+
+        if ($this->language == 'en') {
+            if (!empty($rs['category_name_en'])) {
+                $rs['category_name'] = $rs['category_name_en'];
+            }
+        }
+
+        return $rs['category_name'];
+    }
+
+    private function fnc_getNewsTitle($id)
+    {
+
+        $this->db->select('category_id, category_name,category_name_en');
+        $this->db->where('category_id', $id);
+        $data = $this->db->get($this->category_news_tbl)->row_array();
+
+        $news = [];
+        if(!empty($data)) {
+            $name = $data['category_name'];
+
+            if ($this->val_lang == 'en') {
+                if (!empty($data['category_name_en'])) {
+                    $name = $data['category_name_en'];
+                }
+            }
+            $news[$data['category_id']] = $name;
+        }
+       
+        if (isset($news[$id])) {
+            return $news[$id];
+        }  else {
+            if ($this->val_lang == 'en') {
+                return 'Other';
+            } else {
+                return 'อื่นๆ';
+            }
+        }
+    }
+
+}
+
+?>

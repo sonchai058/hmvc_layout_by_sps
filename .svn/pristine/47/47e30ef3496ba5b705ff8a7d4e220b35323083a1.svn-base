@@ -1,0 +1,240 @@
+<?php
+// include("../application/libraries/ElasticIndex.php");
+
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class ManageUserGroup_model extends CI_Model
+{
+  private $group_tbl = 'user_group';
+  private $users_tbl = 'users';
+
+  private $prev_tbl = 'um_app_priv_group';
+  private $d_prev_tbl = 'um_d_app_priv_group';
+
+  private $um_category_app_priv_group_tbl = 'um_category_app_priv_group';
+  private $per_page = 10;
+  # Search
+  private $s_element = array('utext' => FALSE);
+
+  public function __construct()
+  {
+      parent::__construct();
+      $this->user_id = $this->session->cmu_web_session['id'];
+  }
+
+  public function getGroup($page)
+  {
+      $this->fnc_calPageOffset($page);
+      $this->db->order_by('grp_id', 'ASC');
+
+      $this->fnc_setElementSearchFromSession();
+      $data = $this->db->get($this->group_tbl)->result_array();
+
+      foreach ($data as $key => $value) {
+          $prev = $this->getPermission($value['grp_id']);
+          $data[$key]['num_prev'] = count($prev);
+          $data[$key]['checkUserInGroup'] = $this->fnc_checkUsersInGroup($value['grp_id']);
+      }
+
+      return $data;
+  }
+
+  private function fnc_checkUsersInGroup($grp_id)
+  {
+    $this->db->limit(1);
+    $this->db->where('grp_id', $grp_id);
+    return $this->db->get($this->users_tbl)->num_rows();
+  }
+
+  public function getGroupName($grp_id)
+  {
+      $this->db->select('grp_name');
+      $this->db->where('grp_id', $grp_id);
+      $rs = $this->db->get($this->group_tbl)->row_array();
+
+      return count($rs) > 0 ? reset($rs) : '-';
+  }
+
+  public function getGroupForm($grp_id)
+  {
+
+      $data = [
+          'grp_id' => null,
+          'grp_name' => null,
+      ];
+
+      if ($grp_id > 0) {
+          $this->db->where('grp_id', $grp_id);
+          $data = $this->db->get($this->group_tbl)->row_array();
+      }
+
+      return $data;
+  }
+
+  public function insertGroup($data)
+  {
+      if(isset($data['grp_id'])) {
+          unset($data['grp_id']);
+      }
+
+      $this->db->insert($this->group_tbl, $data);
+
+      $id = $this->db->insert_id();
+      $Counter = new Counter;
+      $Counter->logAction($data['grp_name'], $id, 0, 'group', '42', $this->user_id);
+  }
+
+  public function editGroup($data, $grp_id)
+  {
+      if(isset($data['grp_id'])) {
+          unset($data['grp_id']);
+      }
+
+      $dataByID = $this->getGroupForm($grp_id);
+      if(!empty($dataByID)) {
+          $Counter = new Counter;
+          $Counter->logAction($dataByID['grp_name'], $grp_id, 0, 'group', '43', $this->user_id);
+      }
+
+      $this->db->where('grp_id', $grp_id);
+      $this->db->update($this->group_tbl, $data);
+  }
+
+  public function deleteGroup($grp_id)
+  {
+      $dataByID = $this->getGroupForm($grp_id);
+      if(!empty($dataByID)) {
+          $Counter = new Counter;
+          $Counter->logAction($dataByID['grp_name'], $grp_id, 0, 'group', '44', $this->user_id);
+      }
+
+//        $this->db->where('usys_id', $grp_id);
+//        $this->db->delete($this->um_category_app_priv_group_tbl);
+
+      $this->db->where('grp_id', $grp_id);
+      $this->db->delete($this->group_tbl);
+
+      $this->db->where('usys_id', $grp_id);
+      $this->db->delete($this->prev_tbl);
+  }
+
+  public function getPermission($grp_id)
+  {
+      $this->db->where('usys_id', $grp_id);
+      $rs = $this->db->get($this->prev_tbl)->result_array();
+
+      $prev = is_array($rs) && count($rs) > 0 ? array_column($rs, 'app_id') : [];
+      return $prev;
+  }
+
+  public function getPermissionDynamic($grp_id)
+  {
+      $this->db->where('usys_id', $grp_id);
+      $rs = $this->db->get($this->d_prev_tbl)->result_array();
+
+      $prev = is_array($rs) && count($rs) > 0 ? array_column($rs, 'app_id') : [];
+      return $prev;
+  }
+
+  public function updatePermission($apps, $grp_id)
+  {
+
+      $dataByID = $this->getGroupForm($grp_id);
+      if(!empty($dataByID)) {
+          $Counter = new Counter;
+          $Counter->logAction($dataByID['grp_name'], $grp_id, 0, 'group', '45', $this->user_id);
+      }
+
+      # ลบสิทธิ์
+      $this->db->where('usys_id', $grp_id);
+      $this->db->delete($this->prev_tbl);
+
+      # เพิ่มสิทธิ์ใหม่
+      foreach ($apps as $app_id) {
+
+          $this->db->insert(
+              $this->prev_tbl, ['usys_id' => $grp_id, 'app_id' => $app_id]
+          );
+      }
+  }
+
+  public function updatePermissionDynamic($apps, $grp_id)
+  {
+
+      # ลบสิทธิ์
+      $this->db->where('usys_id', $grp_id);
+      $this->db->delete($this->d_prev_tbl);
+
+      # เพิ่มสิทธิ์ใหม่
+      foreach ($apps as $app_id) {
+
+          $this->db->insert(
+              $this->d_prev_tbl, ['usys_id' => $grp_id, 'app_id' => $app_id]
+          );
+      }
+  }
+
+  public function getCount()
+  {
+      $this->fnc_setElementSearchFromSession();
+      $data = $this->db->get($this->group_tbl)->num_rows();
+      if (!empty($data) && $data > 0) {
+          return $data;
+      }
+      return false;
+  }
+
+  public function getPerPage()
+  {
+      return $this->per_page;
+  }
+
+  private function fnc_calPageOffset($page)
+  {
+      $offset = ($page * $this->per_page) - $this->per_page;
+      $this->db->limit($this->per_page, $offset);
+  }
+
+  private function fnc_setElementSearchFromSession()
+  {
+      $form_search_element = $this->session->userdata('form_search_element');
+
+      if ($form_search_element == null) {
+          return;
+      }
+      foreach ($this->s_element as $key => $value) {
+          if (isset($form_search_element['element'][$key]))
+              $this->s_element[$key] = $form_search_element['element'][$key];
+      }
+
+      $utext = trim($this->db->escape_str($this->s_element['utext']));
+      if ($utext != '') {
+          $this->db->like('grp_name', $utext);
+      }
+  }
+
+  public function getSElement()
+  {
+      return $this->s_element;
+  }
+
+  public function checkUser()
+  {
+      if ($this->input->post('grp_id') != '') {
+          $this->db->where('grp_id<>', $this->input->post('grp_id'));
+      }
+      $this->db->where('grp_name', $this->input->post('grp_name'));
+      $data = $this->db->get($this->group_tbl)->num_rows();
+      if ($data > 0) {
+
+          return FALSE;
+      }
+      return TRUE;
+  }
+
+}
+
+/* End of file New_model.php */
+/* Location: ./application/models/New_model.php */

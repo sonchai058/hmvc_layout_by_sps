@@ -1,0 +1,126 @@
+<div class="main-container">
+  <div class="pd-ltr-20 xs-pd-20-10">
+    <div class="pd-20 pb-40 card-box mb-30">
+  		<div class="clearfix mb-20">
+          <div class="row">
+            <div class="col-4">
+              <h4 class="text-blue h4">จัดการข้อมูลเจ้าหน้าที่</h4>
+            </div>
+
+            <div class="col-8">
+              <div class="pull-right">
+                <nav aria-label="breadcrumb" role="navigation">
+      						<ol class="breadcrumb pd-0">
+      							<li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+      							<li class="breadcrumb-item active" aria-current="page">จัดการเจ้าหน้าที่</li>
+      						</ol>
+      					</nav>
+              </div>
+            </div>
+          </div>
+  		</div>
+
+
+      <div class="header-leftSBS">
+        <div class="header-search">
+          <form method="post"
+                action="<?= $action_link ?>">
+
+
+            <div class="form-group mb-0 w-60 pull-left ml-4">
+              <i class="dw dw-search2 search-icon mx-auto"></i>
+              <input type="text" class="form-control search-input " name="form_search_element[utext]" placeholder="ค้นหา" value="<?= $form_search_element['utext'] ?>">
+            </div>
+
+            <div class="form-group row">
+              <label class="col-sm-12 col-md-3 my-auto text-right">กลุ่มผู้ใช้</label>
+              <div class="col-sm-12 col-md-9">
+                <select id="grp_id" name="form_search_element[grp_id]" class="form-control w-90">
+                    <option value="all">-- ทั้งหมด --</option>
+                    <?php if (!empty($getGroupFilter)): ?>
+                        <?php foreach ($getGroupFilter as $key => $value): ?>
+                            <option value="<?= $key ?>" <?= $form_search_element['grp_id'] == $key ? 'selected' : '' ?>><?= $value ?></option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+							</div>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <div class="form-group mt-3 text-center">
+                <button type="submit" class="btn btn-primary mr-1">
+                    <i class="fa fa-search"></i> ค้นหา
+                </button>
+                <button type="submit" name="reset" value="clear" class="btn btn-danger">
+                    <i class="fa fa-refresh"></i> ล้างค่า
+                </button>
+            </div>
+          </form>
+        </div>
+      </div>
+  		<div class="table-responsive">
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th class="text-center w-10" scope="col">ลำดับ</th>
+							<th class="text-center w-25" scope="col">ชื่อผู้ใช้</th>
+              <th class="text-center w-15" scope="col">กลุ่ม</th>
+							<th class="text-center w-10" scope="col">สถานะ</th>
+							<th class="text-center w-40" scope="col">
+                <a class="btn btn-sm btn-success" href="<?= $action_link . 'form/' ?>" title="เพิ่มผู้ใช้">
+                    <i class="fa fa-plus"></i> เพิ่มผู้ใช้
+                </a>
+              </th>
+						</tr>
+					</thead>
+					<tbody>
+            <?php if(!empty($getUser)): foreach ($getUser as $key => $value): ?>
+              <tr>
+								<th class="text-center" scope="row"><?= ++$this->start_no ?></th>
+								<td><?= $value['prename'] . $value['fname'] . ' ' . $value['lname'] ?></td>
+                <td><?= $value['grp_name'] ?></td>
+								<td class="text-center">
+                  <?php if ($value['status'] == 0): ?>
+                      ระงับการใช้งาน
+                  <?php else: ?>
+                      ปกติ
+                  <?php endif; ?>
+                </td>
+								<td class="text-center">
+                  <a href="<?= $action_link . 'permission/' . $value['id'] ?>"
+                     class="table-link btn btn-sm btn-primary" title="กำหนดสิทธิ">
+                      <i class="fa fa-gear"></i> กำหนดสิทธิ
+                  </a>
+
+                  <a href="<?= $action_link . 'form/' . $value['id'] ?>"
+                     class="table-link btn btn-sm btn-warning" title="แก้ไข">
+                      <i class="fa fa-edit"></i> แก้ไข
+                  </a>
+
+                  <a href="<?= $action_link . 'delete/' . $value['id'] ?>"
+                     class="table-link btn btn-sm btn-danger" title="ลบ"
+                     onclick="return confirm('คุณต้องการลบสมาชิก')">
+                      <i class="fa fa-trash-o"></i> ลบ
+                  </a>
+                </td>
+							</tr>
+            <?php endforeach; else:?>
+              <tr class="text-center">
+                  <td colspan="5"><strong>- ไม่พบข้อมูล -</strong></td>
+              </tr>
+            <?php endif;?>
+
+					</tbody>
+				</table>
+			</div>
+
+
+      <div class="pagination">
+          <div class="paging">
+              <?php echo $this->my_pagination; ?>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>

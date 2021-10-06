@@ -1,0 +1,66 @@
+<?php
+
+/**
+ * Created by PhpStorm.
+ * User: Sarawut
+ * Date: 2/15/17 AD
+ * Time: 12:59 PM
+ */
+class Permission_model extends CI_Model
+{
+
+    private $grop_tbl = 'um_app_group';
+    private $app_tbl = 'um_app_info';
+
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    private function fnc_getSubMenu($parent_id)
+    {
+        $this->db->select('app_id, app_name, class, parent_id');
+        $this->db->where('show_menu', 1);
+        $this->db->where('parent_id', $parent_id);
+        $this->db->order_by('menu_order', 'asc');
+
+        $rs = $this->db->get($this->app_tbl)->result_array();
+        return $rs;
+    }
+
+
+    private function fnc_getMenu($grp_id)
+    {
+        $this->db->select('app_id, app_name, class, parent_id');
+        $this->db->where('grp_id', $grp_id);
+        $this->db->where('parent_id', 0);
+        $this->db->where('show_menu', 1);
+        $this->db->order_by('parent_id asc, menu_order asc');
+        $rs = $this->db->get($this->app_tbl)->result_array();
+        $i = 0;
+        $getData = [];
+        $subMenu = [];
+        foreach ($rs as $key => $value) {
+            $value['submenu'] = $this->fnc_getSubMenu($value['app_id']);
+            if(!empty($value['submenu'])) {
+              $subMenu[] = $value;
+            } else {
+              $getData[] = $value;
+            }
+        }
+
+        return array_merge($getData, $subMenu);
+    }
+
+    public function getApp()
+    {
+        $this->db->order_by('grp_id', 'asc');
+        $rs = $this->db->get($this->grop_tbl)->result_array();
+        foreach ($rs as $key => $value) {
+            $rs[$key]['menu'] = $this->fnc_getMenu($value['grp_id']);
+        }
+
+        return $rs;
+    }
+
+}

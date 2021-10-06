@@ -1,0 +1,244 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class ManageResume_model extends CI_Model
+{
+    #เรียกตารางจากฐานข้อมูล
+
+    private $tbl = 'manage_resume';
+
+    ##Pagination
+    private $per_page = 50;
+
+    ## Search
+    private $s_element = array('stext' => FALSE, 'status' => 'all');
+
+    ## Match data
+    private $status = array('1' => 'เผยแพร่', '2' => 'ไม่เผยแพร่');
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->user_id = $this->session->cmu_web_session['id'];
+        
+        $this->path = './file_upload/manage_resume/';
+        $this->path_upload = 'file_upload/manage_resume/';
+
+        if (!file_exists($this->path)) {
+            $oldmask = umask(0);
+            mkdir($this->path, 0777);
+            umask($oldmask);
+        }
+    }
+
+    public function getData($page)
+    {
+        $this->fnc_calPageOffset($page);
+        $this->fnc_setElementSearchFromSession();
+        $this->db->order_by('s_order', 'asc');
+        $this->db->order_by('time_create', 'desc');
+        $data = $this->db->get($this->tbl)->result_array();
+        if (!empty($data)) {
+            $getData = [];
+            foreach ($data as $key => $value) {
+                $value['show_status'] = !empty($value['show_status']) ? $value['show_status'] : '-';
+                $getData[] = $value;
+            }
+            return $getData;
+        } else {
+            return [];
+        }
+
+    }
+
+    public function getCountData()
+    {
+        $this->fnc_setElementSearchFromSession();
+        return $this->db->count_all_results($this->tbl);
+    }
+
+    public function getForm($id)
+    {
+
+        if(!empty($id)) {
+            $this->db->where('id', $id);
+            $data = $this->db->get($this->tbl)->row_array();
+            if (!empty($data)) {
+                if (!empty($data['file_name']) && file_exists($this->path . $data['file_name'])) {
+                    $data['img'] = base_url() . $data['file_path'] . $data['file_name'];
+                } else {
+                    $data['img'] = null;
+                }
+                return $data;
+            }
+        }
+
+
+        $fields = $this->db->list_fields($this->tbl);
+        $getData = [];
+        foreach($fields as $key => $value) {
+            $getData[$value] = '';
+        }
+
+        return $getData;
+    }
+
+
+    public function getSelectData($id)
+    {
+        $this->db->where('id', $id);
+        $data = $this->db->get($this->tbl)->row_array();
+
+        if (!empty($data)) {
+            return $data;
+        }
+        return false;
+
+    }
+
+    public function selectNeweOrder()
+    {
+        $this->db->order_by('s_order', 'desc');
+        $this->db->select('s_order');
+        $last_no = $this->db->get($this->tbl)->row_array();
+        return ($last_no['s_order'] + 1);
+    }
+
+    public function insertData($id)
+    {
+        // $last_no = $this->selectNeweOrder();
+        $data = $this->input->post();        
+        if ($_FILES["image_resume"]["name"] != "") {
+            $ext = explode('.', $_FILES["image_resume"]["name"]);
+            $ext = end($ext);
+            $file_name = md5(date('Y-m-dh:i:s')) . '.' . $ext;
+            $full_name = $this->path . $file_name;
+            if (move_uploaded_file($_FILES["image_resume"]["tmp_name"], $full_name)) {
+                $data['file_path'] = $this->path_upload;
+                $data['file_name'] = $file_name;
+                $data['file_name_original'] = $_FILES["image_resume"]["name"];
+                $data['time_upload'] = date('Y-m-d H:i:s');
+                if(!empty($id)) {
+                    $delete_img = $this->fnc_getImg($id);
+                    if ($delete_img != '') {
+                        @unlink($delete_img['delete']);
+                    }
+                }
+            }
+        }
+        if(!empty($id)) {
+            $dataByID = $this->getSelectData($id);
+            if(!empty($dataByID)) {
+                $Counter = new Counter;
+                $Counter->logAction($dataByID['prename'].$dataByID['first_name'].' '.$dataByID['last_name'], $id, 0, 'resume', '84', $this->user_id);
+            }
+            
+            $this->db->where('id', $id);
+            $this->db->update($this->tbl, $data);
+        } else {
+            $time_create = date('Y-m-d h:i:s');
+            $data['time_create'] = date('Y-m-d h:i:s');
+            $data['s_order'] = 0;
+            $this->db->insert($this->tbl, $data);
+            $id = $this->db->insert_id();
+            $Counter = new Counter;
+            $Counter->logAction($data['prename'].$data['first_name'].' '.$data['last_name'], $id, 0, 'resume', '83', $this->user_id);
+        }
+    }
+
+
+    public function deleteData($id)
+    {
+        $dataByID = $this->getSelectData($id);
+        if(!empty($dataByID)) {
+            $Counter = new Counter;
+            $Counter->logAction($dataByID['prename'].$dataByID['first_name'].' '.$dataByID['last_name'], $id, 0, 'resume', '85', $this->user_id);
+        }
+        $this->db->where('id', $id);
+        $this->db->delete($this->tbl);
+
+    }
+
+//     ## Search
+
+    private function fnc_setElementSearchFromSession()
+    {
+        $form_search_element = $this->session->userdata('form_search_element');
+
+
+        if ($form_search_element == null) {
+            return;
+        }
+        foreach ($this->s_element as $key => $value) {
+            if (isset($form_search_element['element'][$key]))
+                $this->s_element[$key] = $form_search_element['element'][$key];
+        }
+
+        $stext = trim($this->db->escape_str($this->s_element['stext']));
+        $status = $this->s_element['status'];
+
+        if ($stext != '') {
+            $this->db->where("((CONCAT(REPLACE(prename,' ',''), REPLACE(first_name,' ',''), REPLACE(last_name, ' ','')) LIKE '%".str_replace(' ', '', $stext)."%' OR TRIM(position) LIKE '%".$stext."%') OR (CONCAT(REPLACE(prename_en,' ',''), REPLACE(first_name_en,' ',''), REPLACE(last_name_en, ' ','')) LIKE '%".str_replace(' ', '', $stext)."%' OR TRIM(position_en) LIKE '%".$stext."%'))");
+            // $this->db->where("(title LIKE '%{$stext}%')");
+
+        }
+
+        if ($status != 'all') {
+            $this->db->where('show_status', $status);
+        }
+    }
+
+    public function getSElement()
+    {
+        return $this->s_element;
+    }
+
+    public function saveOrder($id, $order)
+    {
+        $data = array(
+            's_order' => $order
+        );
+
+        $this->db->where('id', $id);
+        $this->db->update($this->tbl, $data);
+
+
+        return 'เรียงลำดับข้อมูลแล้ว';
+    }
+
+//     ##Pagination
+
+    public function getPerPage()
+    {
+        return $this->per_page;
+    }
+
+    private function fnc_calPageOffset($page)
+    {
+        $offset = ($page * $this->per_page) - $this->per_page;
+
+        $this->db->limit($this->per_page, $offset);
+    }
+
+    private function fnc_getImg($id)
+    {
+        // $this->db->limit(1);
+        // $this->db->select('*');
+        $this->db->where('id', $id);
+        $data = $this->db->get($this->tbl)->result_array();
+
+        $getData = NULL;
+        if (!empty($data)) {
+            $getData = reset($data);
+            $getData['delete'] = $this->path . $getData['file_name'];
+
+        }
+
+        return $getData;
+    }
+}
+
+/* End of file New_model.php */
+/* Location: ./application/models/New_model.php */

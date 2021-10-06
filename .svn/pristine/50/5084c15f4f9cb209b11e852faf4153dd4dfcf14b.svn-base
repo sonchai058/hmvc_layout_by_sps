@@ -1,0 +1,46 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class ManageBgSearch extends MDL_Controller {
+
+	public function __construct()
+    {
+        parent::__construct();
+        $this->path_upload = './file_upload/';
+    }
+
+	public function index()
+	{
+		$data['title'] = 'Background Search';
+        $data['title_sub'] = 'Background Search';
+        $bg_id = $this->model->getBgId();
+        $data['title_page'] = $bg_id != FALSE ? 'แก้ไข Background Search' : 'เพิ่ม Background Search';
+		$data['getForm'] = $this->model->getForm($bg_id);
+		// _print_r($data['getForm']);
+		parent::view('manage_bg_search/form', $data);
+	}
+
+	public function insert($id = FALSE)
+    {
+        $data = $this->model->insertBgSearch($id);
+        if (!empty($data)) {
+            if ($id != FALSE) {
+                echo "<SCRIPT LANGUAGE='JavaScript'>
+                          window.alert('ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด')
+                          window.location.href='" . base_url() . 'news/ManageBgSearch/index/' . $id . "'
+                          </SCRIPT>";
+            } else {
+                echo "<SCRIPT LANGUAGE='JavaScript'>
+                          window.alert('ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด')
+                          window.location.href='" . base_url() . 'news/ManageBgSearch/index' . "'
+                          </SCRIPT>";
+            }
+        } else {
+            redirect(base_url() . 'management/ManageBgSearch');
+        }
+    }
+
+}
+
+/* End of file ManageBgSearch.php */
+/* Location: ./application/modules/management/controllers/ManageBgSearch.php */

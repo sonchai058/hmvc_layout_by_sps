@@ -1,0 +1,84 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class CategoryNews extends MDL_Controller
+{
+
+    public function __construct()
+    {
+        parent::__construct();
+        ## Search
+        parent::setSearchSession();
+        $this->path_upload = './file_upload/';
+    }
+
+    #หน้าหลัก
+
+    public function index($page = 1)
+    {
+        $data['title'] = 'จัดการข้อมูลหมวดหมู่ข่าว';
+        $data['title_page'] = 'จัดการข้อมูลหมวดหมู่ข่าว';
+
+        // $data['category'] = $this->model->getCategory();
+        // $data['status'] = $this->model->getStatus();
+
+        ##Pagination
+        $num = $this->model->getCategoryCount();
+        $per_page = $this->model->getPerPage();
+        parent::pagination($page, $num, $per_page, 4);
+        $data['list'] = $this->model->getCategoryNews($page);
+        $data['form_search_element'] = $this->model->getSElement();
+        // _print_r($data['list']);
+        parent::view('category_news/index', $data);
+    }
+
+    #ดึงค่ามาโชว์ในฟอร์ม เพิ่ม-แก้ไข
+
+    public function form($category_id = FALSE)
+    {
+        if ($category_id != FALSE) {
+            $data['title'] = 'แก้ไขหมวดหมู่ข่าว';
+            $data['title_sub'] = 'แก้ไขหมวดหมู่ข่าว';
+        }else{
+            $data['title'] = 'เพิ่มหมวดหมู่ข่าว';
+            $data['title_sub'] = 'เพิ่มหมวดหมู่ข่าว';
+        }
+        $data['title_page'] = $category_id != FALSE ? 'แก้ไขหมวดหมู่ข่าว' : 'เพิ่มหมวดหมู่ข่าว';
+        $data['getForm'] = $this->model->getForm($category_id);
+        // _print_r($data['getForm']);
+        parent::view('category_news/form', $data);
+    }
+
+    #เพิ่มข้อมูลและแก้ไขข้อมูล
+
+    public function insert($category_id = FALSE)
+    {
+        $this->model->insert($category_id);
+        redirect(base_url() . 'management/CategoryNews');
+    }
+
+    #ลบข้อมูล
+
+    public function delete($category_id = FALSE)
+    {
+        $this->model->delete($category_id);
+        redirect(base_url() . 'management/CategoryNews');
+    }
+
+    public function updateOrder($category_id = false, $order = false)
+    {
+
+        if ($category_id == false || $order == false) {
+            $result = 'ไม่สามารถเรียงลำดับข้อมูลได้';
+        } else {
+            $result = $this->model->saveOrder($category_id, $order);
+        }
+
+        echo $result;
+    }
+}
+
+/* End of file News.php */
+/* Location: ./application/controllers/News.php */

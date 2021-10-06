@@ -1,0 +1,105 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+require_once 'phpmailer/phpmailer.php';
+
+class SbsMail
+{
+	protected $ci;
+
+	public function __construct()
+	{
+        $this->ci =& get_instance();
+
+        $this->default = array(
+                                'SMTPSecure' =>'ssl' , 
+                                'Host' =>'smtp.gmail.com' , 
+                                'Port' =>'465' , 
+                                'Username' =>'thaitimebank.mailer@gmail.com' , 
+                                'Password' =>'thaitimebank2020' , 
+                                'FromName' =>'noreply: ธนาคารเวลา :: '
+                         );
+	}
+
+
+    public function getDataConfig()
+    {
+        $data  = $this->default;
+        $tbl = 'config_mail';
+        $this->ci->load->dbutil();
+        if ($this->ci->dbutil->database_exists('coj_library_info') && $this->ci->db->table_exists($tbl) ){
+
+            $rs = $this->ci->db->get($tbl)->result_array();
+            $data = array();
+            if(!empty($rs)){
+                foreach ($rs as $key => $value) {
+                    $data[$value['name']] = $value['data'];
+                }
+            }
+        }
+        
+        return $data;
+    }
+
+function sendMail($to, $subject, $body)
+{
+    $mail = new PHPMailer();
+    if(!$mail)
+        exit;
+
+    $nosend_subject = "Server Report INSTITUTE OF PHYSICAL EDUCATION";
+    if(trim(strtolower(substr($subject, 0, strlen($nosend_subject)))) == trim(strtolower($nosend_subject))) {
+        exit; //do nothing
+    }
+
+
+    $config = $this->getDataConfig();
+
+
+
+    $mail->CharSet = 'UTF-8';
+    $mail->IsSMTP(); // telling the class to use SMTP
+    //$mail->Host       = "mail.yourdomain.com"; // SMTP server
+    $mail->SMTPDebug = 0;                     // enables SMTP debug information (for testing)
+    // 1 = errors and messages
+    // 2 = messages only
+    $mail->SMTPAuth = true;                  // enable SMTP authentication
+
+    $mail->SMTPSecure = $config['SMTPSecure'];                 // sets the prefix to the servier
+    $mail->Host = $config['Host'];      // sets GMAIL as the SMTP server
+    $mail->Port = $config['Port'];                   // set the SMTP port for the GMAIL server
+    $mail->Username = $config['Username'];  // GMAIL username
+    $mail->Password = $config['Password'];            // GMAIL password
+    $mail->FromName = $config['FromName'];
+
+
+    // $mail->SMTPSecure = "ssl";                 // sets the prefix to the servier
+    // $mail->Host = "smtp.gmail.com";      // sets GMAIL as the SMTP server
+    // $mail->Port = 465;                   // set the SMTP port for the GMAIL server
+    // $mail->Username = "simplybright.mailer@gmail.com";  // GMAIL username
+    // $mail->Password = "sbsmail##";            // GMAIL password
+    // $mail->FromName = "noreply::  ";
+
+    if(strpos($to, ';') > 0) {
+        $emails = explode(';', $to);
+        foreach($emails as $xmail) {
+            $mail->AddAddress($xmail, $xmail);
+        }
+    } else {
+        $mail->AddAddress($to, $to);
+    }
+
+    $mail->Subject = $subject;
+    $mail->MsgHTML($body);
+    if(!$mail->Send()) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+
+}
+
+/* End of file SbsMail.php */
+/* Location: ./application/libraries/SbsMail.php */

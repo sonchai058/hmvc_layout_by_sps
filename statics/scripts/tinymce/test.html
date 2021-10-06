@@ -1,0 +1,22 @@
+<!-- Place inside the <head> of your HTML -->
+<script type="text/javascript" src="tinymce.min.js"></script>
+<script type="text/javascript">
+tinymce.init({
+    selector: ".textarea",
+	width:450,
+	height:200,
+	 theme: "modern",
+	 plugins: [
+        "searchreplace code ",
+    ],
+	  toolbar: "insertfile undo redo | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent"
+ });
+</script>
+<style>
+	.textarea{
+		margin:10px auto;
+	}
+</style>
+<!-- Place this in the body of the page content -->
+    <textarea class="textarea"></textarea>
+    <textarea class="textarea"></textarea>

@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html class="h-100">
+<?php
+define('LINK', base_url());
+define('ROOT_PATH', str_replace('index.php/', '', base_url()));
+define('LAYOUT_PATH', ROOT_PATH . 'layout/default/');
+define('STATIC_PATH', ROOT_PATH . 'statics/');
+define('TITLE_NAME', _po('Chiang Mai University Library'));
+?>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <?php if (strtolower($cur_class) == 'news' && strtolower($cur_method) == 'newsdetail' && !empty($news_detail)): ?>
+        <meta property="og:url" content="<?= LINK . 'News/NewsDetail/' . $news_detail['news_id'] ?>"/>
+        <meta property="og:title" content="<?= $news_detail['news_title'] ?>"/>
+        <meta property="og:image" content="<?= LINK . $news_detail['news_path'] . $news_detail['news_image'] ?>"/>
+        <meta property="og:description"
+              content="<?= mb_substr(strip_tags($news_detail['news_description']), 0, 300, "utf-8") ?>"/>
+
+        <meta property="twitter:title" content="<?= $news_detail['news_title'] ?>">
+        <meta property="twitter:description"
+              content="<?= mb_substr(strip_tags($news_detail['news_description']), 0, 300, "utf-8") ?>">
+        <meta property="twitter:image" content="<?= LINK . $news_detail['news_path'] . $news_detail['news_image'] ?>">
+        <meta property="twitter:url" content="<?= LINK . 'News/NewsDetail/' . $news_detail['news_id'] ?>">
+    <?php else : ?>
+        <?php if (strtolower($cur_class) == 'htmldetail' && strtolower($cur_method) == 'detail' && $this->uri->segment(4) == 'main' && !empty($html_detail)): ?>
+            <meta property="og:url" content="<?= LINK . 'HtmlDetail/Detail/' . $html_detail['menu_id'] . '/main' ?>"/>
+            <meta property="og:title" content="<?= $html_detail['menu_name'] ?>"/>
+            <meta property="og:description"
+                  content="<?= mb_substr(strip_tags($html_detail['description']), 0, 300, "utf-8") ?>"/>
+            <meta property="twitter:title" content="<?= $html_detail['menu_name'] ?>">
+            <meta property="twitter:description"
+                  content="<?= mb_substr(strip_tags($html_detail['description']), 0, 300, "utf-8") ?>">
+            <meta property="twitter:url"
+                  content="<?= LINK . 'HtmlDetail/Detail/' . $html_detail['menu_id'] . '/main' ?>">
+        <?php elseif (strtolower($cur_class) == 'htmldetail' && strtolower($cur_method) == 'detail' && $this->uri->segment(4) == 'top' && !empty($html_detail)): ?>
+            <meta property="og:url" content="<?= LINK . 'HtmlDetail/Detail/' . $html_detail['menu_id'] . '/top' ?>"/>
+            <meta property="og:title" content="<?= $html_detail['menu_name'] ?>"/>
+            <meta property="og:description"
+                  content="<?= mb_substr(strip_tags($html_detail['description']), 0, 300, "utf-8") ?>"/>
+            <meta property="twitter:title" content="<?= $html_detail['menu_name'] ?>">
+            <meta property="twitter:description"
+                  content="<?= mb_substr(strip_tags($html_detail['description']), 0, 300, "utf-8") ?>">
+            <meta property="twitter:url"
+                  content="<?= LINK . 'HtmlDetail/Detail/' . $html_detail['menu_id'] . '/top' ?>">
+        <?php else: ?>
+            <meta property="og:url" content="<?= LINK ?>"/>
+            <meta property="og:title" content="<?= TITLE_NAME ?>"/>
+            <meta property="og:description" content="<?= TITLE_NAME ?>"/>
+            <meta property="twitter:title" content="<?= TITLE_NAME ?>">
+            <meta property="twitter:description" content="<?= TITLE_NAME ?>">
+            <meta property="twitter:url" content="<?= LINK ?>">
+        <?php endif; ?>
+        <meta property="twitter:image" content="<?= LAYOUT_PATH . 'images/CMU_WEB/Chiang_Mai_University_Logo.png' ?>">
+        <meta property="og:image" content="<?= LAYOUT_PATH . 'images/CMU_WEB/Chiang_Mai_University_Logo.png' ?>"/>
+    <?php endif; ?>
+    <meta property="fb:app_id" content="2808471862768946"/>
+    <meta property="og:type" content="article"/>
+    <meta name="twitter:card" content="summary">
+    <title><?= TITLE_NAME ?></title>
+    <meta name="description" content="<?= TITLE_NAME ?>">
+    <meta name="title"
+          content="Chiang Mai University Library สำนักหอสมุด มหาวิทยาลัยเชียงใหม่ | เป็นศูนย์บริการทรัพยากรการเรียนรู้ระดับแนวหน้า เพื่อสนับสนุนการเรียนการสอน และการเป็นมหาวิทยาลัยชั้นนำ ที่มุ่งเน้นการวิจัย">
+    <meta name="description"
+          content="Chiang Mai University Library สำนักหอสมุด มหาวิทยาลัยเชียงใหม่ | เป็นศูนย์บริการทรัพยากรการเรียนรู้ระดับแนวหน้า เพื่อสนับสนุนการเรียนการสอน และการเป็นมหาวิทยาลัยชั้นนำ ที่มุ่งเน้นการวิจัย">
+    <link rel="shortcut icon" href="<?= STATIC_PATH ?>images/cmul_favicon.gif" type="image/gif"/>
+
+    <script src="<?= STATIC_PATH ?>scripts/jquery-3.5.0.js"></script>
+
+    <script src="<?= STATIC_PATH ?>scripts/core.js"></script>
+    <script src="<?= STATIC_PATH ?>scripts/script.min.js"></script>
+
+    <link rel="stylesheet" href="<?= STATIC_PATH ?>scripts/jquery-ui/jquery-ui.min.css">
+    <script src="<?= STATIC_PATH ?>scripts/jquery-ui/jquery-ui.min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="<?= LAYOUT_PATH ?>styles/core.css">
+    <link rel="stylesheet" type="text/css" href="<?= LAYOUT_PATH ?>styles/icon-font.min.css">
+    <link rel="stylesheet" type="text/css" href="<?= LAYOUT_PATH ?>styles/style.css">
+
+    <script src="<?= STATIC_PATH ?>scripts/angularjs/angular.min.js"></script>
+    <script src="<?= STATIC_PATH ?>scripts/angularjs/angular-sanitize.js"></script>
+    <script src="<?= STATIC_PATH ?>scripts/angularjs/angular-animate.js"></script>
+
+    <link href="<?= STATIC_PATH ?>scripts/calendar/packages/core/main.css" rel='stylesheet'/>
+    <link href="<?= STATIC_PATH ?>scripts/calendar/packages/daygrid/main.css" rel='stylesheet'/>
+    <script src="<?= STATIC_PATH ?>scripts/calendar/packages/core/main.js"></script>
+    <script src="<?= STATIC_PATH ?>scripts/calendar/packages/interaction/main.js"></script>
+    <script src="<?= STATIC_PATH ?>scripts/calendar/packages/daygrid/main.js"></script>
+    <script src="<?= STATIC_PATH ?>scripts/calendar/packages/core/locales/th.js"></script>
+
+    <link rel="stylesheet" href="<?= STATIC_PATH ?>scripts/OwlCarousel2/dist/assets/owl.carousel.css">
+    <link rel="stylesheet" href="<?= STATIC_PATH ?>scripts/OwlCarousel2/dist/assets/owl.theme.default.css">
+    <script src="<?= STATIC_PATH ?>scripts/OwlCarousel2/dist/owl.carousel.js"></script>
+
+    <link rel="stylesheet" href="<?= STATIC_PATH ?>scripts/select2/css/select2.min.css">
+    <script src="<?= STATIC_PATH ?>scripts/select2/js/select2.min.js"></script>
+    <script src="<?= STATIC_PATH ?>scripts/select2/js/i18n/th.js"></script>
+
+    <link href="<?= LAYOUT_PATH ?>fonts/fontawesome5.15/css/all.css" rel="stylesheet">
+
+    <link href="<?= STATIC_PATH ?>scripts/calendar/packages/core/main.css" rel='stylesheet'/>
+    <link href="<?= STATIC_PATH ?>scripts/calendar/packages/daygrid/main.css" rel='stylesheet'/>
+    <script src="<?= STATIC_PATH ?>scripts/calendar/packages/core/main.js"></script>
+    <script src="<?= STATIC_PATH ?>scripts/calendar/packages/interaction/main.js"></script>
+    <script src="<?= STATIC_PATH ?>scripts/calendar/packages/daygrid/main.js"></script>
+    <script src="<?= STATIC_PATH ?>scripts/calendar/packages/core/locales/th.js"></script>
+
+    <link href="<?= STATIC_PATH ?>scripts/fancybox/dist/jquery.fancybox.min.css" rel='stylesheet'/>
+    <script src="<?= STATIC_PATH ?>scripts/fancybox/dist/jquery.fancybox.min.js"></script>
+
+
+    <!-- datepicker -->
+    <script src="<?= STATIC_PATH ?>scripts/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
+    <script src="<?= STATIC_PATH ?>scripts/bootstrap-datepicker/js/bootstrap-datepicker-thai.js"></script>
+    <script src="<?= STATIC_PATH ?>scripts/bootstrap-datepicker/js/locales/bootstrap-datepicker.th.js"></script>
+    <link href="<?= STATIC_PATH ?>scripts/bootstrap-datepicker/dist/css/bootstrap-datepicker.css" rel='stylesheet'/>
+
+    <!-- DATETIMEPICKER -->
+    <link rel="stylesheet" href="<?= STATIC_PATH ?>scripts/datetimepicker/jquery.datetimepicker.css">
+    <script src="<?= STATIC_PATH ?>scripts/datetimepicker/build/jquery.datetimepicker.full.js"></script>
+
+    <!-- asColorPicker -->
+    <link rel="stylesheet" type="text/css" href="<?= STATIC_PATH ?>plugins/jquery-asColorPicker/dist/css/asColorPicker.css">
+    <script src="<?= STATIC_PATH ?>plugins/jquery-asColor/dist/jquery-asColor.js"></script>
+    <script src="<?= STATIC_PATH ?>plugins/jquery-asGradient/dist/jquery-asGradient.js"></script>
+    <script src="<?= STATIC_PATH ?>plugins/jquery-asColorPicker/jquery-asColorPicker.js"></script>
+    
+    <link rel="stylesheet" href="<?= LAYOUT_PATH ?>styles/aos.css">
+    <script src="<?= STATIC_PATH ?>scripts/aos/aos.js"></script>
+
+    <script src="<?= STATIC_PATH ?>scripts/paginationMagic.js"></script>
+
+    <link rel="stylesheet" href="<?= LAYOUT_PATH ?>styles/mainStyle.css">
+
+    <link rel="stylesheet" href="<?= STATIC_PATH ?>styles/animate.css">
+
+    <script src="<?= STATIC_PATH ?>plugins/cookie-consent-bar-message/src/jquery.cookieMessage.js"></script>
+</head>
+
+<body link="<?= LINK ?>" class="d-flex flex-column h-100">
+<main>
+    <div class="blockBackgroup <?= (!empty($_GET['themeWhite']) ? 'blockBackgroupWhite' : '') ?>"></div>
+    <div class="bgBarHeader">
+        <div class="container ">
+
+            <nav class="navbar navbar-expand-lg navbarSbs">
+                <a class="navbar-brand" href="<?= LINK ?>">
+                    <img src="<?= LAYOUT_PATH . 'images/CMU_WEB/logo.png' ?>" class="logoWeb" alt="logoWeb">
+                </a>
+
+                <div class="navbar-collapse collapse show mt-2 mt-lg-0 mt-md-0 mt-sm-0">
+                    <ul class="navbar-nav ml-auto dp-inline">
+                        <?php if (!empty($top_menu)): ?>
+                            <?php foreach ($top_menu as $key => $value): ?>
+                                <li class="nav-item dp-inline">
+                                    <?php if ($value['type_menu'] == 1 && !empty($value['description'])): ?>
+                                        <a href="<?= base_url() . 'HtmlDetail/Detail/' . $value['menu_id'] . '/top' ?>"
+                                           class="main-menu-custom">
+                                            <?= $value['menu_name'] ?>
+                                        </a>
+                                    <?php elseif ($value['type_menu'] == 2 && !empty($value['menu_link'])): ?>
+                                        <a onclick="InsertCounterPageType('html_detail_top', <?= $value['menu_id']?>)" href="<?= $value['menu_link'] ?>" target="_blank" class="main-menu-custom">
+                                            <?= $value['menu_name'] ?>
+                                        </a>
+                                    <?php elseif ($value['type_menu'] == 3): ?>
+                                        <a href="<?= base_url() . $value['url_module'] ?>" class="main-menu-custom">
+                                            <?= $value['menu_name'] ?>
+                                        </a>
+                                    <?php else: ?>
+                                        <a class="cursor-default main-menu-custom">
+                                            <?= $value['menu_name'] ?>
+                                        </a>
+                                    <?php endif ?>
+                                </li>
+                            <?php endforeach ?>
+                        <?php endif ?>
+                        <li class="nav-item dp-inline float-right mt-1 mt-lg-0 mt-md-0 mt-sm-0 mt-block-option">
+                            <div class="row ml-auto mt-top-tablet">
+                                <div class="blockFontSize">
+                                    <a class="aLanguage"
+                                       onclick="changeFontSize(0)"><?= $val_lang == 'en' ? 'A' : 'ก' ?></a>
+                                    <a class="aLanguage"
+                                       onclick="changeFontSize(2)"><?= $val_lang == 'en' ? 'A' : 'ก' ?></a>
+                                    <a class="aLanguage"
+                                       onclick="changeFontSize(4)"><?= $val_lang == 'en' ? 'A' : 'ก' ?></a>
+                                </div>
+                                <div class="blockLanguage">
+                                    <a class="aLanguage <?= (empty($this->session->LANGUAGE) || (!empty($this->session->LANGUAGE) && $this->session->LANGUAGE == 'TH') ? 'activeLanguage' : '') ?> "
+                                       href="<?= LINK . 'Language/th' ?>">TH</a>
+                                    <a class="aLanguage <?= (!empty($this->session->LANGUAGE) && $this->session->LANGUAGE == 'EN' ? 'activeLanguage' : '') ?>"
+                                       href="<?= LINK . 'Language/en' ?>">EN</a>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <nav class="navbar navbar-expand-lg navbarSbsBottom" commentSBS="เมนูหลัก">
+                <button class="navbar-toggler custom-toggler" type="button" data-toggle="collapse"
+                        data-target="#navbarSbsBottom" aria-controls="navbarSbsBottom" aria-expanded="false"
+                        aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse navbar-collapseSbs" id="navbarSbsBottom">
+                    <ul class="navbar-nav">
+                        <?php if (!empty($main_menu)): ?>
+                            <?php foreach ($main_menu as $key => $value): ?>
+                                <?php if (!empty($value['sub_menu'])): ?>
+                                    <li class="nav-item dropdown <?= (!empty($value['sub_menu']['check_unit']) ? 'mega-dropdown' : '') ?>">
+                                        <?php if ($value['type_menu'] == 1 && !empty($value['description'])): ?>
+                                            <a class="nav-link dropdown-toggle main-menu-custom"
+                                               href="<?= base_url() . 'HtmlDetail/Detail/' . $value['menu_id'] . '/main' ?>"
+                                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <?= $value['menu_name'] ?>
+                                            </a>
+                                        <?php elseif ($value['type_menu'] == 2 && !empty($value['menu_link'])): ?>
+                                            <a class="nav-link dropdown-toggle main-menu-custom"
+                                               href="<?= $value['menu_link'] ?>" target="_blank" aria-haspopup="true"
+                                               aria-expanded="false" onclick="InsertCounterPageType('html_detail', <?= $value['menu_id'] ?>)">
+                                                <?= $value['menu_name'] ?>
+                                            </a>
+                                        <?php elseif ($value['type_menu'] == 3): ?>
+                                            <a class="nav-link dropdown-toggle main-menu-custom"
+                                               href="<?= base_url() . $value['url_module'] ?>" aria-haspopup="true"
+                                               aria-expanded="false">
+                                                <?= $value['menu_name'] ?>
+                                            </a>
+                                        <?php else: ?>
+                                            <a class="nav-link dropdown-toggle main-menu-custom" href="#"
+                                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <?= $value['menu_name'] ?>
+                                            </a>
+                                        <?php endif ?>
+                                        <?php if ($value['sub_menu']['count_sub'] == 3): ?>
+                                            <?php $countSub1 = count($value['sub_menu'][0]['unit_menu']) ?>
+                                            <?php $countSub2 = count($value['sub_menu'][1]['unit_menu']) ?>
+                                            <?php $countSub3 = count($value['sub_menu'][2]['unit_menu']) ?>
+                                            <?php if (($countSub2 + $countSub3) < $countSub1): ?>
+                                                <div class="dropdown-menu animated animate__fadeInUp b-none pt-0 special-menu"
+                                                     commentSBS="unitmenu ที่ 2 + 3 น้อยกว่าอันที่ 1">
+                                                    <div class="row" commentSBS="sub">
+                                                        <?php if (!empty($value['sub_menu'])): ?>
+                                                            <?php foreach ($value['sub_menu'] as $k0Sub => $v0Sub): ?>
+                                                                <?php if (is_numeric($k0Sub)) : ?>
+                                                                    <?php if ($k0Sub == 0 || $k0Sub == 1): ?>
+                                                                        <div  class="col-lg-6 col-md-6">
+                                                                    <?php endif ?>
+                                                                    <ul class="list-style-nav">
+                                                                        <?php if ($v0Sub['type_menu'] == 1 && !empty($v0Sub['description'])): ?>
+                                                                            <li>
+                                                                                <h6>
+                                                                                    <a href="<?= base_url() . 'HtmlDetail/Detail/' . $v0Sub['menu_id'] . '/main' ?>">
+                                                                                        <?= $v0Sub['menu_name'] ?>
+                                                                                    </a>
+                                                                                </h6>
+                                                                            </li>
+                                                                        <?php elseif ($v0Sub['type_menu'] == 2 && !empty($v0Sub['menu_link'])): ?>
+                                                                            <li>
+                                                                                <h6>
+                                                                                    <a href="<?= $v0Sub['menu_link'] ?>"
+                                                                                       target="_blank" onclick="InsertCounterPageType('html_detail', <?= $v0Sub['menu_id']?>)">
+                                                                                        <?= $v0Sub['menu_name'] ?>
+                                                                                    </a>
+                                                                                </h6>
+                                                                            </li>
+                                                                        <?php elseif ($v0Sub['type_menu'] == 3): ?>
+                                                                            <li>
+                                                                                <h6>
+                                                                                    <a href="<?= base_url() . $v0Sub['url_module'] ?>">
+                                                                                        <?= $v0Sub['menu_name'] ?>
+                                                                                    </a>
+                                                                                </h6>
+                                                                            </li>
+                                                                        <?php else: ?>
+                                                                            <li>
+                                                                                <h6>
+                                                                                    <a href="#" class="Unlink">
+                                                                                        <?= $v0Sub['menu_name'] ?>
+                                                                                    </a>
+                                                                                </h6>
+                                                                            </li>
+                                                                        <?php endif ?>
+                                                                        <?php if (!empty($v0Sub['unit_menu'])): ?>
+                                                                            <?php foreach ($v0Sub['unit_menu'] as $kUnit => $vUnit): ?>
+                                                                                <?php if ($vUnit['type_menu'] == 1 && !empty($vUnit['description'])): ?>
+                                                                                    <li>
+                                                                                        <a class="unit-menu"
+                                                                                           href="<?= base_url() . 'HtmlDetail/Detail/' . $vUnit['menu_id'] . '/main' ?>"><?= $vUnit['menu_name'] ?></a>
+                                                                                    </li>
+                                                                                <?php elseif ($vUnit['type_menu'] == 2 && !empty($vUnit['menu_link'])): ?>
+                                                                                    <li>
+                                                                                        <a class="unit-menu"
+                                                                                           href="<?= $vUnit['menu_link'] ?>"
+                                                                                           target="_blank" onclick="InsertCounterPageType('html_detail', <?= $vUnit['menu_id']?>)"><?= $vUnit['menu_name'] ?></a>
+                                                                                    </li>
+                                                                                <?php elseif ($vUnit['type_menu'] == 3): ?>
+                                                                                    <li>
+                                                                                        <a class="unit-menu"
+                                                                                           href="<?= base_url() . $vUnit['url_module'] ?>"><?= $vUnit['menu_name'] ?></a>
+                                                                                    </li>
+                                                                                <?php else: ?>
+                                                                                    <li>
+                                                                                        <a class="unit-menu Unlink"
+                                                                                           href="#"><?= $vUnit['menu_name'] ?></a>
+                                                                                    </li>
+                                                                                <?php endif ?>
+                                                                            <?php endforeach ?>
+                                                                        <?php endif ?>
+                                                                    </ul>
+                                                                    <?php if ($k0Sub == 0 || $k0Sub == 2): ?>
+                                                                        </div>
+                                                                    <?php endif ?>
+                                                                <?php endif ?>
+                                                            <?php endforeach ?>
+                                                        <?php endif ?>
+                                                    </div>
+                                                </div>
+                                            <?php else: ?>
+                                                <?php if (!empty($value['sub_menu']['check_unit'])): ?>
+                                                    <div class="dropdown-menu animated animate__fadeInUp b-none pt-0"
+                                                         commentSBS="unitmenu ที่ 2 + 3 มากกว่าอันที่ 1 > ถ้ามีเมนูเลเวล 3 ให้มี div ครอบ">
+                                                        <div class="row">
+                                                            <?php if (!empty($value['sub_menu'])): ?>
+                                                                <?php foreach ($value['sub_menu'] as $kSub => $vSub): ?>
+                                                                    <?php if (is_numeric($kSub)) : ?>
+                                                                        <div class="col-lg-3 col-md-6" commentSBS="sub">
+                                                                            <ul class="list-style-nav">
+                                                                                <?php if ($vSub['type_menu'] == 1 && !empty($vSub['description'])): ?>
+                                                                                    <li>
+                                                                                        <h6>
+                                                                                            <a href="<?= base_url() . 'HtmlDetail/Detail/' . $vSub['menu_id'] . '/main' ?>">
+                                                                                                <?= $vSub['menu_name'] ?>
+                                                                                            </a>
+                                                                                        </h6>
+                                                                                    </li>
+                                                                                <?php elseif ($vSub['type_menu'] == 2 && !empty($vSub['menu_link'])): ?>
+                                                                                    <li>
+                                                                                        <h6>
+                                                                                            <a href="<?= $vSub['menu_link'] ?>"
+                                                                                               target="_blank" onclick="InsertCounterPageType('html_detail', <?= $vSub['menu_id']?>)">
+                                                                                                <?= $vSub['menu_name'] ?>
+                                                                                            </a>
+                                                                                        </h6>
+                                                                                    </li>
+                                                                                <?php elseif ($vSub['type_menu'] == 3): ?>
+                                                                                    <li>
+                                                                                        <h6>
+                                                                                            <a href="<?= base_url() . $vSub['url_module'] ?>">
+                                                                                                <?= $vSub['menu_name'] ?>
+                                                                                            </a>
+                                                                                        </h6>
+                                                                                    </li>
+                                                                                <?php else: ?>
+                                                                                    <li>
+                                                                                        <h6>
+                                                                                            <a href="#" class="Unlink">
+                                                                                                <?= $vSub['menu_name'] ?>
+                                                                                            </a>
+                                                                                        </h6>
+                                                                                    </li>
+                                                                                <?php endif ?>
+                                                                                <?php if (!empty($vSub['unit_menu'])): ?>
+                                                                                    <?php foreach ($vSub['unit_menu'] as $kUnit => $vUnit): ?>
+                                                                                        <?php if ($vUnit['type_menu'] == 1 && !empty($vUnit['description'])): ?>
+                                                                                            <li>
+                                                                                                <a class="unit-menu"
+                                                                                                   href="<?= base_url() . 'HtmlDetail/Detail/' . $vUnit['menu_id'] . '/main' ?>"><?= $vUnit['menu_name'] ?></a>
+                                                                                            </li>
+                                                                                        <?php elseif ($vUnit['type_menu'] == 2 && !empty($vUnit['menu_link'])): ?>
+                                                                                            <li>
+                                                                                                <a class="unit-menu"
+                                                                                                   href="<?= $vUnit['menu_link'] ?>"
+                                                                                                   target="_blank" onclick="InsertCounterPageType('html_detail', <?= $vUnit['menu_id']?>)"><?= $vUnit['menu_name'] ?></a>
+                                                                                            </li>
+                                                                                        <?php elseif ($vUnit['type_menu'] == 3): ?>
+                                                                                            <li>
+                                                                                                <a class="unit-menu"
+                                                                                                   href="<?= base_url() . $vUnit['url_module'] ?>"><?= $vUnit['menu_name'] ?></a>
+                                                                                            </li>
+                                                                                        <?php else: ?>
+                                                                                            <li>
+                                                                                                <a class="unit-menu Unlink"
+                                                                                                   href="#"><?= $vUnit['menu_name'] ?></a>
+                                                                                            </li>
+                                                                                        <?php endif ?>
+                                                                                    <?php endforeach ?>
+                                                                                <?php endif ?>
+                                                                            </ul>
+                                                                        </div>
+                                                                    <?php endif ?>
+                                                                <?php endforeach ?>
+                                                            <?php endif ?>
+                                                        </div>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <ul class="b-none dropdown-menu font-14 animated animate__fadeInUp"
+                                                        commentSBS="ถ้าไม่มีเมนูเลเวล 3 ให้ใช่ ul li ได้เลย">
+                                                        <?php if (!empty($value['sub_menu'])): ?>
+                                                            <?php foreach ($value['sub_menu'] as $kSub => $vSub): ?>
+                                                                <?php if (is_numeric($kSub)) : ?>
+                                                                    <?php if ($vSub['type_menu'] == 1 && !empty($vSub['description'])): ?>
+                                                                        <li>
+                                                                            <h6>
+                                                                                <a href="<?= base_url() . 'HtmlDetail/Detail/' . $vSub['menu_id'] . '/main' ?>"
+                                                                                   class="dropdown-item">
+                                                                                    <?= $vSub['menu_name'] ?>
+                                                                                </a>
+                                                                            </h6>
+                                                                        </li>
+                                                                    <?php elseif ($vSub['type_menu'] == 2 && !empty($vSub['menu_link'])): ?>
+                                                                        <li>
+                                                                            <h6>
+                                                                                <a href="<?= $vSub['menu_link'] ?>"
+                                                                                   target="_blank"
+                                                                                   class="dropdown-item" onclick="InsertCounterPageType('html_detail', <?= $vSub['menu_id']?>)">
+                                                                                    <?= $vSub['menu_name'] ?>
+                                                                                </a>
+                                                                            </h6>
+                                                                        </li>
+                                                                    <?php elseif ($vSub['type_menu'] == 3): ?>
+                                                                        <li>
+                                                                            <h6>
+                                                                                <a href="<?= base_url() . $vSub['url_module'] ?>"
+                                                                                   class="dropdown-item">
+                                                                                    <?= $vSub['menu_name'] ?>
+                                                                                </a>
+                                                                            </h6>
+                                                                        </li>
+                                                                    <?php else: ?>
+                                                                        <li>
+                                                                            <h6>
+                                                                                <a href="#"
+                                                                                   class="dropdown-item Unlink">
+                                                                                    <?= $vSub['menu_name'] ?>
+                                                                                </a>
+                                                                            </h6>
+                                                                        </li>
+                                                                    <?php endif ?>
+                                                                <?php endif ?>
+                                                            <?php endforeach ?>
+                                                        <?php endif ?>
+                                                    </ul>
+                                                <?php endif ?>
+                                            <?php endif ?>
+                                        <?php else: ?>
+                                            <?php if (!empty($value['sub_menu']['check_unit'])): ?>
+                                                <div class="dropdown-menu animated animate__fadeInUp b-none pt-0"
+                                                     commentSBS="Submenu > 3 => ถ้ามีเมนูเลเวล 3 ให้มี div ครอบ">
+                                                    <div class="row">
+                                                        <?php if (!empty($value['sub_menu'])): ?>
+                                                            <?php foreach ($value['sub_menu'] as $kSub => $vSub): ?>
+                                                                <?php if (is_numeric($kSub)) : ?>
+                                                                    <div class="col-lg-3 col-md-6" commentSBS="sub">
+                                                                        <ul class="list-style-nav">
+                                                                            <?php if ($vSub['type_menu'] == 1 && !empty($vSub['description'])): ?>
+                                                                                <li>
+                                                                                    <h6>
+                                                                                        <a href="<?= base_url() . 'HtmlDetail/Detail/' . $vSub['menu_id'] . '/main' ?>">
+                                                                                            <?= $vSub['menu_name'] ?>
+                                                                                        </a>
+                                                                                    </h6>
+                                                                                </li>
+                                                                            <?php elseif ($vSub['type_menu'] == 2 && !empty($vSub['menu_link'])): ?>
+                                                                                <li>
+                                                                                    <h6>
+                                                                                        <a href="<?= $vSub['menu_link'] ?>"
+                                                                                           target="_blank" onclick="InsertCounterPageType('html_detail', <?= $vSub['menu_id']?>)">
+                                                                                            <?= $vSub['menu_name'] ?>
+                                                                                        </a>
+                                                                                    </h6>
+                                                                                </li>
+                                                                            <?php elseif ($vSub['type_menu'] == 3): ?>
+                                                                                <li>
+                                                                                    <h6>
+                                                                                        <a href="<?= base_url() . $vSub['url_module'] ?>">
+                                                                                            <?= $vSub['menu_name'] ?>
+                                                                                        </a>
+                                                                                    </h6>
+                                                                                </li>
+                                                                            <?php else: ?>
+                                                                                <li>
+                                                                                    <h6>
+                                                                                        <a href="#" class="Unlink">
+                                                                                            <?= $vSub['menu_name'] ?>
+                                                                                        </a>
+                                                                                    </h6>
+                                                                                </li>
+                                                                            <?php endif ?>
+                                                                            <?php if (!empty($vSub['unit_menu'])): ?>
+                                                                                <?php foreach ($vSub['unit_menu'] as $kUnit => $vUnit): ?>
+                                                                                    <?php if ($vUnit['type_menu'] == 1 && !empty($vUnit['description'])): ?>
+                                                                                        <li>
+                                                                                            <a class="unit-menu"
+                                                                                               href="<?= base_url() . 'HtmlDetail/Detail/' . $vUnit['menu_id'] . '/main' ?>"><?= $vUnit['menu_name'] ?></a>
+                                                                                        </li>
+                                                                                    <?php elseif ($vUnit['type_menu'] == 2 && !empty($vUnit['menu_link'])): ?>
+                                                                                        <li>
+                                                                                            <a class="unit-menu"
+                                                                                               href="<?= $vUnit['menu_link'] ?>"
+                                                                                               target="_blank" onclick="InsertCounterPageType('html_detail', <?= $vUnit['menu_id']?>)"><?= $vUnit['menu_name'] ?></a>
+                                                                                        </li>
+                                                                                    <?php elseif ($vUnit['type_menu'] == 3): ?>
+                                                                                        <li>
+                                                                                            <a class="unit-menu"
+                                                                                               href="<?= base_url() . $vUnit['url_module'] ?>"><?= $vUnit['menu_name'] ?></a>
+                                                                                        </li>
+                                                                                    <?php else: ?>
+                                                                                        <li>
+                                                                                            <a class="unit-menu Unlink"
+                                                                                               href="#"><?= $vUnit['menu_name'] ?></a>
+                                                                                        </li>
+                                                                                    <?php endif ?>
+                                                                                <?php endforeach ?>
+                                                                            <?php endif ?>
+                                                                        </ul>
+                                                                    </div>
+                                                                <?php endif ?>
+                                                            <?php endforeach ?>
+                                                        <?php endif ?>
+                                                    </div>
+                                                </div>
+                                            <?php else: ?>
+                                                <ul class="b-none dropdown-menu font-14 animated animate__fadeInUp mt-lassthan-30"
+                                                    commentSBS="ถ้าไม่มีเมนูเลเวล 3 ให้ใช่ ul li ได้เลย">
+                                                    <?php if (!empty($value['sub_menu'])): ?>
+                                                        <?php foreach ($value['sub_menu'] as $kSub => $vSub): ?>
+                                                            <?php if (is_numeric($kSub)) : ?>
+                                                                <?php if ($vSub['type_menu'] == 1 && !empty($vSub['description'])): ?>
+                                                                    <li>
+                                                                        <h6>
+                                                                            <a href="<?= base_url() . 'HtmlDetail/Detail/' . $vSub['menu_id'] . '/main' ?>"
+                                                                               class="dropdown-item">
+                                                                                <?= $vSub['menu_name'] ?>
+                                                                            </a>
+                                                                        </h6>
+                                                                    </li>
+                                                                <?php elseif ($vSub['type_menu'] == 2 && !empty($vSub['menu_link'])): ?>
+                                                                    <li>
+                                                                        <h6>
+                                                                            <a href="<?= $vSub['menu_link'] ?>"
+                                                                               target="_blank" class="dropdown-item" onclick="InsertCounterPageType('html_detail', <?= $vSub['menu_id']?>)">
+                                                                                <?= $vSub['menu_name'] ?>
+                                                                            </a>
+                                                                        </h6>
+                                                                    </li>
+                                                                <?php elseif ($vSub['type_menu'] == 3): ?>
+                                                                    <li>
+                                                                        <h6>
+                                                                            <a href="<?= base_url() . $vSub['url_module'] ?>"
+                                                                               class="dropdown-item">
+                                                                                <?= $vSub['menu_name'] ?>
+                                                                            </a>
+                                                                        </h6>
+                                                                    </li>
+                                                                <?php else: ?>
+                                                                    <li>
+                                                                        <h6>
+                                                                            <a href="#" class="dropdown-item Unlink">
+                                                                                <?= $vSub['menu_name'] ?>
+                                                                            </a>
+                                                                        </h6>
+                                                                    </li>
+                                                                <?php endif ?>
+                                                            <?php endif ?>
+                                                        <?php endforeach ?>
+                                                    <?php endif ?>
+                                                </ul>
+                                            <?php endif ?>
+                                        <?php endif ?>
+
+                                    </li>
+                                <?php else: ?>
+                                    <li class="nav-item">
+                                        <?php if ($value['type_menu'] == 1 && !empty($value['description'])): ?>
+                                            <a class="nav-link"
+                                               href="<?= base_url() . 'HtmlDetail/Detail/' . $value['menu_id'] ?>">
+                                                <?= $value['menu_name'] ?>
+                                            </a>
+                                        <?php elseif ($value['type_menu'] == 2 && !empty($value['menu_link'])): ?>
+                                            <a class="nav-link" href="<?= $value['menu_link'] ?>" target="_blank" onclick="InsertCounterPageType('html_detail', <?= $value['menu_id']?>)">
+                                                <?= $value['menu_name'] ?>
+                                            </a>
+                                        <?php elseif ($value['type_menu'] == 3): ?>
+                                            <a class="nav-link" href="<?= base_url() . $value['url_module'] ?>">
+                                                <?= $value['menu_name'] ?>
+                                            </a>
+                                        <?php else: ?>
+                                            <a class="nav-link Unlink" href="#">
+                                                <?= $value['menu_name'] ?>
+                                            </a>
+                                        <?php endif ?>
+                                    </li>
+                                <?php endif ?>
+                            <?php endforeach ?>
+                        <?php endif ?>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    </div>

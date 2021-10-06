@@ -1,0 +1,144 @@
+<div class="main-container">
+    <div class="pd-ltr-20 xs-pd-20-10">
+        <div class="pd-20 pb-40 card-box mb-30">
+            <div class="clearfix mb-20">
+                <div class="row">
+                    <div class="col-6">
+                        <h4 class="text-blue h4"><?= $title_page ?></h4>
+                    </div>
+
+                    <div class="col-6">
+                        <div class="pull-right">
+                            <nav aria-label="breadcrumb" role="navigation">
+                                <ol class="breadcrumb pd-0">
+                                    <li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+                                    <li class="breadcrumb-item active" aria-current="page"><?= $title_page ?></li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="header-leftSBS">
+                <div class="header-search">
+                    <form method="post"
+                          action="<?= $action_link ?>">
+                        <div class="form-group mb-0 w-60 pull-left ml-4">
+                            <i class="dw dw-search2 search-icon mx-auto"></i>
+                            <input type="text" class="form-control search-input " name="form_search_element[stext]" placeholder="ค้นหา" value="<?= $form_search_element['stext'] ?>">
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-sm-12 col-md-4 my-auto text-right">สถานะ</label>
+                            <div class="col-sm-12 col-md-8">
+                                <select id="status" name="form_search_element[status]" class="form-control select_search">
+                                    <option value="all">-- ทั้งหมด --</option>
+                                    <option value="1" <?= $form_search_element['status'] == 1 ? 'selected' : ''?>>เผยแพร่</option>
+                                    <option value="2" <?= $form_search_element['status'] == 2 ? 'selected' : ''?>>ไม่เผยแพร่</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="clearfix"></div>
+
+                        <div class="form-group mt-3 text-center">
+                            <button type="submit" class="btn btn-primary mr-1">
+                                <i class="fa fa-search"></i> ค้นหา
+                            </button>
+                            <button type="submit" name="reset" value="clear" class="btn btn-danger">
+                                <i class="fa fa-refresh"></i> ล้างค่า
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table id="tableListData" class="table table-striped">
+                    <thead >
+                    <tr role="row" >
+                        <th class="text-center start_no">
+                            <span>ลำดับ</span>
+                        </th>
+                        <th class="text-center" style="width: 25%;">
+                            <span>รูปภาพเว็บไซต์ที่เกี่ยวข้อง</span>
+                        </th>
+                        <th class="text-center">
+                            <span>เว็บไซต์ที่เกี่ยวข้อง</span>
+                        </th>
+                        <th class="text-center" style="width: 10%;">
+                            <span>สถานะ</span>
+                        </th>
+                        <th class="text-center" style="width: 15%;">
+                            <span>วันที่สร้าง</span>
+                        </th>
+                        <th class="text-center" style="width: 25%">
+                            <a href="<?= $action_link.'form' ?>" title="เพิ่มเว็บไซต์ที่เกี่ยวข้อง">
+                                <button type="button" class="btn btn-success">
+                                    <i class="fa fa-plus"></i> เพิ่มเว็บไซต์ที่เกี่ยวข้อง
+                                </button>
+                            </a>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <?php if(!empty($list)): foreach($list as $key => $value): ?>
+                        <tr id="<?= $value['id'] ?>" order="<?= ++$this->start_no ?>" class="odd" role="row">
+                            <td class="text-center"><?= $this->start_no ?></td>
+                            <td class="text-center">
+                                <?=$value['image']?>
+                            </td>
+                            <td><?= $value['title']?></td>
+                            <td class="text-center"><?= $status[$value['show_status']] ?></td>
+                            <td class="text-center"><?= General::dayThai($value['time_create']) ?></td>
+                            <td class="text-center">
+                                <a href="<?= $action_link.'form/'.$value['id'] ?>" class="table-link " title="แก้ไข">
+                                    <button type="button" class="btn btn-warning">
+                                        <i class="fa fa-edit"></i> แก้ไข
+                                    </button>
+                                </a>
+                                <a href="<?=$action_link.'delete/'.$value['id']?>" class="table-link " title="ลบ" onclick="return confirm('คุณต้องการลบเว็บไซต์ที่เกี่ยวข้องนี้')">
+                                    <button type="button" class="btn btn-danger">
+                                        <i class="fa fa-trash-o"></i> ลบ
+                                    </button>
+                                </a>
+                            </td>
+                        </tr>
+                    <?php
+                    endforeach;
+                    else:
+                        ?>
+                        <tr class="odd text-center " role="row">
+                            <td colspan="6"><strong>- ไม่พบข้อมูล -</strong>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script language="javascript" type="text/javascript">
+    jQuery(document).ready(function ($) {
+        var count_col = $('#tableListData tbody tr.odd').attr('order');
+        $('#tableListData tbody').tableDnD({
+            onDrop: function (table, row)
+            {
+                var rows = table.rows;
+                for (var i = 0; i < rows.length; i++) {
+                    var id = rows[i].getAttribute('id');
+                    var order = ((parseInt(count_col) + parseInt(i)));
+                    $('tr[id=' + id + '] td:first').text(order);
+                    $('tr[id=' + id + ']').attr('order',order);
+                    var url = '<?= $action_link ?>updateOrder/' + id + '/' + order;
+                    $.get(url, function (data) {
+                    });
+                }
+            }
+        });
+    });
+</script>

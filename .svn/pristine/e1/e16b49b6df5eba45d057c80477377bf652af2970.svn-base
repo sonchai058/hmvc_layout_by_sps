@@ -1,0 +1,210 @@
+<?php
+
+/**
+ *
+ */
+class Login_model extends CI_model
+{
+    private $users_tbl = 'users';
+    private $session_data = 'cmu_web_session';
+    private $prev_tbl = 'um_app_priv';
+    private $prev_group_tbl = 'um_app_priv_group';
+
+    function __construct()
+    {
+        parent::__construct();
+        $this->load->library('session');
+
+    }
+
+    private function fnc_getPrivGroup($grp_id)
+    {
+        $this->db->select('app_id');
+        $this->db->where('usys_id', $grp_id);
+        $rs = $this->db->get($this->prev_group_tbl)->result_array();
+
+        $priv = [];
+        if(is_array($rs) && count($rs) > 0) {
+            $priv = array_column($rs, 'app_id');
+        }
+
+        return $priv;
+    }
+
+    private function fnc_getPrivUser($id)
+    {
+        $this->db->select('app_id');
+        $this->db->where('usys_id', $id);
+        $rs = $this->db->get($this->prev_tbl)->result_array();
+
+        $priv = [];
+        if(is_array($rs) && count($rs) > 0) {
+            $priv = array_column($rs, 'app_id');
+        }
+
+        return $priv;
+    }
+
+    private function fnc_getPriv($id, $grp_id)
+    {
+        $priv_group = $this->fnc_getPrivGroup($grp_id);
+        $priv_user = $this->fnc_getPrivUser($id);
+
+        $priv = array_merge($priv_group, $priv_user);
+        return array_unique($priv);
+    }
+
+    public function checkLogin()
+    {
+        $success = false;
+        $this->db->where('username', $this->input->post('username'));
+        $this->db->where('password', $this->input->post('password'));
+        $data = $this->db->get($this->users_tbl)->row_array();
+        $success['check'] = false;
+        if (!empty($data)) {
+          if($data['status'] == 1) {
+
+            $session = [];
+            foreach ($data as $key => $value) {
+                if ($key != 'password' && $key != 'username') {
+                    $session[$key] = $value;
+                }
+            }
+            $session['priv'] = $this->fnc_getPriv($data['id'], $data['grp_id']);
+            $success['check'] = 'true';
+            $this->session->set_userdata($this->session_data, $session);
+            $Counter = new Counter;
+            $Counter->logAction('เข้าสู่ระบบ', 0, 0, 'login', '1', $data['id']);
+          } else {
+              $success['check'] = 'Suspend';
+              $Counter = new Counter;
+              $Counter->logAction('เข้าสู่ระบบขณะถูกระงับ', 0, 0, 'login', '4', $data['id']);
+          }
+        } else {
+          $Counter = new Counter;
+          $Counter->logAction('เข้าสู่ระบบไม่สำเร็จ', 0, 0, 'login', '3', 0);
+        }
+
+
+        return $success;
+    }
+
+    
+
+    private function fnc_userExist($email = '', $username = '')
+    {
+
+        $this->db->where('TRIM(email)', trim($email));
+        $this->db->where('TRIM(username)', trim($username));
+        $data = $this->db->count_all_results($this->users_tbl);
+
+        return $data > 0 ? false : true;
+    }
+
+    private function fnc_getUserByEmail($username, $email)
+    {
+        $this->db->where('TRIM(username)', trim($username));
+        $this->db->where('TRIM(email)', trim($email));
+        return $this->db->get($this->users_tbl)->row_array();
+    }
+
+    ## AD ##
+    public function addAdMember($user_auth = array())
+    {
+        $itaccounttype_allow = [
+            'EmpResiAcc',
+            'ManAcc',
+            'MISEmpAcc',
+            'NonMISEmpAcc',
+            'RetEmpAcc',
+            'VIPAcc'
+        ];
+        if(in_array($user_auth['itaccounttype_id'], $itaccounttype_allow)) {
+            $user_ad = $this->formatADdata($user_auth);
+            $not_exist = $this->fnc_userExist($user_ad['email'], $user_ad['username']);
+            if ($not_exist) {
+                // add
+                $this->db->insert($this->users_tbl, $user_ad);
+            } else {
+                // update
+                $this->db->where('id', $user['id']);
+                $this->db->update($this->users_tbl, $user_ad);
+            }
+            $user = $this->fnc_getUserByEmail($user_ad['username'], $user_ad['email']);
+            $this->checkLoginAD($user);
+            return $user;
+        } else {
+            $Counter = new Counter;
+            $Counter->logAction('เข้าสู่ระบบไม่สำเร็จ', 0, 0, 'login', '3', 0);
+            return false;
+        }
+
+
+    }
+
+    public function checkLoginAD($data='')
+    {
+        if($data['status'] == 1) {
+            $session = [];
+            foreach ($data as $key => $value) {
+                if ($key != 'password' && $key != 'username') {
+                    $session[$key] = $value;
+                }
+            }
+            $session['priv'] = $this->fnc_getPriv($data['id'], $data['grp_id']);
+            $success['check'] = 'true';
+            $this->session->set_userdata($this->session_data, $session);
+            $Counter = new Counter;
+            $Counter->logAction('เข้าสู่ระบบ', 0, 0, 'login', '1', $data['id']);
+        }else{
+            $success['check'] = 'Suspend';
+            $Counter = new Counter;
+            $Counter->logAction('เข้าสู่ระบบขณะถูกระงับ', 0, 0, 'login', '4', $data['id']);
+        }
+    }
+
+    public function formatADdata($user_ad = array())
+    {
+        $data['username']    = @$user_ad['cmuitaccount'];
+        $data['password']    = @$user_ad['cmuitaccount'];
+        $data['prename']     = @$user_ad['prename_TH'];
+        $data['fname']       = @$user_ad['firstname_TH'];
+        $data['lname']       = @$user_ad['lastname_TH'];
+        $data['grp_id']      = 99;
+        $data['status']      = 1;
+        $data['email']       = @$user_ad['cmuitaccount'];
+        $data['tel']         = '';
+        $data['idcard']      = '';
+        $data['sex']         = '';
+        $data['affiliation'] = @$user_ad['organization_name_TH'];
+        $data['position']    = ''; // บุคคลภายใน
+        $data['other']       = '';
+        $data['education']   = '';
+        $data['nationality'] = 'TH';
+        $data['time_create'] = date('Y-m-d H:i:s');
+        $data['is_ad']       = 1;
+
+        $grp_id_old = $this->fnc_getGrpIdOld($data['username'], $data['email']);
+        if(!empty($grp_id_old)){
+            $data['grp_id'] = $grp_id_old;
+        }
+
+        return $data;
+    }
+
+    private function fnc_getGrpIdOld($username, $email)
+    {
+        $this->db->where('username', $username);
+        $this->db->where('email', $email);
+        $data = $this->db->get($this->users_tbl)->row_array();
+
+        if(!empty($data)) {
+            return $data['grp_id'];
+        } else {
+            return 0;
+        }
+
+    }
+}
+
+?>

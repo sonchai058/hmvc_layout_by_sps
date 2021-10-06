@@ -1,0 +1,65 @@
+<div class="main-container">
+  <div class="pd-ltr-20 xs-pd-20-10">
+    <div class="pd-20 card-box mb-30">
+      <div class="clearfix mb-20">
+          <div class="row">
+            <div class="col-4">
+              <h4 class="text-blue h4"><?= $title_page ?></h4>
+            </div>
+
+            <div class="col-8">
+              <div class="pull-right">
+                <nav aria-label="breadcrumb" role="navigation">
+                  <ol class="breadcrumb pd-0">
+                    <li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+                    <li class="breadcrumb-item">จัดการเจ้าหน้าที่</li>
+                    <li class="breadcrumb-item"><a href="<?= $action_link ?>">กำหนดกลุ่ม</a></li>
+                    <li class="breadcrumb-item active" aria-current="page"><?= $title_page ?></li>
+                  </ol>
+                </nav>
+              </div>
+            </div>
+          </div>
+      </div>
+
+      <div class="clearfix mb-20">
+        <?php if(validation_errors() != ''): ?>
+            <div class="alert alert-danger">
+                <?php echo validation_errors(); ?>
+            </div>
+        <?php endif; ?>
+        <form role="form" id="post" method="post"
+              action="<?= $action_link.'insertGroup/'.$getForm['grp_id'] ?>"
+              enctype="multipart/form-data">
+
+            <div class="form-group">
+                <input type="hidden" id="grp_id" name="grp_id" value="<?= $getForm['grp_id']?>">
+                <label for="grp_name"><strong>ชื่อกลุ่ม</strong>&nbsp;<span
+                        style="color: #f02323">*</span></label>
+                <input type="text" class="form-control validate[required]" id="grp_name" name="grp_name"
+                       placeholder="ชื่อกลุ่ม..." value="<?= $getForm['grp_name'] ?>" maxlength="250">
+            </div>
+            <div class="form-group text-center">
+                <a href="<?= $action_link ?>">
+                    <button type="button" class="btn btn-danger"><i class="fa fa-times"></i>&nbsp;ยกเลิก
+                    </button>
+                </a>
+                &nbsp;&nbsp;
+                <button type="submit" class="btn btn-success"><i class="fa fa-save"></i>&nbsp;บันทึก
+                </button>
+
+            </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script language="javascript" type="text/javascript">
+  $(document).ready(function () {
+    $("#post").validationEngine();
+    $(window).dblclick(function () {
+        jQuery('#post').validationEngine('hide');
+    });
+  });
+</script>

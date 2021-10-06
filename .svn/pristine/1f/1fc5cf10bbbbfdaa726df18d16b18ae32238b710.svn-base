@@ -1,0 +1,266 @@
+<div class="main-container" ng-app="exportApp" ng-controller="exportController" ng-cloak>
+  <div class="pd-ltr-20 xs-pd-20-10">
+    <div class="pd-20 pb-40 card-box mb-30">
+  		<div class="clearfix mb-20">
+          <div class="row">
+            <div class="col-4">
+              <h4 class="text-blue h4"><?= $title_page ?></h4>
+            </div>
+
+            <div class="col-8" ng-show="step == 'start'">
+              <div class="pull-right">
+                <nav aria-label="breadcrumb" role="navigation">
+      						<ol class="breadcrumb pd-0">
+      							<li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+      							<li class="breadcrumb-item active" aria-current="page"><?= $title ?></li>
+      						</ol>
+      					</nav>
+              </div>
+            </div>
+          </div>
+  		</div>
+
+
+      <div class="header-leftSBS mb-0" ng-show="step == 'start'">
+        <div class="header-search">
+          <form method="post"
+                action="<?= $action_link ?>">
+            <div class="form-group mb-4">
+              <i class="dw dw-search2 search-icon mx-auto"></i>
+              <input type="text" class="form-control search-input " name="form_search_element[text]" placeholder="ค้นหา" value="<?= $form_search_element['text'] ?>">
+            </div>
+
+            <div class="form-group row w-50 pull-left">
+              <label class="col-sm-12 col-md-3 my-auto text-right">การกระทำ : </label>
+              <div class="col-sm-12 col-md-9">
+                <select class="form-control" name="form_search_element[type_action]">
+                    <option value="all">ทั้งหมด</option>
+                    <?php foreach ($status_action as $key => $value):?>
+                        <option value="<?= $key?>" <?= $form_search_element['type_action'] == $key ? 'selected' : '' ?>><?= $value?></option>
+                    <?php endforeach;?>
+                </select>
+							</div>
+            </div>
+
+            <div class="form-group row w-50 pull-left">
+              <label class="col-md-2 col-12 col-sm-4 my-auto text-right">วันที่ : </label>
+              <div class="col-md-4 col-12 col-sm-8">
+                  <input type="text" name="form_search_element[startdate]"
+                         class="form-control text-center" id="date_start"
+                         value="<?= $form_search_element['startdate']; ?>"
+                         placeholder="วันที่เริ่มต้น" autocomplete="off">
+              </div>
+              <label class="col-md-2 col-12 col-sm-4 my-auto text-center">ถึง
+              </label>
+              <div class="col-md-4 col-12 col-sm-8">
+                  <input type="text" name="form_search_element[enddate]"
+                         class="form-control text-center" id="date_end"
+                         value="<?= $form_search_element['enddate']; ?>"
+                         placeholder="วันที่สิ้นสุด" autocomplete="off">
+              </div>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <div class="form-group mt-3 text-center">
+                <button type="submit" class="btn btn-primary mr-1">
+                    <i class="fa fa-search"></i> ค้นหา
+                </button>
+                <button type="submit" name="reset" value="clear" class="btn btn-danger">
+                    <i class="fa fa-refresh"></i> ล้างค่า
+                </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="text-right mb-2" ng-show="step == 'start'">
+          <button type="button" class="btn btn-success"
+                  ng-click="export(1)">
+              <i class="fa fa-file-excel-o"></i>&nbsp;ส่งออกไฟล์ CSV
+          </button>
+      </div>
+
+  		<div class="table-responsive" ng-show="step == 'start'">
+				<table id="tableListData" class="table table-striped">
+					<thead>
+						<tr>
+							<th class="text-center w-10" scope="col">ลำดับ</th>
+							<th class="text-center w-25" scope="col">รายการ</th>
+              <th class="text-center w-15" scope="col">การกระทำ</th>
+							<th class="text-center w-15" scope="col">ผู้กระทำ</th>
+              <th class="text-center w-20" scope="col">วันที่สร้าง</th>
+							<th class="text-center w-20" scope="col">IP Address</th>
+						</tr>
+					</thead>
+					<tbody>
+            <?php if(!empty($getData)): foreach ($getData as $key => $value): ?>
+              <tr>
+                <td class="text-center"><?= ++$this->start_no ?></td>
+                <td><?= $value['title'] ?></td>
+                <td><?= $status_action[$value['type_action']] ?></td>
+                <td><?= $value['user_id'] ?></td>
+                <td class="text-center"><?= $value['c_date_time'] ?></td>
+                <td class="text-center"><?= $value['ip'] ?></td>
+							</tr>
+            <?php endforeach; else:?>
+              <tr class="text-center">
+                  <td colspan="7"><strong>- ไม่พบข้อมูล -</strong></td>
+              </tr>
+            <?php endif;?>
+
+					</tbody>
+				</table>
+			</div>
+
+      <div class="pagination" ng-show="step == 'start'">
+          <div class="paging">
+              <?php echo $this->my_pagination; ?>
+          </div>
+      </div>
+
+      <!-- ## Engine export  -->
+      <div class="col-12" id="exportController" ng-hide="step == 'start'">
+          <div class="progress" ng-show="step == 'export'">
+              <div class="progress-bar" role="progressbar" aria-valuenow="{{percent}}"
+                   aria-valuemin="0" aria-valuemax="100" style="width: {{percent}}%;">
+                  <span class="text-white h5 mb-0">  {{percent}}% ประมวลผล </span>
+              </div>
+          </div>
+          <div class="alert alert-primary text-center" ng-show="step == 'export'">
+              <p>
+                  <i class="fa fa-spinner fa-spin"></i>
+              <h4 class="text-primary">กำลังส่งออกข้อมูล . . . ชุดที่ {{page}} <span ng-show="all_page > 0">จากทั้งหมด {{all_page}} ชุด</span>
+              </h4>
+              </p>
+          </div>
+
+          <div class="alert alert-primary text-center mt10" ng-show="step == 'complete'">
+              <p> <h4 class="text-primary">ส่งออกข้อมูลเสร็จเรียบร้อย</h4> </p>
+              <a class="btn btn-primary " href="<?= base_url() ?>{{export_file}}" role="button"
+                 ng-click="step = 'start'" id="refresh"> <i class="fa fa-cloud-download"></i>
+                  คลิกเพื่อดาวน์โหลด</a>
+          </div>
+
+          <div class="clearfix"></div>
+      </div>
+      <!-- ## Engine export  -->
+    </div>
+  </div>
+</div>
+
+<style>
+    .progress {
+        height: 40px;
+        margin-top: 20px;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .fa-spin {
+        font-size: 46px;
+    }
+</style>
+
+<script framework="angular">
+    var exportData = angular.module("exportApp", ['ngAnimate']);
+
+    exportData.controller('exportController', function ($scope, $http, $q, phpData) {
+        var LINK_LIB = phpData.LINK_LIB;
+        var search = phpData.search;
+        var numPage = phpData.numPage;
+
+        $scope.all_page = 0;
+        $scope.percent = 1;
+        $scope.page = 1;
+        $scope.step = 'start';
+
+        $scope.export_file = '';
+
+        token = Math.floor(Math.random() * 89999 + 10000);
+
+
+        var load = $scope.export = function (page) {
+            if (numPage > 0) {
+                $scope.step = 'export';
+                $scope.page = page;
+
+                var send_data = {
+                    page: page,
+                    token: token,
+                    search: search,
+                    numPage: numPage
+                };
+                console.log(send_data);
+                $http.post(LINK_LIB + 'export/',
+                    'send_data=' + JSON.stringify(send_data),
+                    {
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8;'},
+                    }
+                ).then(function (res) {
+
+                    var result_data = res.data;
+                    $scope.percent = result_data.math.percent;
+                    $scope.all_page = result_data.math.all_page;
+
+                    if (result_data.file_path != '') {
+                        $scope.export_file = result_data.file_path;
+                    }
+
+                    if ($scope.percent < 100) {
+                        $scope.page = result_data.next_page;
+                        $scope.export($scope.page);
+                    } else {
+
+                        $scope.step = 'complete';
+
+                    }
+
+                }, function () {
+                    alert('เกิดข้อผิดพลาด กรุณาตรวจสอบการเชื่อมต่อเครือข่าย');
+                });
+            } else {
+                window.alert("ไม่พบข้อมูลในการส่งออก");
+            }
+        }
+
+        var init = function () {
+
+        }
+
+        init();
+
+    });
+
+
+    <?php
+    # กำหนดค่า default ให้กับ angularjs
+    $phpData = array(
+        'LINK_LIB' => $action_link,
+        'search' => $form_search_element,
+        'numPage' => $count
+    );
+    ?>
+    exportData.value('phpData', <?= json_encode($phpData) ?>);
+
+    $("#date_start").datepicker({
+        todayBtn: 1,
+        format: 'dd/mm/yyyy',
+        autoclose: true,
+        language: "th",
+        orientation: "bottom"
+    }).on('changeDate', function (selected) {
+        var minDate = new Date(selected.date.valueOf());
+        $('#date_end').datepicker('setStartDate', minDate);
+    });
+
+    $("#date_end").datepicker({
+        format: 'dd/mm/yyyy',
+        autoclose: true,
+        language: "th",
+        orientation: "bottom"
+    }).on('changeDate', function (selected) {
+        var maxDate = new Date(selected.date.valueOf());
+        $('#date_start').datepicker('setEndDate', maxDate);
+    });
+</script>

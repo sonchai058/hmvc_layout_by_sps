@@ -1,0 +1,121 @@
+<style>
+    .white {
+        white-space: nowrap;
+    }
+
+    .input_search {
+        width: 100% !important;
+    }
+
+    .label_search {
+        min-height: 33px;
+        padding-top: 8px;
+        font-size: 15px;
+    }
+
+    .img-slide img {
+        width: 100%;
+        height: <?=$heightImg?>px;
+        padding: 2%;
+    }
+
+    .btn-sm, .btn-group-sm > .btn {
+        padding: 3px 10px !important;
+        font-size: 14px !important;
+        line-height: 1.5;
+        border-radius: 3px;
+    }
+
+    #new_image {
+        float: left;
+        margin-top: 5px;
+    }
+</style>
+
+<div class="main-container">
+    <div class="pd-ltr-20 xs-pd-20-10">
+        <div class="pd-20 pb-40 card-box mb-30">
+            <div class="row">
+                <div class="col-md-12">
+
+                    <div class="row">
+                        <div class="col-6">
+                          <h4 class="text-blue h4"><?= $title_page ?></h4>
+                        </div>
+
+                        <div class="col-6">
+                          <div class="pull-right">
+                            <nav aria-label="breadcrumb" role="navigation">
+                              <ol class="breadcrumb pd-0">
+                                <li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+                                <li class="breadcrumb-item active" aria-current="page"><?= $title_page ?></li>
+                              </ol>
+                            </nav>
+                          </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="main-box clearfix">
+                                <!-- <header class="main-box-header clearfix">
+                                    <h2><?= $title_sub ?></h2>
+                                </header> -->
+
+                                <div class="main-box-body clearfix mt-2">
+                                    <form role="form" id="post" method="post"
+                                          action="<?= $action_link . 'insert/' . $getForm['cg_id'] ?>"
+                                          enctype="multipart/form-data">
+                                        <div class="form-group">
+                                            <label for="news_title"><strong>ชื่อหมวดหมู่ปฏิทิน</strong>
+                                                &nbsp;<span style="color: #f02323">*</span></label>
+                                            <input type="text" class="form-control validate[required]" id="cg_name"
+                                                   name="cg_name"
+                                                   placeholder="ชื่อหมวดหมู่ปฏิทิน" value="<?= $getForm['cg_name'] ?>" maxlength="250">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="news_title"><strong>ชื่อหมวดหมู่ปฏิทิน ภาษาอังกฤษ</strong></label>
+                                            <input type="text" class="form-control" id="cg_name_en"
+                                                   name="cg_name_en"
+                                                   placeholder="ชื่อหมวดหมู่ปฏิทิน ภาษาอังกฤษ" value="<?= $getForm['cg_name_en'] ?>" maxlength="250">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>
+                                                <strong>สีของหมวดหมู่ปฏิทิน Online</strong>
+                                                &nbsp;<span style="color: #f02323">*</span>
+                                            </label>
+                                            <input type="text" class="colorpicker form-control" value="<?= $getForm['cg_color'] = '' ? '#7ab2fa' : $getForm['cg_color'] ?>" name="color" />
+                                        </div>
+                                        <div class="form-group text-center">
+                                            <button type="button" class="btn btn-danger"
+                                                    onclick="window.location='<?= $action_link ?>index'">
+                                                <i class="fa fa-times"></i>&nbsp;ยกเลิก
+                                            </button>
+                                            &nbsp;&nbsp;
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fa fa-save"></i>&nbsp;บันทึก
+                                            </button>
+
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>      
+        </div>
+    </div>
+</div>
+
+<script>
+    $( document ).ready(function() {
+        $(".colorpicker").asColorPicker();
+        $(".complex-colorpicker").asColorPicker({
+            mode: 'complex'
+        });
+        $(".gradient-colorpicker").asColorPicker({
+            mode: 'gradient'
+        });
+    });
+</script>

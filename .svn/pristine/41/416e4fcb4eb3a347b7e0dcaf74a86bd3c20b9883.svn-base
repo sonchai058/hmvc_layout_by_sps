@@ -1,0 +1,682 @@
+<?php
+
+/**
+ * Created by PhpStorm.
+ * User: Sarawut
+ * Date: 3/15/16 AD
+ * Time: 3:15 PM
+ */
+class Tools extends MY_Controller
+{
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->Elastic = new ElasticIndex();
+        $this->es_type = 'cmu_web';
+
+    }
+
+    public function elasticLogTag()
+    {
+
+        $url = "http://localhost:9200/log_index/";
+
+        $query = '{
+          "settings": {
+                "index": {
+                    "max_result_window" : 200000
+                }
+            },
+          "mappings": {
+            "tag": {
+              "properties": {
+                "tag": {
+                  "type": "text",
+                  "analyzer": "keyword",
+                  "fielddata": true
+                },
+                "option": {
+                  "type": "text",
+                  "analyzer": "keyword",
+                  "fielddata": true
+                },
+                "create_dt": {
+                  "type": "date",
+                  "format": "yyyy-MM-dd HH:mm:ss"
+                }
+              }
+            }
+          }
+        }';
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
+        $output = curl_exec($ch);
+
+        curl_close($ch);
+
+        _print_r(json_decode($output, true));
+
+    }
+
+    public function indexData($data_type = 'know', $id = 1)
+    {
+
+        $es = $this->Elastic;
+        $ret = $es->index($this->es_type, $data_type, $id);
+        echo "<BR><pre>";
+        print_r($ret);
+    }
+
+    public function reIndexSBS($data_type = 1, $start = 0)
+    {
+        $this->record = 100;
+        // die('debug Safety');
+
+        $data_type_arr = array(
+            1 => 'menu',
+            2 => 'menu_top',
+            3 => 'news',
+            4 => 'online_library_course',
+        );
+
+        if ($start == 0 && $data_type == 1) {
+            $es = $this->Elastic;
+
+            $es->purgeIndex();
+            # สร้างและกำหนดค่าสำหรับโครงสร้าง index
+            $es->initialIndex($this->es_type);
+        }
+
+        if ($data_type == 1 || $data_type == 2) {
+            if ($data_type == '1') {
+                $table = 'manage_menu';
+            } else {
+                $table = 'manage_menu_top';
+            }
+            $this->db->select("menu_id as id, type_menu");
+            $this->db->where('show_status', 1);
+            $this->db->where('parent_id');
+            $this->db->order_by('menu_order ASC');
+
+//            $this->db->limit($this->record, $start);
+            $rs = $this->db->get($table)->result_array();
+            $getData = [];
+            if (!empty($rs)) {
+                foreach ($rs as $key => $value) {
+                    $this->db->select("menu_id as id, type_menu");
+                    $this->db->where('show_status', 1);
+                    $this->db->where('parent_id', $value['id']);
+                    $this->db->order_by('menu_order ASC');
+                    $data = $this->db->get($table)->result_array();
+                    if (!empty($data)) {
+                        foreach ($data as $kSub => $vSub) {
+                            if ($vSub['type_menu'] > 0) {
+                                $getData[$vSub['id']]['id'] = $vSub['id'];
+                            }
+
+                            $this->db->select("menu_id as id, type_menu");
+                            $this->db->where('show_status', 1);
+                            $this->db->where('parent_id', $vSub['id']);
+                            $this->db->order_by('menu_order ASC');
+                            $subData = $this->db->get($table)->result_array();
+                            if (!empty($subData)) {
+                                foreach ($subData as $kUnit => $vUnit) {
+                                    if ($vUnit['type_menu'] > 0) {
+
+                                        $getData[$vUnit['id']]['id'] = $vUnit['id'];
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if ($value['type_menu'] > 0) {
+                        $getData[$value['id']]['id'] = $value['id'];
+                    }
+
+                }
+            }
+            $rs = $getData;
+        } elseif ($data_type == 3) {
+            $this->db->select("news_id as id");
+            $this->db->where('show_status', 1);
+            $this->db->limit($this->record, $start);
+            $this->db->order_by('news_date ASC');
+
+            $rs = $this->db->get("news")->result_array();
+
+        } elseif ($data_type == 4) {
+            $this->db->select("banner_id as id");
+            $this->db->where('show_status', 1);
+            $this->db->limit($this->record, $start);
+            $this->db->order_by('s_order ASC');
+            $rs = $this->db->get("manage_banner")->result_array();
+
+        }
+
+        foreach ($rs as $value) {
+
+            echo '<strong>' . ++$start . '</strong>';
+            echo '<br />id =' . $value['id'];
+            $this->indexData($data_type_arr[$data_type], $value['id']);
+            echo '<hr />';
+        }
+
+        $num = count($rs);
+        if ($num == $this->record) {
+            $url = base_url();
+            echo "<meta http-equiv='refresh' content='0; url={$url}Tools/reIndexSBS/{$data_type}/{$start}'>";
+
+        } elseif (isset($data_type_arr[$data_type + 1])) {
+            $data_type = $data_type + 1;
+
+            $url = base_url();
+            echo "<meta http-equiv='refresh' content='0; url={$url}Tools/reIndexSBS/{$data_type}/0'>";
+        }
+
+    }
+
+    public function setFontSize($size = 0)
+    {
+        $this->session->set_userdata(['font_size' => $size]);
+    }
+
+    public function siteMapDownload()
+    {
+        $link = '';
+        $link_sub_menu = '';
+        $link_unit_menu = '';
+
+        $site_map = array();
+        $sub_data = array();
+
+        $this->load->model('Index_model');
+        $top_menu = $this->Index_model->getTopMenu();
+        $main_menu = $this->Index_model->getMainMenu();
+        $category_news = $this->Index_model->getCategoryNews();
+        // _print_r($data);
+
+        if (!empty($top_menu)) {
+            foreach ($top_menu as $key => $value) {
+                if ($value['type_menu'] == 1) {
+                    $link = base_url() . 'HtmlDetail/Detail/' . $value['menu_id'] . '/top';
+                } elseif ($value['type_menu'] == 2) {
+                    $link = $value['menu_link'];
+                }
+
+                $site_map[] = array(
+                    'name' => $value['menu_name'],
+                    'link' => $link,
+                    'lastmod' => $value['time_create'],
+                );
+            }
+        }
+
+        if (!empty($main_menu)) {
+            foreach ($main_menu as $key => $value) {
+                if ($value['type_menu'] == 1 && !empty($value['description'])) {
+                    $link = base_url() . 'HtmlDetail/Detail/' . $value['menu_id'] . '/top';
+                } elseif ($value['type_menu'] == 2 && !empty($value['menu_link'])) {
+                    $link = $value['menu_link'];
+                }
+
+                if (!empty($value['sub_menu'])) {
+                    foreach ($value['sub_menu'] as $key_sub_menu => $value_sub_menu) {
+                        if (is_numeric($key_sub_menu)) {
+
+                            if ($value_sub_menu['type_menu'] == 1) {
+                                $link_sub_menu = base_url() . 'HtmlDetail/Detail/' . $value_sub_menu['menu_id'] . '/top';
+                            } elseif ($value_sub_menu['type_menu'] == 2) {
+                                $link_sub_menu = $value_sub_menu['menu_link'];
+                            }
+
+                            if (!empty($value_sub_menu['unit_menu'])) {
+                                foreach ($value_sub_menu['unit_menu'] as $key_unit_menu => $value_unit_menu) {
+                                    if ($value_unit_menu['type_menu'] == 1 && !empty($value_unit_menu['description'])) {
+                                        $link_unit_menu = base_url() . 'HtmlDetail/Detail/' . $value_unit_menu['menu_id'] . '/main';
+                                    } elseif ($value_unit_menu['type_menu'] == 2 && !empty($value_unit_menu['menu_link'])) {
+                                        $link_unit_menu = $value_unit_menu['menu_link'];
+                                    }
+
+                                    $site_map[] = array(
+                                        'name' => $value_unit_menu['menu_name'],
+                                        'link' => $link_unit_menu,
+                                        'lastmod' => $value_unit_menu['time_create'],
+                                    );
+                                }
+                            }
+
+                            $site_map[] = array(
+                                'name' => $value_sub_menu['menu_name'],
+                                'link' => $link_sub_menu,
+                                'lastmod' => $value_sub_menu['time_create'],
+                            );
+                        }
+                    }
+                }
+
+                if (!empty($value['menu_link'])) {
+                    $site_map[] = array(
+                        'name' => $value['menu_name'],
+                        'link' => $link,
+                        'lastmod' => $value['time_create'],
+                    );
+                }
+            }
+        }
+
+        if (!empty($category_news)) {
+            foreach ($category_news as $key => $value) {
+                $link = base_url() . 'News/NewsList/' . $value['category_id'];
+                $site_map[] = array(
+                    'name' => $value['category_name'],
+                    'link' => $link,
+                    'lastmod' => '',
+                );
+            }
+        }
+
+        $dom = new DOMDocument();
+        $dom->encoding = 'utf-8';
+        $dom->xmlVersion = '1.0';
+        $dom->formatOutput = true;
+        $xml_file_name = './file_upload/site_map.xml';
+
+        $root = $dom->createElement('urlset');
+        $attr_id = new DOMAttr('xmlns', base_url());
+        $root->setAttributeNode($attr_id);
+
+        if (!empty($site_map)) {
+            foreach ($site_map as $key => $value) {
+                if (!empty($value['link'])) {
+                    $data_node = $dom->createElement('url');
+
+                    $loc = $dom->createElement('loc', $value['link']);
+                    $data_node->appendChild($loc);
+
+                    if (!empty($value['lastmod'])) {
+                        $lastmod = $dom->createElement('lastmod', $value['lastmod']);
+                        $data_node->appendChild($lastmod);
+                    }
+
+                    $changefreq = $dom->createElement('changefreq', 'yearly');
+                    $data_node->appendChild($changefreq);
+
+                    $priority = $dom->createElement('priority', '1');
+                    $data_node->appendChild($priority);
+
+                    $root->appendChild($data_node);
+                }
+
+            }
+
+            $dom->appendChild($root);
+            $dom->save($xml_file_name);
+
+
+            $url = base_url();
+            echo "<meta http-equiv='refresh' content='0; url={$url}file_upload/site_map.xml'>";
+
+            // $filename = './file_upload/site_map.xml';
+            // header('Content-Disposition: attachment; filename="'.basename($filename).'"');
+            // header('Content-Length: ' . filesize($filename));
+
+            // flush();
+
+            // readfile($filename);
+            // die();
+
+        }
+
+
+    }
+
+    public function setImgCoverNews($start = 0)
+    {
+        $limit = 20;
+        $this->db->where('news_image <> ', '');
+        $this->db->limit($limit, $start);
+        $data = $this->db->get('news')->result_array();
+
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                if (file_exists('file_upload/news/' . $value['news_image'])) {
+                    $this->fnc_setImgCoverNewsDoc($value['news_id'], $value);
+                } else {
+                    $this->fnc_setImgCoverNewsDoc($value['news_id'], array());
+                }
+                $start++;
+            }
+        }
+
+        $num = count($data);
+        if ($num == $limit) {
+            $url = base_url();
+            echo "<meta http-equiv='refresh' content='0; url={$url}Tools/setImgCoverNews/{$start}'>";
+        } else {
+            die('Complete');
+        }
+    }
+
+    private function fnc_setImgCoverNewsDoc($news_id, $dataNews = array())
+    {
+        $this->db->where('news_id', $news_id);
+        $data = $this->db->get('news_doc')->result_array();
+        if (!empty($data)) {
+            $allowImg = ['jpg', 'jpeg', 'png', 'gif'];
+            $dataIsCover = array_column($data, 'is_cover');
+            $isCover = (in_array(1, $dataIsCover) ? true : false);
+            foreach ($data as $key => $value) {
+                if (!empty($dataNews)) {
+                    $index = ($key + 2);
+                    if ($isCover == false) {
+                        $ext = explode('.', $dataNews['news_image']);
+                        $ext = end($ext);
+                        $this->db->insert('news_doc', [
+                            'news_id' => $dataNews['news_id'],
+                            'user_upload' => 3,
+                            'ext' => strtolower($ext),
+                            'file_path' => './file_upload/',
+                            'file_name' => $dataNews['news_image'],
+                            'file_name_original' => $dataNews['news_image'],
+                            'time_upload' => $dataNews['news_date'],
+                            's_order' => 1,
+                            'is_cover' => 1
+                        ]);
+                        $isCover = true;
+                    }
+                    $setUpdate = ['s_order' => $index];
+                } else {
+                    $index = ($key + 1);
+                    if (in_array($value['ext'], $allowImg) && $isCover == false) {
+                        $setUpdate = ['s_order' => $index, 'is_cover' => 1];
+                        $isCover = true;
+                    } else {
+                        $setUpdate = ['s_order' => $index];
+                    }
+                }
+
+                $this->db->where('doc_id', $value['doc_id']);
+                $this->db->update('news_doc', $setUpdate);
+            }
+        } else {
+            $ext = explode('.', $dataNews['news_image']);
+            $ext = end($ext);
+            $this->db->insert('news_doc', [
+                'news_id' => $dataNews['news_id'],
+                'user_upload' => 3,
+                'ext' => $ext,
+                'file_path' => './file_upload/',
+                'file_name' => $dataNews['news_image'],
+                'file_name_original' => $dataNews['news_image'],
+                'time_upload' => $dataNews['news_date'],
+                's_order' => 1,
+                'is_cover' => 1
+            ]);
+        }
+    }
+
+    public function setSiteIdNews()
+    {
+        $this->db->where('record_id <>', 0);
+        $this->db->where('site_id', 0);
+        $this->db->where('type', 'news');
+        $data = $this->db->get('counter_page_info')->result_array();
+        // _print_r($data);
+
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                $cate_id = $this->fnc_getCategoryId($value['record_id']);
+                if (!empty($cate_id)) {
+                    $this->fnc_updateSiteId($value['record_id'],$cate_id);
+
+                }
+            }
+        }
+        echo 'success';
+        // echo 'fail <br>';
+    }
+
+    private function fnc_getCategoryId($record_id)
+    {
+        $this->db->select('news_category');
+        $this->db->where('news_id', $record_id);
+        $data = $this->db->get('news')->row_array();
+
+        if (!empty($data)) {
+            return $data['news_category'];
+        }else{
+            return '';
+        }
+    }
+
+    private function fnc_updateSiteId($record_id,$cate_id)
+    {
+        $this->db->where('record_id', $record_id);
+        $this->db->where('site_id', 0);
+        $this->db->update('counter_page_info', ['site_id' => $cate_id]);
+    }
+
+    public function importDataPersonnel()
+    {
+        DIE("SAFETY");
+        $this->db->truncate('manage_resume');
+        $countData = $this->fnc_initDirector();
+        $countData = $this->fnc_initExecutive($countData);
+        $countData = $this->fnc_initExecutiveDirector($countData);
+        $countData = $this->fnc_initPersonnel($countData);
+    }
+
+    private function fnc_initDirector()
+    {
+        $this->db->truncate('manage_director');
+        $data = $this->db->get('Director')->result_array();
+        if(!empty($data)) {
+            foreach ($data as $key => $value) {
+                $setDataInsertResume = [];
+                $setDataInsertResume['prename'] = $value['f2'];
+                $setDataInsertResume['first_name'] = $value['f3'];
+                $setDataInsertResume['first_name_en'] = $value['f5'];
+                $setDataInsertResume['last_name'] = $value['f4'];
+                $setDataInsertResume['last_name_en'] = $value['f6'];
+                $setDataInsertResume['position'] = $value['f7'];
+                $setDataInsertResume['affiliated'] = $value['f7'];
+                $setDataInsertResume['email'] = $value['f8'];
+                $setDataInsertResume['show_status'] = 1;
+                $setDataInsertResume['time_create'] = date('Y-m-d H:i:s');
+                $setDataInsertResume['s_order'] = $value['f1'];
+                $this->db->insert('manage_resume', $setDataInsertResume);
+                $id_resume = $this->db->insert_id();
+                $setDataInsertDirector = [];
+                $setDataInsertDirector['id_resume'] = $id_resume;
+                $setDataInsertDirector['show_status'] = 1;
+                $setDataInsertDirector['time_create'] = date('Y-m-d H:i:s');
+                $setDataInsertDirector['s_order'] = $value['f1'];
+                $setDataInsertDirector['prename'] = $value['f2'];
+                $setDataInsertDirector['position'] = $value['f7'];
+                $this->db->insert('manage_director', $setDataInsertDirector);
+                $orderData = $value['f1'];
+            }
+
+            return $orderData;
+        }
+    }
+
+    private function fnc_initExecutive($orderData)
+    {
+        $orderData = $orderData + 1;
+        $this->db->truncate('manage_executive');
+        $data = $this->db->get('Executive')->result_array();
+
+        if(!empty($data)) {
+            foreach ($data as $key => $value) {
+                $setDataInsertResume = [];
+                $setDataInsertResume['prename'] = $value['f2'];
+                $setDataInsertResume['prename_en'] = $value['f5'];
+                $setDataInsertResume['first_name'] = $value['f3'];
+                $setDataInsertResume['first_name_en'] = $value['f6'];
+                $setDataInsertResume['last_name'] = $value['f4'];
+                $setDataInsertResume['last_name_en'] = $value['f7'];
+                $setDataInsertResume['position'] = $value['f8'];
+                $setDataInsertResume['affiliated'] = $value['f8'];
+                $setDataInsertResume['email'] = $value['f9'];
+                $setDataInsertResume['tel_work'] = $value['f11'];
+                $id_resume = $this->fnc_checkImportDupicate($setDataInsertResume);
+                if(!empty($id_resume)) {
+                    $this->db->where('id', $id_resume);
+                    $this->db->update('manage_resume', $setDataInsertResume);
+                } else {
+                    $setDataInsertResume['show_status'] = 1;
+                    $setDataInsertResume['time_create'] = date('Y-m-d H:i:s');
+                    $setDataInsertResume['s_order'] = $orderData++;
+                    $this->db->insert('manage_resume', $setDataInsertResume);
+                    $id_resume = $this->db->insert_id();
+                }
+                
+                $setDataInsertExecutive = [];
+                $setDataInsertExecutive['id_resume'] = $id_resume;
+                $setDataInsertExecutive['show_status'] = 1;
+                $setDataInsertExecutive['time_create'] = date('Y-m-d H:i:s');
+                $setDataInsertExecutive['s_order'] = ($key + 1);
+                $this->db->insert('manage_executive', $setDataInsertExecutive);
+            }
+
+            return $orderData;
+        }
+    }
+
+    private function fnc_initExecutiveDirector($orderData)
+    {
+        $orderData = $orderData;
+        $this->db->truncate('manage_executive_director');
+        $data = $this->db->get('ExecutiveDirector')->result_array();
+        if(!empty($data)) {
+            foreach ($data as $key => $value) {
+                $setDataInsertResume = [];
+                $setDataInsertResume['prename'] = ($value['f4'] == 'Mr.' ? 'นาย' : 'นางสาว');
+                $setDataInsertResume['prename_en'] = $value['f4'];
+                $setDataInsertResume['first_name'] = $value['f2'];
+                $setDataInsertResume['first_name_en'] = $value['f5'];
+                $setDataInsertResume['last_name'] = $value['f3'];
+                $setDataInsertResume['last_name_en'] = $value['f6'];
+                $setDataInsertResume['position'] = $value['f7'];
+                $setDataInsertResume['affiliated'] = $value['f7'];
+                $setDataInsertResume['email'] = $value['f8'];
+                $setDataInsertResume['tel_work'] = $value['f9'];
+                $id_resume = $this->fnc_checkImportDupicate($setDataInsertResume);
+                if(!empty($id_resume)) {
+                    $this->db->where('id', $id_resume);
+                    $this->db->update('manage_resume', $setDataInsertResume);
+                } else {
+                    $setDataInsertResume['show_status'] = 1;
+                    $setDataInsertResume['time_create'] = date('Y-m-d H:i:s');
+                    $setDataInsertResume['s_order'] = $orderData++;
+                    $this->db->insert('manage_resume', $setDataInsertResume);
+                    $id_resume = $this->db->insert_id();
+                }
+                
+                $setDataInsertExecutiveDirector = [];
+                $setDataInsertExecutiveDirector['id_resume'] = $id_resume;
+                $setDataInsertExecutiveDirector['show_status'] = 1;
+                $setDataInsertExecutiveDirector['time_create'] = date('Y-m-d H:i:s');
+                $setDataInsertExecutiveDirector['s_order'] = ($key + 1);
+                $this->db->insert('manage_executive_director', $setDataInsertExecutiveDirector);
+            }
+
+            return $orderData;
+        }
+    }
+
+    private function fnc_checkImportDupicate($dataImport)
+    {
+        $this->db->where('first_name', $dataImport['first_name']);
+        $this->db->where('last_name', $dataImport['last_name']);
+        $this->db->where('position', $dataImport['position']);
+        $data = $this->db->get('manage_resume')->row_array();
+
+        if(!empty($data)) {
+            return $data['id'];
+        } else {
+            return null;
+        }
+    }
+
+    private function fnc_initPersonnel($orderData)
+    {
+        $orderData = $orderData;
+        $dataFaction = $this->fnc_initFaction();
+        $data = $this->db->get('Personnel')->result_array();
+
+        if(!empty($data)) {
+            foreach ($data as $key => $value) {
+                $setFaction[(!empty($dataFaction[$value['f7']]) ? $dataFaction[$value['f7']] : 0)][] = $value;
+                
+            }
+            ksort($setFaction);
+            $this->db->truncate('manage_personnel');
+            foreach ($setFaction as $key => $value) {
+                foreach ($value as $k => $v) {
+                    $setDataInsertResume = [];
+                    $setDataInsertResume['prename'] = ($v['f3'] == 'Mr.' ? 'นาย' : 'นางสาว');
+                    $setDataInsertResume['prename_en'] = $v['f3'];
+                    $setDataInsertResume['first_name'] = $v['f1'];
+                    $setDataInsertResume['first_name_en'] = $v['f4'];
+                    $setDataInsertResume['last_name'] = $v['f2'];
+                    $setDataInsertResume['last_name_en'] = $v['f5'];
+                    $setDataInsertResume['position'] = $v['f6'];
+                    $setDataInsertResume['affiliated'] = $v['f8'];
+                    $setDataInsertResume['email'] = $v['f9'];
+                    $setDataInsertResume['tel_work'] = $v['f10'];
+                    $id_resume = $this->fnc_checkImportDupicate($setDataInsertResume);
+                    if(!empty($id_resume)) {
+                        $this->db->where('id', $id_resume);
+                        $this->db->update('manage_resume', $setDataInsertResume);
+                    } else {
+                        $setDataInsertResume['show_status'] = 1;
+                        $setDataInsertResume['time_create'] = date('Y-m-d H:i:s');
+                        $setDataInsertResume['s_order'] = $orderData++;
+                        $this->db->insert('manage_resume', $setDataInsertResume);
+                        $id_resume = $this->db->insert_id();
+                    }
+                    $setDataInsertPersonnel = [];
+                    $setDataInsertPersonnel['id_faction'] = $key;
+                    $setDataInsertPersonnel['id_resume'] = $id_resume;
+                    $setDataInsertPersonnel['show_status'] = 1;
+                    $setDataInsertPersonnel['time_create'] = date('Y-m-d H:i:s');
+                    $setDataInsertPersonnel['s_order'] = ($k + 1);
+                    $this->db->insert('manage_personnel', $setDataInsertPersonnel);
+                }
+            }
+                
+        }
+    }
+
+    private function fnc_initFaction()
+    {
+        $this->db->truncate('manage_faction_personnel');
+        $this->db->group_by('f7');
+        $data = $this->db->get('Personnel')->result_array();
+
+        if(!empty($data)) {
+            $getData = [];
+            foreach ($data as $key => $value) {
+                $this->db->insert('manage_faction_personnel', [
+                    'faction' => $value['f7'],
+                    'show_status' => 1,
+                    'time_create' => date('Y-m-d H:i:s'),
+                ]);
+
+                $getData[$value['f7']] = $this->db->insert_id();
+            }
+
+            return $getData;
+        } else {
+            return [];
+        }
+    }
+}

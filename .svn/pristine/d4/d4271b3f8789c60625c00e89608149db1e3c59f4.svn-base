@@ -1,0 +1,321 @@
+<?php
+
+if(!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class ManageBanner_model extends CI_Model
+{
+    #เรียกตารางจากฐานข้อมูล
+
+    private $banner_tbl = 'manage_banner';
+
+    ##Pagination
+    private $per_page = 10;
+
+    ## Search
+    private $s_element = array('stext' => FALSE, 'status' => 'all');
+
+    ## Match data
+    private $status = array('1' => 'เผยแพร่', '2' => 'ไม่เผยแพร่');
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->user_id = $this->session->cmu_web_session['id'];
+
+        $this->fnc_createTbl();
+        $this->path = 'file_upload/module/slide/';
+        $this->path_upload = 'file_upload/module/slide/';
+
+
+    }
+    private function fnc_createTbl()
+    {
+        $this->load->library('CreateTable');
+
+        $this->createtable->createTable($this->banner_tbl,'
+          `banner_id` INT NOT NULL AUTO_INCREMENT,
+          `banner_title` VARCHAR(250),
+          `url` VARCHAR(250),
+          `banner_image` VARCHAR(250),
+          `img_path` VARCHAR(250),
+          `show_status` INT(1),
+          `time_create` DATETIME,
+          `s_order` INT(11),
+          PRIMARY KEY (banner_id)');
+
+          $this->createtable->addColumn('manage_banner', 'banner_title_en', 'VARCHAR(250)');
+    }
+
+    public function getTableList($page)
+    {
+        $this->fnc_setElementSearchFromSession();
+        $this->db->order_by('s_order','asc');
+        $this->db->order_by('time_create','desc');
+        $data=$this->db->get($this->banner_tbl)->result_array();
+        // _print_r($this->db->last_query());
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                if(file_exists($this->path.$value['banner_image']) && !empty($value['banner_image'])) {                    
+                    $value['banner_image']= "<img src='".APP_HOST_ADDRESS.$value['img_path'].'/'.$value['banner_image']."' class='img_list'>";
+                }
+                else{
+                    $value['banner_image']="- ไม่พบไฟล์ภาพ -";
+                }
+                $value['banner_title']=!empty($value['banner_title'])?$value['banner_title']:'-';
+                $value['show_status']=!empty($value['show_status'])?$value['show_status']:'-';
+                $get_data[]=$value;
+            }
+            return $get_data;
+        }
+        return false;
+        
+    }
+
+    public function getCountTableList()
+    {
+        $this->fnc_setElementSearchFromSession();
+        $this->db->order_by('s_order','asc');
+        $data = $this->db->get($this->banner_tbl)->num_rows();
+          if (!empty($data) && $data > 0) {
+              return $data;
+          }
+          return false;
+        
+    }
+
+    public function getListCount()
+    {
+        $this->fnc_setElementSearchFromSession();
+        $data=$this->db->get($this->banner_tbl)->result_array();        
+        $count=!empty($data)?count($data):0;
+        
+        return $count;
+    }
+
+    public function getForm()
+    {
+        $reset = array(
+            'banner_id'=>"",
+            'banner_title'=>"",
+            'banner_title_en'=>"",
+            'url'=>"",
+            'banner_image'=>"",
+            'img_path'=>"",
+            'show_status'=>"",
+            'time_create'=>"",
+            's_order'=>""
+            );
+        return $reset;
+    }
+
+    public function getSelectData($banner_id)
+    {
+        $this->db->where('banner_id', $banner_id);
+        $data = $this->db->get($this->banner_tbl)->row_array();
+        
+        if(!empty($data)) {
+            $img=$data['banner_image'];
+            $path_img=$data['img_path'];
+            if(file_exists($this->path.$img) && !empty($img)) {
+                $data['banner_image'] = APP_HOST_ADDRESS.$path_img.$img;
+            } else {
+                $data['banner_image'] = "";
+            }
+            return $data;
+        }
+        return false;
+        
+    }
+    public function selectNeweOrder()
+    {
+        $this->db->order_by('s_order','desc');
+        // $this->db->limit(1,0);
+        $this->db->select('s_order');        
+        $last_no=$this->db->get($this->banner_tbl)->row_array();
+        // var_dump($last_no);
+        return ($last_no['s_order']+1);
+    }
+    public function getInsert()
+    {   
+        // $last_no=$this->selectNeweOrder(); //หา order สุดท้าย
+        // _print_r($last_no);
+        $time_create=date('Y-m-d h:i:s');
+        $data = array(
+            'banner_title'=>$this->input->post('banner_title'),
+            'banner_title_en'=>$this->input->post('banner_title_en'),
+            'url'=>$this->input->post('url'),
+            'show_status'=>$this->input->post('show_status'),
+            'time_create'=>$time_create,
+            's_order'=> 0
+            );
+        if($_FILES['new_image']['name'] != '') {
+            $alert = $this->fnc_upImg($_FILES['new_image']);
+
+            $info=  pathinfo($_FILES['new_image']['name']);
+            $type_img=$info['extension'];
+            $name_img = md5(date('Y-m-dh:i:s')).'.'.$type_img;
+            if($alert != '') {
+                return $alert;
+            }
+            $data['banner_image'] = $name_img ;
+            $data['img_path'] = $this->path_upload;                
+        }
+        else{
+            return "กรุณาเลือกรูปภาพ";
+        }
+
+        $this->db->insert($this->banner_tbl, $data);
+
+        $id = $this->db->insert_id();
+        $Counter = new Counter;
+        $Counter->logAction($data['banner_title'], $id, 0, 'banner', '27', $this->user_id);
+    }
+    public function getEdit($id)
+    {   
+        $time_create=date('Y-m-d h:i:s');
+        $data = array(
+            'banner_title'=>$this->input->post('banner_title'),
+            'banner_title_en'=>$this->input->post('banner_title_en'),
+            'url'=>$this->input->post('url'),
+            'show_status'=>$this->input->post('show_status'),
+            // 'time_create'=>$time_create,
+            );
+        $img = $this->fnc_selectImg($id);
+        if($_FILES['new_image']['name'] != '') {            
+            $alert = $this->fnc_upImg($_FILES['new_image']);
+
+            $info=  pathinfo($_FILES['new_image']['name']);
+            $type_img=$info['extension'];
+            $name_img = md5(date('Y-m-dh:i:s')).'.'.$type_img;
+            if($alert != '') {
+                return $alert;
+            }
+            if(file_exists($this->path.$img)) {
+                unlink($this->path.$img);
+            }
+            $data['banner_image'] = $name_img ;
+            $data['img_path'] = $this->path_upload;                
+        }
+        elseif($_FILES['new_image']['name'] == '' && !file_exists($this->path.$img)){
+            return "กรุณาเลือกรูปภาพ";
+        }
+
+        $dataByID = $this->getSelectData($id);
+
+        if(!empty($dataByID)) {
+            $Counter = new Counter;
+            $Counter->logAction($dataByID['banner_title'], $id, 0, 'banner', '28', $this->user_id);
+        }
+
+        $this->db->where('banner_id',$id);
+        $this->db->update($this->banner_tbl, $data);
+    }
+
+    private function fnc_selectImg($id)
+    {
+        $this->db->select('banner_image');
+        $this->db->where('banner_id', $id);
+        $data = $this->db->get($this->banner_tbl)->row_array();
+        if(!empty($data)) {
+            return $data['banner_image'];
+        }
+        return false;
+    }
+    private function fnc_upImg($img)
+    {        
+        $alert = "";
+        $info=  pathinfo($img['name']);
+        $type_img=$info['extension'];
+
+        $name_img = md5(date('Y-m-dh:i:s')).'.'.$type_img;
+
+        if($type_img == 'jpg' || $type_img == 'png' || $type_img == 'gif') {
+
+            move_uploaded_file($img['tmp_name'], $this->path.$name_img);
+        } else {
+            return $alert = "ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด";
+        }
+    }
+
+    public function getdelete($id)
+    {
+        $dataByID = $this->getSelectData($id);
+        if(!empty($dataByID)) {
+            $Counter = new Counter;
+            $Counter->logAction($dataByID['banner_title'], $id, 0, 'banner', '29', $this->user_id);
+        }
+        $img = $this->fnc_selectImg($id);
+        if(file_exists($this->path.$img)) {
+            unlink($this->path.$img);
+        }
+        $this->db->where('banner_id', $id);
+        $this->db->delete($this->banner_tbl);
+    }
+
+//     ## Search
+
+    private function fnc_setElementSearchFromSession()
+    {
+        $form_search_element = $this->session->userdata('form_search_element');
+
+
+        if($form_search_element == null) {
+            return;
+        }
+        foreach($this->s_element as $key => $value) {
+            if(isset($form_search_element['element'][$key]))
+                $this->s_element[$key] = $form_search_element['element'][$key];
+        }
+
+        $stext = trim($this->db->escape_str($this->s_element['stext']));
+        $status = $this->s_element['status'];
+
+        if($stext != '') {
+            $this->db->where("(banner_title LIKE '%{$stext}%')");
+        }
+
+        if($status != 'all') {
+            $this->db->where('show_status', $status);
+        }
+    }
+
+    public function getSElement()
+    {
+        return $this->s_element;
+    }
+
+    public function saveOrder($id, $order)
+    {
+        $data = array(
+            's_order' => $order
+            );
+
+        $this->db->where('banner_id', $id);
+        $this->db->update($this->banner_tbl, $data);
+        
+
+        return 'เรียงลำดับข้อมูลแล้ว';
+    }
+
+
+//     ##Pagination
+
+    public function getPerPage()
+    {
+        return $this->per_page;
+    }
+
+    private function fnc_calPageOffset($page)
+    {
+        $offset = ($page * $this->per_page) - $this->per_page;
+
+        $this->db->limit($this->per_page, $offset);
+    }
+
+    
+
+}
+
+/* End of file New_model.php */
+/* Location: ./application/models/New_model.php */

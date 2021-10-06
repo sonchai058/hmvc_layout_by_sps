@@ -1,0 +1,136 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class ManageExpert extends MDL_Controller
+{
+
+    private $status = array(1 => 'เผยแพร่', 2 => 'ไม่เผยแพร่', '-' => '-');
+
+    public function __construct()
+    {
+        parent::__construct();
+        ## Search
+        parent::setSearchSession();
+    }
+
+    public function index($page = 1)
+    {
+        $data['title'] = 'จัดการผู้เชี่ยวชาญ';
+        $data['title_page'] = 'จัดการผู้เชี่ยวชาญ';
+        $data['list'] = $this->model->getData($page);
+        $num = $this->model->getCountData();
+        $per_page = $this->model->getPerPage();
+        parent::pagination($page, $num, $per_page, 4);
+        $data['form_search_element'] = $this->model->getSElement();
+        $data['status'] = $this->status;
+        ## Search
+        parent::view('manage_expert/index', $data);
+    }
+
+    public function formData($id = FALSE)
+    {
+        $data['title'] = 'จัดการผู้เชี่ยวชาญ';
+        $data['title_page'] = 'จัดการผู้เชี่ยวชาญ';
+        $data['data'] = $this->model->getForm($id);
+        $data['title_sub'] = $id != FALSE ? 'แก้ไขผู้เชี่ยวชาญ' : 'เพิ่มผู้เชี่ยวชาญ';
+        parent::view('manage_expert/form', $data);
+    }
+
+    public function getDataAjax()
+    {
+        $data = $this->model->getDataAjax();
+
+        echo json_encode($data); die();
+    }
+
+    public function getDataResume($id = false)
+    {
+        $data = $this->model->getDataResume($id);
+
+        echo json_encode($data); die();
+    }
+
+    public function insertData($id = FALSE)
+    {
+        $this->model->insertData($id);
+        redirect(base_url() . 'management/ManageExpert/index');
+    }
+
+    public function deleteData($id = FALSE)
+    {
+        $this->model->deleteData($id);
+        redirect(base_url() . 'management/ManageExpert/index');
+    }
+
+    public function TopicExpert($expert_id = null, $page = 1)
+    {
+        if(empty($expert_id)) {
+            show_404();
+        }
+
+        $expertData = $this->model->getExpertById($expert_id);
+        if(empty($expertData)) {
+            show_404();
+        }
+        $data['title'] = 'จัดการผู้เชี่ยวชาญ';
+        $data['title_sub'] = 'จัดการหัวข้อความเชี่ยวชาญ';
+        $data['title_page'] = 'จัดการหัวข้อความเชี่ยวชาญ <br> (ผู้เชี่ยวชาญ : '.$expertData['prename'].$expertData['first_name'].' '.$expertData['last_name'].')';
+        $data['list'] = $this->model->getDataExpert($expert_id, $page);
+        $data['expert_id'] = $expert_id;
+        $num = $this->model->getCountExpert($expert_id);
+        $per_page = $this->model->getPerPage();
+        parent::pagination($page, $num, $per_page, 5);
+        $data['form_search_element'] = $this->model->getSElement();
+        $data['status'] = $this->status;
+        parent::view('manage_expert/topic_expert', $data);
+    }
+
+    public function formExpert($expert_id = FALSE, $id_topic = FALSE)
+    {
+        if(empty($expert_id)) {
+            show_404();
+        }
+
+        $expertData = $this->model->getExpertById($expert_id);
+        if(empty($expertData)) {
+            show_404();
+        }
+
+        $data['title'] = 'จัดการผู้เชี่ยวชาญ';
+        $data['title_page'] = 'จัดการหัวข้อความเชี่ยวชาญ';
+        $data['expert_id'] = $expert_id;
+        $data['data'] = $this->model->getFormExpert($expert_id, $id_topic);
+        $data['title_sub'] = $id_topic != FALSE ? 'แก้ไขหัวข้อความเชี่ยวชาญ <br> (ผู้เชี่ยวชาญ : '.$expertData['prename'].$expertData['first_name'].' '.$expertData['last_name'].')' : 'เพิ่มหัวข้อความเชี่ยวชาญ <br> (ผู้เชี่ยวชาญ : '.$expertData['prename'].$expertData['first_name'].' '.$expertData['last_name'].')';
+        parent::view('manage_expert/form_expert', $data);
+    }
+
+    public function insertExpert($expert_id = FALSE, $id_topic = FALSE)
+    {
+        $this->model->insertExpert($expert_id, $id_topic);
+        redirect(base_url() . 'management/ManageExpert/TopicExpert/'.$expert_id);
+    }
+
+    public function deleteExpert($expert_id = FALSE, $id_topic = FALSE)
+    {
+        $this->model->deleteExpert($expert_id, $id_topic);
+        redirect(base_url() . 'management/ManageExpert/TopicExpert/'.$expert_id);
+    }
+
+
+    public function updateOrder($id = false, $order = false)
+    {
+        if ($id == false || $order == false) {
+            $result = 'ไม่สามารถเรียงลำดับข้อมูลได้';
+        } else {
+            $result = $this->model->saveOrder($id, $order);
+        }
+
+        echo $result;
+    }
+
+}
+
+/* End of file News.php */
+/* Location: ./application/controllers/News.php */

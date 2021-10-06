@@ -1,0 +1,137 @@
+<style>
+    .input_search {
+        width: 100% !important;
+    }
+    .label_search {
+        min-height: 33px;
+        padding-top: 8px;
+        font-size: 15px;
+    }
+    .select_search span{
+        width: 100% !important;
+        padding: 0px;
+         text-align: left;
+    }
+</style>
+
+<div class="main-container">
+    <div class="pd-ltr-20 xs-pd-20-10">
+        <div class="pd-20 pb-40 card-box mb-30">
+            <div class="row">
+                <div class="col-md-12">
+
+                    <div class="row">
+                        <div class="col-6">
+                          <h4 class="text-blue h4"><?= $title_page ?></h4>
+                        </div>
+
+                        <div class="col-6">
+                          <div class="pull-right">
+                            <nav aria-label="breadcrumb" role="navigation">
+                              <ol class="breadcrumb pd-0">
+                                <li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+                                <li class="breadcrumb-item active" aria-current="page"><?= $title_page ?></li>
+                              </ol>
+                            </nav>
+                          </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="main-box clearfix">
+                                <div class="main-box-body clearfix">
+                                    <div class="col-md-12">
+                                        <div class="header-leftSBS">
+                                            <div class="header-search">
+                                              <form method="post"
+                                                    action="<?= $action_link ?>">
+                                                <div class="form-group mb-0 w-70 mx-auto">
+                                                  <i class="dw dw-search2 search-icon mx-auto"></i>
+                                                  <input type="text" class="form-control search-input " name="form_search_element[stext]" placeholder="ค้นหา" value="<?= $form_search_element['stext'] ?>">
+                                                </div>
+
+                                                <div class="form-group mt-3 text-center">
+                                                    <button type="submit" class="btn btn-primary mr-1">
+                                                        <i class="fa fa-search"></i> ค้นหา
+                                                    </button>
+                                                    <button type="submit" name="reset" value="clear" class="btn btn-danger">
+                                                        <i class="fa fa-refresh"></i> ล้างค่า
+                                                    </button>
+                                                </div>
+                                              </form>
+                                            </div>
+                                        </div>
+
+                                        <div class="table-responsive">
+                                            <table role="grid" id="table-example" class="table table-hover dataTable no-footer">
+                                                <thead>
+                                                    <tr role="row">
+                                                        <th class="text-center start_no" style="width: 7%;">
+                                                            <span>ลำดับ</span>
+                                                        </th>
+                                                        <th class="text-center">
+                                                            <span>หมวดหมู่ปฏิทิน</span>
+                                                        </th>
+                                                        <th class="text-center">
+                                                            <span>หมวดหมู่ปฏิทินอังกฤษ</span>
+                                                        </th>
+                                                        <th class="text-center">
+                                                            <span>สี</span>
+                                                        </th>
+                                                        <th class="text-center set_width_button" style="width: 25% !important;">
+                                                            <a href="<?= $action_link ?>form" title="เพิ่ม"><button type="button" class="btn btn-success">
+                                                                <i class="fa fa-plus"></i> เพิ่มหมวดหมู่ปฏิทิน
+                                                            </button></a>
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <?php if(!empty($list)): foreach($list as $key => $value): ?>
+                                                        <tr class="odd" role="row">
+                                                            <td class="text-center"><?= ++$this->start_no ?></td>
+                                                            <td><?= isset($value['cg_name']) ? $value['cg_name'] : '' ?></td>
+                                                            <td><?= isset($value['cg_name_en']) ? $value['cg_name_en'] : '' ?></td>
+                                                            <td class="text-center">
+                                                                <span class="badge badge-pill" style="background-color: <?= $value['cg_color'] ?>; color: <?= $value['cg_color'] ?>;">Color</span>
+                                                            </td>
+                                                            <td class="text-center">
+                                                                <a href="<?= $action_link.'form/'.$value['cg_id'] ?>" class="table-link " title="แก้ไข">
+                                                                    <button type="button" class="btn btn-warning">
+                                                                        <i class="fa fa-edit"></i> แก้ไข
+                                                                    </button>
+                                                                </a>
+                                                                <a href="<?= $action_link.'delete/'.$value['cg_id'] ?>" class="table-link danger" title="ลบ">
+                                                                    <button type="button" class="btn btn-danger" onclick="return confirm('คุณต้องการลบหมวดหมู่ปฏิทิน')">
+                                                                        <i class="fa fa-trash-o"></i> ลบ
+                                                                    </button>
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                        <?php
+                                                        endforeach;
+                                                        else:
+                                                            ?>
+                                                        <tr class="odd text-center " role="row">
+                                                            <td colspan="6"><strong>- ไม่พบข้อมูล -</strong>
+                                                            </td>
+                                                        </tr>
+                                                    <?php endif; ?>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="pagination" style="float:right">
+                                <div class="paging">
+                                    <?php echo $this->my_pagination; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

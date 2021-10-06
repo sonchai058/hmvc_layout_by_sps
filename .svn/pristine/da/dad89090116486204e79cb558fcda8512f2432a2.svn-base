@@ -1,0 +1,168 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Sarawut
+ * Date: 27/6/2018 AD
+ * Time: 10:36
+ */
+
+class News extends MY_Controller
+{
+
+    function __construct()
+    {
+        parent::__construct();
+        $this->load->library('session');
+    }
+
+    public function index($news_id = false)
+    {
+        // parent::view('news_detail');
+        // parent::view('news_list');
+    }
+
+    public function NewsDetail($cate_news = false, $news_id = false)
+    {
+        $data['news_detail'] = $this->model->getNewsDetail($news_id);
+        // _print_r($data);
+        parent::view('news_detail', $data);
+
+        $Counter = new Counter;
+        $Counter->counterPageInfo('news', $news_id, $cate_news);
+    }
+
+    public function NewsList($cate_news = false, $page = 1)
+    {
+        //Pagination
+        $num = $this->model->getCountNewsList($cate_news);
+        $per_page = $this->model->getPerPage();
+        $data['paginate'] = $this->model->newsPagination($page, $num);
+        $data['num'] = $num;
+        $data['per_page'] = $per_page;
+        $data['page'] = $page;
+        $data['cate_news'] = $cate_news;
+        $data['news_list_title'] = $this->model->getCategoryTitle($cate_news);
+        $data['news_list'] = $this->model->getNewsList($cate_news,$page);
+        parent::view('news_list', $data);
+
+        $Counter = new Counter;
+        $Counter->counterPageInfo('news', 0, $cate_news);
+    }
+
+    public function RssFeedList()
+    {
+        $site_url = base_url().'News/';
+        $getCategoryNews = $this->model->getCategoryNews();
+        header("Content-type: text/xml");
+        echo '<?xml version="1.0" encoding="UTF-8"?>';
+        $htmlData = '<rss version="2.0">';
+        if(!empty($getCategoryNews)) {
+            $htmlData .= '<channel>';
+            $htmlData .= '<title>วิธีเชื่อมโยงรายการ จำแนกตามประเภท </title>';
+            $htmlData .= '<link>'.base_url().'News/RssFeedList</link>';
+            $htmlData .= '<description></description>';
+            $htmlData .= '<language>en-TH</language>';
+            $htmlData .= '<copyright>Copyright '.date('Y').'</copyright>';
+            $htmlData .= '<pubDate>'.date("Y-m-d").'T'.date("H:i:s").'+07:00</pubDate>';
+            foreach ($getCategoryNews as $value) {
+                $htmlData .= '<item>';
+                $htmlData .= '<title><![CDATA['.$value['category_name'].']]></title>';
+                $htmlData .= '<link>'.$site_url.'RssFeed/'.$value['category_id'].'</link>';
+                $htmlData .= '<guid></guid>';
+                $htmlData .= '<description>';
+                $htmlData .= '&lt;b&gt; URL ในการเชื่อมโยง &lt;/b&gt;
+                                    <![CDATA[
+                                        -  <a target="_blank" href="'.$site_url.'RssFeed/'.$value['category_id'].'</a>
+                                     ]]>
+                                    &lt;br&gt;
+                                    &lt;b&gt;การจำกัดจำนวนแสดงผล &lt;/b&gt;
+                                    - ทำได้โดยเพิ่ม "&amp;limit={เลขจำนวน}" ต่อท้าย URL ในการเชื่อมโยง &lt;br&gt;
+                                    &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;
+                                    - เช่น
+                                    <![CDATA[
+                                          <a target="_blank" href="'.$site_url.'RssFeed/'.$value['category_id'].'/5">'.$site_url.'RssFeed/'.$value['category_id'].'/5</a>
+                                     ]]>
+                                    &lt;hr&gt;';
+                $htmlData .= '</description>';
+                $htmlData .= '</item>';
+            }
+            $htmlData .= '</channel>';
+        } else {
+            $htmlData .= '<channel>';
+            $htmlData .= '<title>ไม่มีข้อมูล</title>';
+            $htmlData .= '</channel>';
+        }
+        
+        $htmlData .= '</rss>';
+        echo $htmlData;
+    }
+
+    public function RssFeed($category_id = 0, $limit = 5)
+    {
+        $site_url = base_url().'News/';
+        $getNewsList = $this->model->getNewsListCategory($category_id, $limit);
+        header("Content-type: text/xml");
+        echo '<?xml version="1.0" encoding="UTF-8"?>';
+        $htmlData = '<rss version="2.0">';
+        if(!empty($getNewsList) && !empty($getNewsList['listData'])) {
+            $htmlData .= '<channel>';
+            $htmlData .= '<title>รายการ '.$getNewsList['category_name'].'</title>';
+            $htmlData .= '<link>'.base_url().'News/RssFeedList</link>';
+            $htmlData .= '<description>ประจำวันที่ '. General::dayThai(date('Y-m-d')).'</description>';
+            $htmlData .= '<language>en-TH</language>';
+            $htmlData .= '<copyright>Copyright '.date('Y').'</copyright>';
+            $htmlData .= '<pubDate>'.date("Y-m-d").'T'.date("H:i:s").'+07:00</pubDate>';
+            foreach ($getNewsList['listData'] as $value) {
+                $htmlData .= '<item>';
+                $htmlData .= '<title><![CDATA['.$value['news_title'].']]></title>';
+                $htmlData .= '<link>'.$site_url.'NewsDetail/'.$value['news_id'].'</link>';
+                $htmlData .= '<guid></guid>';
+                $htmlData .= '<pubDate>'.date('Y-m-dTH:i:sP', strtotime($value['time_update'])).'</pubDate>';
+                $htmlData .= '<description>';
+                $htmlData .= '<![CDATA[<img src="'.base_url().$value['news_path'].$value['news_image'].'" height="100" width="75" title="'.$value['news_title'].'" />]]> '.(!empty($value['news_description']) ? '&lt;br&gt; รายละเอียด : ' . htmlspecialchars($this->fnc_subContent($value['news_description'])) : '');
+                $htmlData .= '</description>';
+                $htmlData .= '</item>';
+            }
+            $htmlData .= '</channel>';
+        } else {
+            $htmlData .= '<channel>';
+            $htmlData .= '<title>ไม่มีข้อมูล</title>';
+            $htmlData .= '</channel>';
+        }
+        
+        $htmlData .= '</rss>';
+
+        echo $htmlData;
+    }
+
+    private function fnc_pureContent($content)
+    {
+        $tmp = strip_tags($content);
+        $tmp = str_replace('&nbsp;', ' ', $tmp);
+        $tmp = trim(preg_replace('/\s\s+/', ' ', $tmp));
+        $arr = explode(' ', $tmp);
+        $arr = array_unique($arr);
+
+        $tmp = implode(' ', $arr);
+
+        return trim($tmp);
+    }
+
+
+    private function fnc_subContent($content)
+    {
+        $tmp = $this->fnc_pureContent($content);
+
+        $length = mb_strlen($tmp, 'UTF-8');
+
+        if ($length > 500) {
+            $tmp = mb_substr($tmp, 0, 500, "utf-8");
+            $arr = explode(' ', $tmp);
+
+            array_pop($arr);
+            $tmp = implode(' ', $arr);
+        }
+
+        return trim($tmp);
+    }
+}

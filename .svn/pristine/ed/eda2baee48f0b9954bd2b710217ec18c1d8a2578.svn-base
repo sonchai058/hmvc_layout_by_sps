@@ -1,0 +1,282 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class Calendar_model extends CI_Model
+{
+
+    private $tbl = 'calendar';
+    private $calendar_news_tbl = 'calendar_news';
+    private $calendar_gallery_tbl = 'calendar_gallery';
+    private $calendar_group_tbl = 'calendar_group';
+
+    private $news_tbl = 'news';
+    private $gallery_category_tbl = 'gallery_category';
+    private $gallery_file_tbl = 'gallery_file';
+    private $category_news = array('1' => 'ข่าวประชาสัมพันธ์', '2' => 'ข่าวจัดซื้อจัดจ้างกองทุนฯ พื้นที่', '3' => 'ข่าวการดำเนินกิจกรรมฯ');
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->user_id = $this->session->cmu_web_session['id'];
+        // $this->db = $this->load->database('default', true);
+        // $this->db_users = $this->load->database('km_users', true);
+        // $this->db_users_dbo = $this->db_users->dbprefix;
+        // $this->db_dbo = $this->db->dbprefix;
+
+        $this->fnc_createTbl();
+    }
+
+    private function fnc_createTbl()
+    {
+        $this->load->library('CreateTable');
+
+        $this->createtable->createTable('calendar','
+          `id` int(11) NOT NULL AUTO_INCREMENT,
+          `title` VARCHAR(250) DEFAULT NULL,
+          `start` DATETIME DEFAULT NULL,
+          `end` DATETIME DEFAULT NULL,
+          `detail` text,
+          `title_en` VARCHAR(250) DEFAULT NULL,
+          `detail_en` text DEFAULT NULL,
+          `calendar_group` int(11) DEFAULT NULL,
+          PRIMARY KEY (`id`)');
+
+        $this->createtable->addColumn('calendar', 'time_update', 'DATETIME DEFAULT NULL');
+    }
+
+
+
+    public function getData()
+    {
+        // $this->db->select('id, title, title_en, detail, detail_en, start, end');
+        $data = $this->db->get($this->tbl)->result_array();
+
+        if (!empty($data)) {
+            $getData = [];
+            foreach ($data as $key => $value) {
+                $value['id'] = intval($value['id']);
+                // $value['news'] = $this->fnc_getCanlendarNews($value['id']);
+                $value['color'] = $this->fnc_getCalendarColor($value['calendar_group']);
+                $value['calendar_group'] = $value['calendar_group'].'|'.$value['color'];
+                $getData[] = $value;
+            }
+
+            return $getData;
+        } else {
+            return [];
+        }
+    }
+
+    private function fnc_getCalendarColor($calendar_group)
+    {
+        $this->db->select('cg_color');
+        $this->db->where('cg_id', $calendar_group);
+        $data = $this->db->get($this->calendar_group_tbl)->row_array();
+
+        return $data['cg_color'];
+    }
+
+    public function getDataGroup()
+    {
+        // $this->db->select('id, title, title_en, detail, detail_en, start, end');
+        $data = $this->db->get($this->calendar_group_tbl)->result_array();
+        if (!empty($data)) {
+            $getData = [];
+            foreach ($data as $key => $value) {
+                $value['cg_id'] = intval($value['cg_id']);
+                // $value['news'] = $this->fnc_getCanlendarNews($value['id']);
+                $getData[] = $value;
+            }
+
+            return $getData;
+        } else {
+            return [];
+        }
+    }
+
+    private function fnc_getDataById($id)
+    {
+        $this->db->select('id, title, detail, date(start), date(end)');
+        $this->db->where('id', $id);
+        $data = $this->db->get($this->tbl)->row_array();
+
+        if (!empty($data)) {
+            return $data;
+        } else {
+            return [];
+        }
+    }
+
+    private function fnc_getCanlendarNews($id)
+    {
+        $this->db->select('t2.*');
+        $this->db->where('t1.id', $id);
+        $this->db->where('t2.news_status', 1);
+        $this->db->order_by('t2.news_id', 'desc');
+        $this->db->join($this->news_tbl . ' t2', 't2.news_id = t1.news_id');
+        $data = $this->db->get($this->calendar_news_tbl . ' t1')->result_array();
+
+        if (!empty($data)) {
+            $getData = [];
+            foreach ($data as $key => $value) {
+                $getData[] = [
+                    'id' => $value['news_id'],
+                    'text' => $value['news_title'],
+                    'group' => $this->category_news[$value['news_category']]
+                ];
+            }
+            return $getData;
+        } else {
+            return [];
+        }
+    }
+
+    public function saveData($id)
+    {
+        $date = array();
+        $post = json_decode($_POST['send_data'], true);
+        // _print_r($post);
+        $dt = explode("|",$post['color']);
+        $calendar_group = $dt[0];
+        $color = $dt[1];
+        $dateUpdate = date('Y-m-d H:i:s');
+        if (!empty($post)) {
+            $data = array(
+                'title' => (!empty($post['title']) ? $post['title'] : ''),
+                'title_en' => (!empty($post['title_en']) ? $post['title_en'] : ''),
+                'start' => $post['start'],
+                'end' => $post['end'],
+                'detail' => (!empty($post['detail']) ? $post['detail'] : ''),
+                'detail_en' => (!empty($post['detail_en']) ? $post['detail_en'] : ''),
+                'calendar_group' => $calendar_group,
+                'time_update' => $dateUpdate,
+            );
+        }
+
+        if (!empty($id)) {
+            // die('update');
+            $dataByID = $this->fnc_getDataById($id);
+            if (!empty($data)) {
+                $Counter = new Counter;
+                $Counter->logAction($dataByID['title'], $id, 0, 'calendar', '15', $this->user_id);
+            }
+
+            $this->db->where('id', $id);
+            $this->db->update($this->tbl, $data);
+        } else {
+            // die('insert');
+            $this->db->insert($this->tbl, $data);
+            $id = $this->db->insert_id();
+
+            $Counter = new Counter;
+            $Counter->logAction($data['title'], $id, 0, 'calendar', '14', $this->user_id);
+        }
+
+        // if (!empty($post['news'])) {
+        //     $this->fnc_insertNews($post['news'], $id);
+        // }
+
+        // if (!empty($post['gallery'])) {
+        //     $this->fnc_insertGallery($post['gallery'], $id);
+        // }
+        
+        return $id;
+    }
+
+    private function fnc_insertNews($data, $id)
+    {
+        $this->db->delete($this->calendar_news_tbl, ['id' => $id]);
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                $this->db->insert($this->calendar_news_tbl, ['id' => $id, 'news_id' => $value['id'], 'time_create' => (date('Y-m-d H:i:s'))]);
+            }
+        }
+    }
+
+    private function fnc_insertGallery($data, $id)
+    {
+        $this->db->delete($this->calendar_gallery_tbl, ['id' => $id]);
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                $this->db->insert($this->calendar_gallery_tbl, ['id' => $id, 'gal_id' => $value['id'], 'time_create' => (date('Y-m-d H:i:s'))]);
+            }
+        }
+    }
+
+    public function deleteData($id)
+    {
+        $dataByID = $this->fnc_getDataById($id);
+        if (!empty($dataByID)) {
+            $Counter = new Counter;
+            $Counter->logAction($dataByID['title'], $id, 0, 'calendar', '16', $this->user_id);
+        }
+
+        $this->db->delete($this->tbl, ['id' => $id]);
+        // $this->db->delete($this->calendar_news_tbl, ['id' => $id]);
+        // $this->db->delete($this->calendar_gallery_tbl, ['id' => $id]);
+
+    }
+
+
+    public function getListNews()
+    {
+        $this->db->select('TOP(100) *');
+        if (!empty($_GET) && !empty($_GET['q'])) {
+            $this->db->like('news_title', trim($_GET['q']));
+        }
+        $this->db->where('news_status', 1);
+        $this->db->order_by('news_id', 'desc');
+        $data = $this->db->get($this->news_tbl)->result_array();
+
+        if (!empty($data)) {
+            $getData = [];
+            foreach ($data as $key => $value) {
+                if (isset($getData[$value['news_category']])) {
+                    array_push($getData[$value['news_category']]['children'], [
+                        'id' => $value['news_id'],
+                        'text' => $value['news_title'],
+                        'group' => $this->category_news[$value['news_category']]
+                    ]);
+                } else {
+                    $getData[$value['news_category']]['text'] = $this->category_news[$value['news_category']];
+                    $getData[$value['news_category']]['children'][] = [
+                        'id' => $value['news_id'],
+                        'text' => $value['news_title'],
+                        'group' => $this->category_news[$value['news_category']]
+                    ];
+                }
+            }
+
+            return array_values($getData);
+        } else {
+            return [];
+        }
+    }
+
+    public function getListGallery()
+    {
+        $this->db->select('TOP(100) *');
+        if (!empty($_GET) && !empty($_GET['q'])) {
+            $this->db->like('gal_name', trim($_GET['q']));
+        }
+        $this->db->where('status', 1);
+        $this->db->order_by('[order]', 'asc');
+        $data = $this->db->get($this->gallery_category_tbl)->result_array();
+
+        if (!empty($data)) {
+            $getData = [];
+            foreach ($data as $key => $value) {
+                $getData[] = [
+                    'id' => $value['gal_id'],
+                    'text' => $value['gal_name']
+                ];
+            }
+
+            return $getData;
+        } else {
+            return [];
+        }
+    }
+}

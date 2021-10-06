@@ -1,0 +1,141 @@
+<?php
+
+/**
+ *
+ */
+class DataExpert_model extends CI_model
+{
+    private $manage_menu_module_tbl = 'manage_menu_module';
+    private $tbl = 'manage_expert';
+    private $manage_expert_topic_tbl = 'manage_expert_topic';
+    private $manage_resume_tbl = 'manage_resume';
+    private $proto = [
+        'from' => 0,
+        'size' => 100,
+        'query' => [
+        ]
+    ];
+
+    private $es_type = 'http://localhost:9200/cmu_web/';
+    private $analyzer = 'standard';
+
+    private $default_field = ['title', 'content'];
+    private $val_lang = 'th';
+    private $per_page = 10;
+
+
+    function __construct()
+    {
+        parent::__construct();
+        $this->load->library('session');
+        $this->user_id = $this->session->cmu_web_session['id'];
+
+        if (!empty($_SESSION['LANGUAGE'])) {
+            $this->val_lang = strtolower($_SESSION['LANGUAGE']);
+        }else{
+            $this->val_lang = 'th';
+
+        }
+        
+    }
+
+    private function fnc_filterData($data)
+    {
+
+        $filterData = [];
+        if(!empty($data['filter']['data'])) {
+            foreach($data['filter']['data'] as $key => $value) {
+                foreach($value as $k => $v) {
+                    $filterData[] = $v;
+                }
+            }
+
+        }
+
+        if(!empty($filterData)) {
+            $this->db->where_in('t2.id_store', $filterData);
+        }
+    }
+
+    public function find($data, $offset)
+    {
+
+        $text = trim($data['command']['stext']);
+        if($text != '') {
+            $this->db->where('UPPER(SUBSTRING(t1.topic, 1 ,1)) = "'.$text.'"');
+        }
+
+        $this->db->select('t1.*, t2.id_resume, t3.prename, t3.first_name, t3.last_name, t3.email');
+        $this->db->limit($data['per_page'], $offset);
+        $this->db->where('t1.show_status', 1);
+        $this->db->join($this->tbl.' t2', 't2.id = t1.id_expert');
+        $this->db->join($this->manage_resume_tbl.' t3', 't3.id = t2.id_resume', 'left');
+        $data = $this->db->get($this->manage_expert_topic_tbl.' t1')->result_array();
+        if(!empty($data)) {
+            $getData = [];
+            foreach($data as $key => $value) {
+                $getData[] = $value;
+            }
+            return $getData;
+        } else {
+            return [];
+        }
+    }
+
+   
+    public function getTotal($data)
+    {
+        $text = trim($data['command']['stext']);
+        if($text != '') {
+            $this->db->where('UPPER(SUBSTRING(t1.topic, 1 ,1)) = "'.$text.'"');
+        }
+        // $this->fnc_filterData($data);
+        $this->db->where('t1.show_status', 1);
+        $this->db->join($this->tbl.' t2', 't2.id = t1.id_expert');
+        return $this->db->get($this->manage_expert_topic_tbl.' t1')->num_rows();
+    }
+
+    
+
+    public function aggNameFilter()
+    {
+        $this->db->select("UPPER(SUBSTRING(topic, 1 ,1)) as label");
+        $this->db->where('show_status', 1);
+        $this->db->group_by('SUBSTRING(topic, 1 ,1) ASC');
+        $data = $this->db->get($this->manage_expert_topic_tbl)->result_array();
+
+        if(!empty($data)) {
+            return $data;
+        } else {
+            return [];
+        }
+    }
+    
+    //##Pagination
+
+    public function getPerPage()
+    {
+        return $this->per_page;
+    }
+
+    private function fnc_calPageOffset($page)
+    {
+        $offset = ($page * $this->per_page) - $this->per_page;
+
+        $this->db->limit($this->per_page, $offset);
+    }
+
+    public function getMenuName()
+    {
+        $this->db->where('module_id', 10);
+        $data = $this->db->get('manage_menu')->row_array();
+
+        if(!empty($data)) {
+            return ($this->val_lang == 'en' ? (!empty($data['menu_name_en']) ? $data['menu_name_en'] : $data['menu_name']) : $data['menu_name']);
+        } else {
+            return ($this->val_lang == 'en' ? 'Expert' :'ผู้เชียวชาญ');
+        }
+    }
+}
+
+?>

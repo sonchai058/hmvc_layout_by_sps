@@ -1,0 +1,296 @@
+msgid "Communication Channel"
+msgstr "ช่องทางการสื่อสาร"
+
+msgid "Public Holidays Closed"
+msgstr "วันหยุดนักขัตฤกษ์ ปิดบริการ"
+
+msgid "Sat – Sun Closed"
+msgstr "เสาร์ - อาทิตย์ ปิดบริการ"
+
+msgid "Mon – Fri 8:30 am – 4:30 pm"
+msgstr "จันทร์ - ศุกร์ 8.30 - 16.30 น."
+
+msgid "Semester Break"
+msgstr "ปิดภาคการศึกษา"
+
+msgid "Sat – Sun 10:00 – 6:00 pm"
+msgstr "เสาร์ - อาทิตย์ 10.00 - 18.00 น."
+
+msgid "Mon – Fri 8:00 am – 9:00 pm"
+msgstr "จันทร์ - ศุกร์ 8.00 - 21.00 น."
+
+msgid "Semester"
+msgstr "ปกติ"
+
+msgid "Library Hours"
+msgstr "เวลาเปิดบริการ"
+
+msgid "FAX"
+msgstr "โทรสาร"
+
+msgid "Office"
+msgstr "สำนักงาน"
+
+msgid "PR"
+msgstr "ประชาสัมพันธ์"
+
+msgid "Service"
+msgstr "บริการยืม-คืน"
+
+msgid "Circulation Desk"
+msgstr "บริการช่วยการค้นคว้า"
+
+msgid "Phone"
+msgstr "โทรศัพท์"
+
+msgid "239 Huay Kaew Road, Muang District, Chiang Mai 50200"
+msgstr "239 ถนนห้วยแก้ว อ. เมือง จ. เชียงใหม่ 50200"
+
+msgid "Chiang Mai University Library"
+msgstr "สำนักหอสมุด มหาวิทยาลัยเชียงใหม่"
+
+msgid "Voice of Customer"
+msgstr "ข้อเสนอแนะ"
+
+msgid "Visitor Stats"
+msgstr "สถิติผู้เข้าชม"
+
+msgid "Read More"
+msgstr "อ่านเพิ่มเติม"
+
+msgid "Read All"
+msgstr "อ่านทั้งหมด"
+
+msgid "Gallery"
+msgstr "แกลลอรี่"
+
+msgid "Call Number"
+msgstr "เลขหมู่"
+
+msgid "Author"
+msgstr "ผู้แต่ง"
+
+msgid "Menu"
+msgstr "เมนู"
+
+msgid "Menu Top"
+msgstr "เมนูด้านบน"
+
+msgid "News"
+msgstr "ข่าว"
+
+msgid "Pubyear"
+msgstr "ปีที่บันทึก"
+
+msgid "No data item found"
+msgstr "ไม่พบรายการข้อมูล"
+
+msgid "All results"
+msgstr "ผลการค้นหาทั้งหมด"
+
+msgid "List"
+msgstr "รายการ"
+
+msgid "Internal Search"
+msgstr "ค้นหาภายในเว็บ"
+
+msgid "Previous"
+msgstr "ย้อนกลับ"
+
+msgid "Next"
+msgstr "หน้าถัดไป"
+
+msgid "Annotation"
+msgstr "หมายเหตุ"
+
+msgid "Detail"
+msgstr "รายละเอียด"
+
+msgid "Search"
+msgstr "ค้นหา"
+
+msgid "Location Hours"
+msgstr "ติดต่อมหาวิทยาลัย"
+
+msgid "Calendar"
+msgstr "ปฏิทิน"
+
+msgid "Subject"
+msgstr "หัวข้อ"
+
+msgid "Staff Login"
+msgstr "เข้าสู่ระบบ"
+
+msgid "Logout"
+msgstr "ออกจากระบบ"
+
+msgid "Website management"
+msgstr "จัดการเว็บไซต์"
+
+msgid "Got It"
+msgstr "ยอมรับ"
+
+msgid "Contact Us"
+msgstr "ติดต่อเรา"
+
+msgid "Sorry, your account has been deactivated"
+msgstr "ขออภัยบัญชีผู้ใช้ของท่านถูกระงับการใช้งาน"
+
+msgid "Please contact the system administrator"
+msgstr "กรุณาติดต่อผู้ดูแลระบบ"
+
+msgid "Sorry, the user account or password is incorrect"
+msgstr "ขออภัยบัญชีผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"
+
+msgid "Searching Guide"
+msgstr "คู่มือการสืบค้น"
+
+msgid "Book Cover"
+msgstr "ปกหนังสือ"
+
+msgid "Book Title"
+msgstr "ชื่อหนังสือ"
+
+msgid "Release date"
+msgstr "วันที่เผยแพร่"
+
+msgid "No data found"
+msgstr "ไม่พบข้อมูล"
+
+msgid "Month"
+msgstr "เดือน"
+
+msgid "Year"
+msgstr "ปี"
+
+msgid "Attachment"
+msgstr "ไฟล์เอกสารแนบ"
+
+msgid "View All"
+msgstr "ดูทั้งหมด"
+
+msgid "Total number of books"
+msgstr "จำนวนหนังสือทั้งหมด"
+
+msgid "book"
+msgstr "เล่ม"
+
+msgid "No."
+msgstr "ลำดับ"
+
+msgid "Online Library Course Cover"
+msgstr "ปกหลักสูตรห้องสมุดออนไลน์"
+
+msgid "Online Library Course Title"
+msgstr "ชื่อหลักสูตรห้องสมุดออนไลน์"
+
+msgid "Total number of Online Library Course"
+msgstr "จำนวนหลักสูตรห้องสมุดออนไลน์ทั้งหมด"
+
+msgid "Course"
+msgstr "หลักสูตร"
+
+msgid "Agencies"
+msgstr "หน่วยงาน"
+
+msgid "Related"
+msgstr "ที่เกี่ยวข้อง"
+
+msgid "Date"
+msgstr "วันที่"
+
+msgid "To"
+msgstr "ถึง"
+
+msgid "All"
+msgstr "ทั้งหมด"
+
+msgid "Resource Type"
+msgstr "ประเภททรัพยากร"
+
+msgid "Branch"
+msgstr "สาขาวิชา"
+
+msgid "Subscription"
+msgstr "การบอกรับ"
+
+msgid "Total number of databases"
+msgstr "จำนวนฐานข้อมูลทั้งหมด"
+
+msgid "Database"
+msgstr "ฐานข้อมูล"
+
+msgid "Access the database from outside the network"
+msgstr "เข้าใช้ฐานข้อมูลจากนอกเครือข่าย"
+
+msgid "First name - Last name"
+msgstr "ชื่อ - นามสกุล"
+
+msgid "Position"
+msgstr "ตำแหน่ง"
+
+msgid "Affiliation"
+msgstr "งานที่สังกัด"
+
+msgid "Email"
+msgstr "อีเมล"
+
+msgid "Internal phone number"
+msgstr "โทร"
+
+msgid "Personal phone number"
+msgstr "เบอร์โทรศัพท์ส่วนตัว"
+
+msgid "Education"
+msgstr "การศึกษา"
+
+msgid "Expertise and Experience"
+msgstr "ความเชี่ยวชาญและประสบการณ์"
+
+msgid "Academic work"
+msgstr "ผลงานวิชาการ"
+
+msgid "Awards and Pride"
+msgstr "รางวัลและความภาคภูมิใจ"
+
+msgid "Resume and Workings"
+msgstr "ประวัติและผลงาน"
+
+msgid "Board of Directors"
+msgstr "คณะกรรมการอำนวยการ"
+
+msgid "Board of Executive"
+msgstr "คณะผู้บริหาร"
+
+msgid "Executive"
+msgstr "ผู้บริหาร"
+
+msgid "Board of Executive Directors"
+msgstr "คณะกรรมการบริหาร"
+
+msgid "Executive Board of the Library"
+msgstr "คณะกรรมการบริหารประจำสำนักหอสมุด"
+
+msgid "Expert"
+msgstr "ผู้เชี่ยวชาญ"
+
+msgid "Personnel"
+msgstr "บุคลากร"
+
+msgid "Direct line to Director"
+msgstr "สายตรงผู้อำนวยการ"
+
+msgid "Number of expert topics"
+msgstr "จำนวนหัวข้อความเชี่ยวชาญ"
+
+msgid "Contact information"
+msgstr "ข้อมูลการติดต่อ"
+
+msgid "Contact an expert"
+msgstr "ติดต่อผู้เชี่ยวชาญ"
+
+msgid "Number of faction"
+msgstr "จำนวนฝ่าย"
+
+msgid "Faction"
+msgstr "ฝ่าย"

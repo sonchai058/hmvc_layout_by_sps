@@ -1,0 +1,192 @@
+<div class="main-container">
+    <div class="pd-ltr-20 xs-pd-20-10">
+        <div class="pd-20 pb-40 card-box mb-30">
+            <div class="row">
+                <div class="col-md-12">
+
+                    <div class="row">
+                        <div class="col-6">
+                          <h4 class="text-blue h4"><?= $title_page ?></h4>
+                        </div>
+
+                        <div class="col-6">
+                          <div class="pull-right">
+                            <nav aria-label="breadcrumb" role="navigation">
+                              <ol class="breadcrumb pd-0">
+                                <li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+                                <li class="breadcrumb-item active" aria-current="page"><?= $title_page ?></li>
+                              </ol>
+                            </nav>
+                          </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="main-box clearfix">
+                                <div class="main-box-body clearfix">
+                                    <form role="form" id="post" method="post"
+                                          action="<?= $action_link . 'insert/' ?>"
+                                          enctype="multipart/form-data">
+
+                                        <div class="form-group">
+                                            <label for="menu_name"><strong>ข้อความ</strong>&nbsp;
+                                              <span class="red">*</span>
+                                            </label>
+                                            <textarea name="detail" id="detail" class="form-control" rows="3"><?= $getData['detail'] ?></textarea>
+                                        </div> 
+
+                                        <div class="form-group">
+                                            <label for="menu_name"><strong>ข้อความภาษาอังกฤษ</strong>&nbsp;
+                                              <span class="red">*</span>
+                                            </label>
+                                            <textarea name="detail_en" id="detail_en" class="form-control" rows="3"><?= $getData['detail_en'] ?></textarea>
+                                        </div>  
+
+                                        <div class="form-group">
+                                            <label for="type_menu0"><strong>ข้อกำหนด</strong></label>&nbsp;<span class="red">*</span>
+                                            <div class="jumbotron radio p-3 pt-4 mb-3">
+                                                <input class="validate[required] radio type_menu" at-id="link_none" type="radio"
+                                                       name="type_menu" id="type_menu0"
+                                                       value="0"
+                                                    <?= ($getData['type_menu'] == null) || $getData['type_menu'] == 0 ? 'checked' : '' ?>>
+                                                <label for="type_menu0">
+                                                    ไม่มีข้อกำหนด
+                                                </label>
+                                                &nbsp;&nbsp;
+                                                <input class="validate[required] radio type_menu" at-id="file_upload" type="radio"
+                                                       name="type_menu" id="type_menu1"
+                                                       value="1"
+                                                    <?= isset($getData) && $getData['type_menu'] == 1 ? 'checked' : '' ?>>
+                                                <label for="type_menu1">
+                                                    ข้อกำหนดโดยไฟล์
+                                                </label>
+                                                &nbsp;&nbsp;
+                                                <input class="validate[required] radio type_menu" at-id="url" type="radio"
+                                                       name="type_menu" id="type_menu2"
+                                                       value="2"
+                                                    <?= isset($getData) && $getData['type_menu'] == 2 ? 'checked' : '' ?>>
+                                                <label for="type_menu2">
+                                                    ข้อกำหนดด้วยลิงค์ภายนอก
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div id="file_upload" class="form-group mb-0 link_menu" style="<?= $getData['type_menu'] == null || $getData['type_menu'] == 0 || $getData['type_menu'] == 2 ? 'display: none;' : '' ?>">
+                                            <label><strong>ไฟล์</strong>&nbsp;<span class="red">*</span></label>
+                                            <div class="well">
+                                                <?php if (!empty($getData['file_name'])): ?>
+                                                    ไฟล์อัพโหลด : <a href="<?= base_url().$getData['file_path'].'/'.$getData['file_name'] ?>" target="_blank"><?= $getData['file_name'] ?></a>
+                                                <?php endif ?>
+                                                <input type="file" class="form-control validate[required,custom[url]] mt-2"
+                                                       id="file_name" name="file_name" value="<?= $getData['file_name'] ?>" accept=".pdf">
+                                            </div>
+                                            <div class="text-left" style='color:rgb(221, 84, 84);font-size: 16px; margin: 10px 0 0;'>
+                                                <span class="text_subportfile"
+                                                      style="white-space: normal;">
+                                                    รองรับไฟล์นามสกุล * .pdf
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div id="url" class="form-group mb-0 link_menu"
+                                             style="<?= $getData['type_menu'] == null || $getData['type_menu'] == 0 || $getData['type_menu'] == 1 ? 'display: none;' : '' ?>">
+                                            <label><strong>ลิงก์เชื่อมโยง</strong>&nbsp;<span class="red">*</span></label>
+                                            <div class="well">
+                                                <input type="text" class="form-control validate[required,custom[url]]"
+                                                       id="url" name="url" placeholder="ลิงก์เชื่อมโยง"
+                                                       value="<?= $getData['url'] ?>">
+                                                <p style="padding-top: 10px;"><span class="red">*</span>Ex. <span class="red">https://</span>www.exemple.com</p>
+                                            </div>
+                                        </div>
+<!-- 
+                                        <div class="col-md-12" id="list_upload" style="<?= $getData['type_menu'] == null || $getData['type_menu'] == 0 || $getData['type_menu'] == 2 ? 'display: none;' : '' ?>">
+                                            <div class="table-responsive">
+                                                <table id="tableSort" class="table table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th class="text-center" colspan="2">ชื่อไฟล์</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <?php if ($getData['file_name'] != ''): ?>
+                                                        <tr>
+                                                            <td style="width: 100px;" class="text-center">
+                                                                <?= $getData['file_name'] ?>
+                                                            </td>
+                                                        </tr>
+                                                        <?php else: ?>
+                                                        <tr>
+                                                            <td style="width: 100px;" class="text-center">
+                                                                -- ไม่พบข้อมูล --
+                                                            </td>
+                                                        </tr>
+                                                        <?php endif ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div> -->
+                                        <div class="form-group mt-2" id="status">
+                                            <label for="show_status1"><strong>สถานะ</strong></label>&nbsp;
+                                            <span class="red">*</span>
+                                            <div class="jumbotron radio p-3 pt-4">
+                                                <input type="radio" name="show_status" id="show_status1"
+                                                       value="1"
+                                                    <?= ($getData['show_status'] == null) || $getData['show_status'] == 1 ? 'checked' : '' ?>>
+                                                <label for="show_status1">
+                                                    เผยแพร่
+                                                </label>
+                                                &nbsp;&nbsp;
+                                                <input type="radio" name="show_status" id="show_status2"
+                                                       value="2"
+                                                    <?= isset($getData) && $getData['show_status'] == 2 ? 'checked' : '' ?>>
+                                                <label for="show_status2">
+                                                    ไม่เผยแพร่
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group text-center">
+                                            <a href="<?= $action_link ?>">
+                                                <button type="button" class="btn btn-danger"><i class="fa fa-times"></i>&nbsp;ยกเลิก
+                                                </button>
+                                            </a>
+                                            &nbsp;&nbsp;
+                                            <button type="submit" class="btn btn-success"><i class="fa fa-save"></i>&nbsp;บันทึก
+                                            </button>
+
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script language="javascript" type="text/javascript">
+    $(document).ready(function () {
+        var type_menu = '<?= $getData['type_menu'] ?>';
+        $('input[name=type_menu]').each(function (index, el) {
+            var check = $(this).prop("checked");
+            console.log(check);
+            if (check == true) {
+                var val = $(this).val();
+                var at_id = $(this).attr('at-id');
+                if (type_menu != '' && type_menu != 0) {
+                    $('#' + at_id).show(500);
+                }
+            }
+        });
+
+        $("input[name=type_menu]").change(function () {
+            var val = $(this).val();
+            var at_id = $(this).attr('at-id');
+            $('.link_menu').hide(500);
+            $('#' + at_id).show(500);
+        });
+    });
+</script>

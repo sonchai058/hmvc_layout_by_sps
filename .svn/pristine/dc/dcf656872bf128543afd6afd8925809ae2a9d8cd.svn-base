@@ -1,0 +1,296 @@
+<div class="d-flex align-items-center flex-wrap justify-content-center" ng-app="personnelAPP" ng-controller="personnelController" ng-cloak>
+	<div class="container">
+		<div class="row align-items-center" id="filter-control">
+			<div class="col-lg-12 col-md-12">
+				<div class="search-detail-box position-relative">
+					<div class="clearfix"></div>
+					<div class="blockTotalSearch">
+	                    <div class="row">
+	                        <div class="col-12 mt-auto">
+	                            <div class="textTotalSearch">
+                                    <h2 class="title-html-detail pull-left"><?= $menu_name?></h2>
+                                    <!-- <div class="pull-right">
+    	                            	<?= _po('Number of faction')?>
+    	                            	<span class="textTotalSearchNumber">{{list.length | number}}</span>
+    	                            	<?= _po('Faction')?>
+                                    </div> -->
+	                            </div>
+	                        </div>
+	                    </div>
+	                </div>
+    
+	                <div ng-show="loading" class="row my-3">
+			            <div class="col-12 text-center ">
+			                <div class="p-5">
+			                    <img src="<?= STATIC_PATH ?>/images/loader.gif" class="img-responsive" alt="Image">
+			                </div>
+			            </div>
+			        </div>
+
+					<div ng-hide="loading"  class="row">
+						<div class="col-12">
+                            <div class="blockFilterPersonnel">
+                                <div class="row mt-1 mb-4 justify-content-center">
+                                    <div class="col-10 text-center ">
+                                        <div class="" ng-show="aggs.length > 0">
+                                            <span class="textSubjectFilter"><?= _po('Faction')?></span>
+                                            <select class="selectSubjectFilter" data-ng-model="query.command.stext" data-ng-change="searchMain();">
+                                                <option data-ng-repeat="(key, value) in aggs" value="{{value.id}}">{{value.label}}</option>
+                                                <option value=""><?= _po('All')?></option>
+                                            </select>
+                                            <!-- <label data-ng-click="query.command.stext=value.id;searchMain();" data-ng-repeat="(key, value) in aggs" class="filterName {{query.command.stext == value.id ? 'active' : ''}}">{{value.label}}</label> -->
+                                            <!-- <label class="filterName {{query.command.stext == '' ? 'active' : ''}}" data-ng-click="query.command.stext='';searchMain();"><?= _po('All')?></label> -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+							<div class="row">
+								<div ng-show="!loading" class="col-12">
+                                    <div id="faction_{{value.id}}" class="detailBoxPersonnel position-relative" data-ng-repeat="(key, value) in list | filter:{ id: query.command.stext }">
+                                        <div class="mb-3">
+                                            <div class="textHeadBorderMiddle" itemprop="name"><span>{{value.faction}}</span></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-lg-5 col-md-5 mt-2 text-center text-lg-right">
+                                                <img data-ng-src="{{value.dataPersonnel[0].img}}" class="rounded imgResume" alt="imageResume">
+                                            </div>
+                                            <div class="col-lg-7 col-md-7 mt-3">
+                                                <div class="resumeName">
+                                                    <label><i class="fas fa-user"></i>{{value.dataPersonnel[0].prename + value.dataPersonnel[0].first_name + ' ' +value.dataPersonnel[0].last_name}}</label>
+                                                </div>
+                                                <div>
+                                                    <label class="resumeTopic"><?= _po('Position')?></label> : <span class="resumeData">{{value.dataPersonnel[0].position}}</span>
+                                                </div>
+                                                <div>
+                                                    <label class="resumeTopic"><?= _po('Affiliation')?></label> : <span class="resumeData">{{value.dataPersonnel[0].affiliated}}</span>
+                                                </div>
+                                                <div>
+                                                    <label class="resumeTopic"><?= _po('Email')?></label> : <span class="resumeData"><a href="mailto:{{value.dataPersonnel[0].email}}">{{value.dataPersonnel[0].email}}</a></span>
+                                                </div>
+
+                                                <div data-ng-show="value.dataPersonnel[0].tel_work != ''">
+                                                    <label class="resumeTopic"><?= _po('Internal phone number')?></label> : <span class="resumeData">{{value.dataPersonnel[0].tel_work}}</span>
+                                                </div>
+                                                <div data-ng-show="(value.dataPersonnel[0].education != '' && value.dataPersonnel[0].education != null) || (value.dataPersonnel[0].experience != '' && value.dataPersonnel[0].experience != null) || (value.dataPersonnel[0].academic != '' && value.dataPersonnel[0].academic != null) || (value.dataPersonnel[0].award != '' && value.dataPersonnel[0].award != null)" class="text-center text-lg-left text-md-left">
+                                                    <a target="_blank" href="<?= base_url().'DataResume/index/' ?>{{value.dataPersonnel[0].id}}" class="btn bgCmuResume mt-2"><?= _po('Resume and Workings') ?></a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="clearfix"></div>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="detailBoxPersonnelAffiliated" data-ng-repeat="(keyPersonnel, valuePersonnel) in value.dataPersonnel" ng-if="keyPersonnel != 0">
+                                                    <div class="mb-3">
+                                                        <h2 class="title-html-detail" itemprop="name">{{keyPersonnel}}</h2>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-lg-5 col-md-5 mt-2 text-center text-lg-right">
+                                                            <img data-ng-src="{{valuePersonnel[0].img}}" class="rounded imgResume" alt="imageResume">
+                                                        </div>
+                                                        <div class="col-lg-7 col-md-7 mt-3">
+                                                            <div class="resumeName">
+                                                                <label><i class="fas fa-user"></i>{{valuePersonnel[0].prename + valuePersonnel[0].first_name + ' ' +valuePersonnel[0].last_name}}</label>
+                                                            </div>
+                                                            <div>
+                                                                <label class="resumeTopic"><?= _po('Position')?></label> : <span class="resumeData">{{valuePersonnel[0].position}}</span>
+                                                            </div>
+                                                            <div>
+                                                                <label class="resumeTopic"><?= _po('Affiliation')?></label> : <span class="resumeData">{{valuePersonnel[0].affiliated}}</span>
+                                                            </div>
+                                                            <div>
+                                                                <label class="resumeTopic"><?= _po('Email')?></label> : <span class="resumeData"><a href="mailto:{{valuePersonnel[0].email}}">{{valuePersonnel[0].email}}</a></span>
+                                                            </div>
+
+                                                            <div data-ng-show="valuePersonnel[0].tel_work != ''">
+                                                                <label class="resumeTopic"><?= _po('Internal phone number')?></label> : <span class="resumeData">{{valuePersonnel[0].tel_work}}</span>
+                                                            </div>
+                                                            <div data-ng-show="(valuePersonnel[0].education != '' && valuePersonnel[0].education != null) || (valuePersonnel[0].experience != '' && valuePersonnel[0].experience != null) || (valuePersonnel[0].academic != '' && valuePersonnel[0].academic != null) || (valuePersonnel[0].award != '' && valuePersonnel[0].award != null)" class="text-center text-lg-left text-md-left">
+                                                                <a target="_blank" href="<?= base_url().'DataResume/index/' ?>{{valuePersonnel[0].id}}" class="btn bgCmuResume mt-2"><?= _po('Resume and Workings') ?></a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="clearfix"></div>
+                                                    
+                                                    <div class="row" data-ng-class="{'justify-content-md-center': valuePersonnel.length < 4}" data-ng-show="valuePersonnel.length > 1">
+                                                        <div class="col-lg-4 col-md-6 col-12 mt-5 blockDataResumeData" data-ng-repeat="(keyPersonnelAffiliated, valuePersonnelAffiliated) in valuePersonnel" ng-if="keyPersonnelAffiliated != 0">
+                                                            <div class="blockImgResume">
+                                                                <img data-ng-src="{{valuePersonnelAffiliated.img}}" alt="imageResume" class="rounded imgResume">
+                                                            </div>
+                                                            <div class="blockDataResume">
+                                                                <div class="resumeName">
+                                                                    <label><i class="fas fa-user"></i>{{valuePersonnelAffiliated.prename + valuePersonnelAffiliated.first_name + ' ' + valuePersonnelAffiliated.last_name}}</label>
+                                                                </div>
+                                                                <div>
+                                                                    <label class="resumeTopic"><?= _po('Position')?></label> : <span class="resumeData">{{valuePersonnelAffiliated.position}}</span>
+                                                                </div>
+                                                                <div>
+                                                                    <label class="resumeTopic"><?= _po('Affiliation')?></label> : <span class="resumeData">{{valuePersonnelAffiliated.affiliated}}</span>
+                                                                </div>
+                                                                <div>
+                                                                    <label class="resumeTopic"><?= _po('Email')?></label> : <span class="resumeData"><a href="mailto:{{valuePersonnelAffiliated.email}}">{{valuePersonnelAffiliated.email}}</a></span>
+                                                                </div>
+                                                                <div data-ng-show="valuePersonnelAffiliated.tel_work != ''">
+                                                                    <label class="resumeTopic"><?= _po('Internal phone number')?></label> : <span class="resumeData">{{valuePersonnelAffiliated.tel_work}}</span>
+                                                                </div>
+                                                                <div data-ng-show="(valuePersonnelAffiliated.education != '' && valuePersonnelAffiliated.education != null) || (valuePersonnelAffiliated.experience != '' && valuePersonnelAffiliated.experience != null) || (valuePersonnelAffiliated.academic != '' && valuePersonnelAffiliated.academic != null) || (valuePersonnelAffiliated.award != '' && valuePersonnelAffiliated.award != null)" class="mt-2">
+                                                                    <a target="_blank" href="<?= base_url().'DataResume/index/' ?>{{valuePersonnelAffiliated.id}}" class="btn bgCmuResume"><?= _po('Resume and Workings') ?></a>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                    </div>
+					            </div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+    $(window).scroll(function () {
+        let isMobile = window.matchMedia("only screen and (max-width: 850px)").matches;
+
+        if (!isMobile) {
+            if ($(this).scrollTop() > 150) {
+                $('.blockFilterPersonnel').css('filter', 'drop-shadow(0px 4px 10px #E5E5E5)');
+                $('.blockFilterPersonnel').css('z-index', '98');
+
+            } else {
+                $('.blockFilterPersonnel').css('filter', 'unset');
+                $('.blockFilterPersonnel').css('z-index', 'unset');
+            }
+        } else {
+            $('.blockFilterPersonnel').css('position', 'relative');
+            $('.blockFilterPersonnel').css('top', 'unset');
+            $('.blockFilterPersonnel').css('z-index', 'unset');
+            
+        }
+        
+    })
+</script>
+<script>
+let personnelAPP = angular.module("personnelAPP", ['ngSanitize']);
+
+personnelAPP.directive('ngEnter', function () {
+    return function (scope, element, attrs) {
+        element.bind("keydown keypress", function (event) {
+            if (event.which === 13) {
+                scope.$apply(function () {
+                    scope.$eval(attrs.ngEnter);
+                });
+
+                event.preventDefault();
+            }
+        });
+    };
+});
+
+
+personnelAPP.controller('personnelController', function ($scope, $http, $filter, $window, $timeout, phpData) {
+
+    let api_url = phpData.classLink;
+    let LINK = phpData.LINK;
+    let per_page = (typeof phpData.per_page !== 'undefined' ? phpData.per_page : 10);
+    let proto = {
+        'command': {
+            'stext': '',
+        },
+        'aggregate': true,
+        'per_page': per_page
+    };
+
+
+    $scope.loading = true;
+
+    $scope.query = angular.copy(proto);
+
+    $scope.paging = {
+        'cur_page': 1,
+        'all_page': 1,
+        'offset': 0
+    };
+
+    $scope.total = 0;
+    $scope.list = [];
+    $scope.keyword = [];
+    $scope.aggs = [];
+
+    let fnc_search = function (dataAggs = false) {
+        $scope.loading = true;
+        $('.slide-fade').removeClass('fade-show');
+
+        $scope.data = [];
+
+
+        $http.post(api_url + 'find/',
+            'data=' + encodeURIComponent(angular.toJson($scope.query)),
+            {headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8;'}}
+        ).then(function (res) {
+            $scope.list = res.data.list;
+            // $scope.total = res.data.total;
+            $scope.loading = false;
+
+             if (dataAggs == true) {
+                angular.forEach($scope.list, function(value, key) {
+                    this.push({'id' : value.id, 'label' : value.faction});
+                }, $scope.aggs);
+            }
+
+            $timeout(function () {
+
+                if($scope.query.command.stext != '') {
+                    let ele_top = $('#faction_' + $scope.query.command.stext).offset().top;
+                    window.scrollTo({top: (parseInt(ele_top) - 250), behavior: 'smooth'});
+                } else {
+                    if (document.documentElement.scrollTop > 200 || document.body.scrollTop > 200) {
+                        window.scrollTo({top: 0, behavior: 'smooth'});
+                    }
+                }
+                
+            }, 50);
+        });
+    };
+
+
+    $scope.searchMain = function () {
+        // fnc_search();
+        // $scope.loading = true;
+        // $timeout(function () {
+        //     $scope.loading = false;
+
+            $timeout(function () {
+                if (document.documentElement.scrollTop > 0 || document.body.scrollTop > 0) {
+                    window.scrollTo({top: 0, behavior: 'smooth'});
+                }
+            }, 150);
+        // }, 150);
+    };
+
+    let fnc_init = function () {
+        fnc_search(true);
+        angular.element($window).bind("scroll", function () {});
+    };
+    fnc_init();
+});
+
+</script>
+<script>
+
+    <?php
+    $phpData = [
+        'classLink' => base_url() . 'DataPersonnel/',
+        'LINK' => base_url(),
+        'static' => STATIC_PATH,
+        'per_page' => 10
+    ];
+    ?>
+    personnelAPP.value('phpData', <?= json_encode($phpData) ?>);
+</script>

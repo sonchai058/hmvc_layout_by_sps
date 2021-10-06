@@ -1,0 +1,29 @@
+<?php
+
+if(!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class Language extends MY_Controller
+{
+
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    function th()
+    {
+        $this->session->set_userdata('LANGUAGE', 'TH');
+        $ref = $this->input->server('HTTP_REFERER', TRUE);
+        redirect($ref, 'location');
+    }
+
+    function en()
+    {
+        $this->session->set_userdata('LANGUAGE', 'EN');
+        $ref = $this->input->server('HTTP_REFERER', TRUE);
+        redirect($ref, 'location');
+    }
+}
+
+?>

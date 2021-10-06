@@ -1,0 +1,202 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class News extends MDL_Controller
+{
+
+    public function __construct()
+    {
+        parent::__construct();
+        ## Search
+        parent::setSearchSession();
+        $this->path_upload = './file_upload/';
+    }
+
+    #หน้าหลัก
+
+    public function index($page = 1)
+    {
+        $data['title'] = 'จัดการข้อมูลข่าว';
+        $data['title_page'] = 'จัดการข้อมูลข่าว';
+
+        $data['category'] = $this->model->getCategory();
+        $data['status'] = $this->model->getStatus();
+        // _print_r($data);
+
+        ##Pagination
+        $num = $this->model->getNewsCount();
+        $per_page = $this->model->getPerPage();
+        parent::pagination($page, $num, $per_page, 4);
+        $data['getNews'] = $this->model->getNews($page);
+        $data['form_search_element'] = $this->model->getSElement();
+        $data['news_category'] = $this->model->getNewsCatrgory();
+        // _print_r($data['news_category']);
+        parent::view('news/index', $data);
+    }
+
+    #ดึงค่ามาโชว์ในฟอร์ม เพิ่ม-แก้ไข
+
+    public function form($news_id = FALSE)
+    {
+        $data['title'] = 'ข่าว';
+        $data['title_sub'] = 'ข่าว';
+        $data['title_page'] = $news_id != FALSE ? 'แก้ไขข่าว' : 'เพิ่มข่าว';
+        $data['getForm'] = $this->model->getForm($news_id);
+        $data['category'] = $this->model->getCategoryNews();
+        $data['token'] = $this->fnc_createToken();
+        // _print_r($data);
+        parent::view('news/form', $data);
+    }
+
+    #เพิ่มข้อมูลและแก้ไขข้อมูล
+
+    public function insert($news_id = FALSE)
+    {
+        $data = $this->model->insertNews($news_id);
+        if (!empty($data)) {
+            if ($news_id != FALSE) {
+                echo "<SCRIPT LANGUAGE='JavaScript'>
+                          window.alert('ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด')
+                          window.location.href='" . base_url() . 'news/News/form/' . $news_id . "'
+                          </SCRIPT>";
+            } else {
+                echo "<SCRIPT LANGUAGE='JavaScript'>
+                          window.alert('ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด')
+                          window.location.href='" . base_url() . 'news/News/form' . "'
+                          </SCRIPT>";
+            }
+        } else {
+            redirect(base_url() . 'management/News');
+        }
+    }
+
+    #ลบข้อมูล
+
+    public function delete($news_id = FALSE)
+    {
+        $this->model->deleteNews($news_id);
+        redirect(base_url() . 'management/News');
+    }
+
+    public function createChunk()
+    {
+        $postdata = file_get_contents("php://input");
+        if ($postdata != '') {
+            $req_header = $this->fnc_getCustomHeader();
+            if (is_dir($this->path_upload . "temp") === false) {
+                $oldmask = umask(0);
+                mkdir($this->path_upload . "temp", 0777);
+                umask($oldmask);
+            }
+            $tmp_name = $req_header['X-TOKEN'] . '.tmp';
+            $myfile = fopen($this->path_upload . "temp/{$tmp_name}", "a+") or die("Unable to open file!");
+            fwrite($myfile, $postdata);
+            fclose($myfile);
+        }
+    }
+
+    public function createFile()
+    {
+        $callback = array('status' => 'fail');
+
+        $path = $this->path_upload;
+
+        $raw = file_get_contents("php://input");
+
+        $raw_arr = json_decode($raw, true);
+
+        if (count($raw_arr) > 0) {
+            $tmp = explode('.', $raw_arr['file_name']);
+            $ext = strtolower(end($tmp));
+
+            $token = $raw_arr['token'];
+            $new_name = $token.substr(md5(time()), 0, 8) . '.' . $ext;
+
+
+            $rdata = array(
+                'time_upload' => date('Y-m-d H:i:s'),
+                'file_name_original' => $raw_arr['file_name'],
+                'file_name' => $new_name,
+                'file_path' => $path,
+                'ext' => $ext,
+                'is_cover' => 0,
+                's_order' => 0
+            );
+            $new_file = $path.'news/' . $new_name;
+            $org_file = $path . 'temp/' . $token . '.tmp';
+
+            @rename($org_file, $new_file);
+
+            if (file_exists($org_file)) {
+                unlink($org_file);
+            }
+
+            $callback = array('status' => 'ok', 'file_name' => $new_file, 'rdata' => $rdata);
+        }
+
+        echo json_encode($callback);
+
+    }
+
+    public function deleteFile($doc_id = false)
+    {
+        if ($doc_id != false) {
+            $this->model->removeFile($doc_id);
+        }
+    }
+
+    public function deleteFileByPath()
+    {
+        $path = $_POST['path'];
+        if ($path != false) {
+            @unlink($path);
+        }
+    }
+
+    private function fnc_createToken()
+    {
+        $combine = array(
+            session_id(),
+            time(),
+            $this->input->ip_address(),
+            sprintf('%04d', rand(1, 9999)),
+            sprintf('%04d', rand(1, 9999))
+        );
+        $str = implode('_', $combine);
+
+        return sha1($str);
+    }
+
+    private function fnc_getCustomHeader()
+    {
+        $custom = array();
+        $custom['X-TOKEN'] = !empty($_SERVER['X-TOKEN']) ? $_SERVER['X-TOKEN'] : $_SERVER['HTTP_X_TOKEN'];
+        $custom['X-FILE-NAME'] = !empty($_SERVER['X-FILE-NAME']) ? $_SERVER['X-FILE-NAME'] : $_SERVER['HTTP_X_FILE_NAME'];
+
+        return $custom;
+    }
+
+    public function getListGallery()
+    {
+        $data = $this->model->getListGallery();
+
+        echo json_encode($data); die();
+    }
+
+    public function updateOrder($news_id = false, $order = false)
+    {
+
+        if ($news_id == false || $order == false) {
+            $result = 'ไม่สามารถเรียงลำดับข้อมูลได้';
+        } else {
+            $result = $this->model->saveOrder($news_id, $order);
+        }
+
+        echo $result;
+    }
+}
+
+/* End of file News.php */
+/* Location: ./application/controllers/News.php */

@@ -1,0 +1,88 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class ManageBook extends MDL_Controller {
+
+	public function __construct()
+    {
+        parent::__construct();
+        ## Search
+        parent::setSearchSession();
+    }
+    
+	public function index($page = 1)
+	{
+		$data['title'] = 'จัดการหนังสือ';
+        $data['title_page'] = 'จัดการหนังสือ';
+        //Pagination
+        $num = $this->model->getCountBook();
+        $per_page = $this->model->getPerPage();
+        parent::pagination($page, $num, $per_page, 4);
+        $data['form_search_element'] = $this->model->getSElement();
+        $data['book'] = $this->model->getBook($page);
+        $data['status'] = $this->model->getStatus();
+        // _print_r($data['book']);
+		parent::view('manage_book/index', $data);
+	}
+
+	#ดึงค่ามาโชว์ในฟอร์ม เพิ่ม-แก้ไข
+
+    public function form($book_id = FALSE)
+    {
+        $data['title'] = 'หนังสือ';
+        $data['title_sub'] = 'หนังสือ';
+        $data['title_page'] = $book_id != FALSE ? 'แก้ไขหนังสือ' : 'เพิ่มหนังสือ';
+        $data['getForm'] = $this->model->getForm($book_id);
+        // _print_r($data);
+        parent::view('manage_book/form', $data);
+    }
+
+    public function insert($id = FALSE)
+    {
+        $data = $this->model->insertBook($id);
+        if (!empty($data)) {
+            if ($id != FALSE) {
+                echo "<SCRIPT LANGUAGE='JavaScript'>
+                          window.alert('ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด')
+                          window.location.href='" . base_url() . 'management/ManageBook/form/' . $id . "'
+                          </SCRIPT>";
+            } else {
+                echo "<SCRIPT LANGUAGE='JavaScript'>
+                          window.alert('ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด')
+                          window.location.href='" . base_url() . 'management/ManageBook/form' . "'
+                          </SCRIPT>";
+            }
+        } else {
+            redirect(base_url() . 'management/ManageBook');
+        }
+    }
+
+    public function delete($id = FALSE)
+    {
+        $this->model->delete($id);
+        redirect(base_url() . 'management/ManageBook');
+    }
+
+    public function updateOrder($book_id = false, $order = false)
+    {
+
+        if ($book_id == false || $order == false) {
+            $result = 'ไม่สามารถเรียงลำดับข้อมูลได้';
+        } else {
+            $result = $this->model->saveOrder($book_id, $order);
+        }
+
+        echo $result;
+    }
+
+    public function updateShowStatus($book_id = false)
+    {
+        $result = $this->model->updateShowStatus($book_id);
+
+        echo $result;
+    }
+
+}
+
+/* End of file ManageBook.php */
+/* Location: ./application/modules/management/controllers/ManageBook.php */

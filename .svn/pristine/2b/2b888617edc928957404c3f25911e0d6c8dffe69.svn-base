@@ -1,0 +1,256 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class ManagePopUp_model extends CI_Model {
+
+	#เรียกตารางจากฐานข้อมูล
+
+    private $main_tbl = 'pop_up';
+
+    public function __construct()
+    {
+        parent::__construct();
+        #path สำหรับ insert Database
+        $this->path = 'file_upload/pop_up/';
+        $this->path_upload = 'file_upload/pop_up/';
+        if (!file_exists($this->path)) {
+            $oldmask = umask(0);
+            mkdir($this->path, 0777);
+            umask($oldmask);
+        }
+        $this->user_id = $this->session->cmu_web_session['id'];
+
+        $this->Elastic = new ElasticIndex();
+        $this->fnc_createTbl();
+    }
+	
+	private function fnc_createTbl()
+    {
+
+        $this->load->library('CreateTable');
+
+        $this->createtable->createTable('pop_up','
+          `popup_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+          `url` text ,
+          `file_name` text ,
+          `file_name_original` varchar(255) DEFAULT NULL,
+          `file_path` text ,
+          `is_show` int(1) DEFAULT 1,
+          `time_upload` datetime DEFAULT NULL,
+          `type_date_show` int(1) DEFAULT 1,
+          `date_show_start` datetime DEFAULT NULL,
+          `date_show_end` datetime DEFAULT NULL,
+          PRIMARY KEY (`popup_id`)');
+
+        $this->createtable->addColumn('pop_up', 'url_reserve', 'TEXT');
+        $this->createtable->addColumn('pop_up', 'file_name_reserve', 'TEXT');
+        $this->createtable->addColumn('pop_up', 'file_name_original_reserve', 'TEXT');
+        $this->createtable->addColumn('pop_up', 'file_path_reserve', 'TEXT');
+        $this->createtable->addColumn('pop_up', 'is_show_reserve', 'int(1)');
+        $this->createtable->addColumn('pop_up', 'time_upload_reserve', 'datetime');
+        $this->createtable->addColumn('pop_up', 'date_show_start_reserve', 'datetime');
+        $this->createtable->addColumn('pop_up', 'date_show_end_reserve', 'datetime');
+
+    }
+
+    #ดึงข้อมูลแสดงฟอร์มเพิ่ม - แก้ไข
+
+    public function getForm()
+    {
+        $this->db->where('popup_id', 1);
+        $data = $this->db->get($this->main_tbl)->result_array();
+
+        $getData = null;
+        if (!empty($data)) {
+
+            $getData = reset($data);
+            if (!empty($getData['file_name']) && file_exists($this->path . $getData['file_name'])) {
+                $getData['img'] = base_url() . $getData['file_path'] . $getData['file_name'];
+            } else {
+                $getData['img'] = null;
+            }
+
+            if (!empty($getData['file_name_reserve']) && file_exists($this->path . $getData['file_name_reserve'])) {
+                $getData['img_reserve'] = base_url() . $getData['file_path_reserve'] . $getData['file_name_reserve'];
+            } else {
+                $getData['img_reserve'] = null;
+            }
+
+            if($getData['type_date_show'] == 2) {
+                if(!empty($getData['date_show_start'])) {
+                    $getData['date_show_start'] = date('Y-m-d', strtotime($getData['date_show_start']));
+                }
+
+                if(!empty($getData['date_show_end'])) {
+                    $getData['date_show_end'] = date('Y-m-d', strtotime($getData['date_show_end']));
+                }
+
+                $getData['date_show_start'] = General::DBtoThaiDateDath($getData['date_show_start']);
+                $getData['date_show_end'] = General::DBtoThaiDateDath($getData['date_show_end']);
+            } else {
+                $getData['date_show_start'] = null;
+                $getData['date_show_end'] = null;
+            }
+
+            if(!empty($getData['date_show_start_reserve'])) {
+                $getData['date_show_start_reserve'] = date('Y-m-d', strtotime($getData['date_show_start_reserve']));
+                $getData['date_show_start_reserve'] = General::DBtoThaiDateDath($getData['date_show_start_reserve']);
+            }
+
+            if(!empty($getData['date_show_end_reserve'])) {
+                $getData['date_show_end_reserve'] = date('Y-m-d', strtotime($getData['date_show_end_reserve']));
+                $getData['date_show_end_reserve'] = General::DBtoThaiDateDath($getData['date_show_end_reserve']);
+            }
+        } else {
+            $getData = array(
+                'popup_id' => null,
+                'title' => null,
+                'url' => null,
+                'file_path' => null,
+                'file_name' => null,
+                'file_name_original' => null,
+                'img' => null,
+                'is_show' => 1,
+                'type_date_show' => 1,
+                'url_reserve' => null,
+                'file_path_reserve' => null,
+                'file_name_reserve' => null,
+                'file_name_original_reserve' => null,
+                'img_reserve' => null,
+                'is_show_reserve' => 1,
+                'type_date_show' => 1,
+            );
+        }
+
+        return $getData;
+    }
+
+   
+    #เพิ่ม - แก้ไขข้อมูล
+
+    public function insertData()
+    {
+        $img = null;
+        $img_reserve = null;
+        if (!empty($_FILES)) {
+            $img = $this->fnc_uploadImg($_FILES['image_popup']);
+            $img_reserve = $this->fnc_uploadImg($_FILES['image_popup_reserve'], 'reserve');
+        }
+
+        $data = $this->insetData(1, $img, $img_reserve);
+        return $data;
+    }
+
+    private function insetData($id, $img, $img_reserve)
+    {
+        $delete_img = $this->fnc_getImg($id);
+        $data = [];
+        if ($_FILES["image_popup"]["name"] != "") {
+            if ($img['type'] == '.jpg' || $img['type'] == '.jpeg' || $img['type'] == '.png' || $img['type'] == '.gif') {
+                if (move_uploaded_file($_FILES["image_popup"]["tmp_name"], $img['path'])) {
+                    $data['file_path'] = $this->path_upload;
+                    $data['file_name'] = $img['file_name'];
+                    $data['file_name_original'] = $_FILES["image_popup"]["name"];
+                    if ($delete_img != '') {
+                        @unlink($delete_img['delete']);
+                    }
+                }
+            } else {
+                $alert = 'ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด';
+                return $alert;
+            }
+        }
+
+        if ($_FILES["image_popup_reserve"]["name"] != "") {
+            if ($img_reserve['type'] == '.jpg' || $img_reserve['type'] == '.jpeg' || $img_reserve['type'] == '.png' || $img_reserve['type'] == '.gif') {
+                if (move_uploaded_file($_FILES["image_popup_reserve"]["tmp_name"], $img_reserve['path'])) {
+                    $data['file_path_reserve'] = $this->path_upload;
+                    $data['file_name_reserve'] = $img_reserve['file_name'];
+                    $data['file_name_original_reserve'] = $_FILES["image_popup_reserve"]["name"];
+                    if ($delete_img != '') {
+                        @unlink($delete_img['delete_reserve']);
+                    }
+                }
+            } else {
+                $alert = 'ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด';
+                return $alert;
+            }
+        }
+
+
+        $dateUpdate = date('Y-m-d H:i:s');
+        $data['time_upload'] = $dateUpdate;
+        $data['is_show'] = $this->input->post('is_show');
+        $data['type_date_show'] = $this->input->post('type_date_show');
+        $data['url'] = $this->input->post('url');
+
+        if(!empty($this->input->post('date_show_start'))) {
+          $data['date_show_start'] = General::ThaitoDBDateDathTime($this->input->post('date_show_start').':00');
+        }
+
+        if(!empty($this->input->post('date_show_end'))) {
+          $data['date_show_end'] = General::ThaitoDBDateDathTime($this->input->post('date_show_end').':00');
+        }
+
+        $data['time_upload_reserve'] = $dateUpdate;
+        $data['is_show_reserve'] = $this->input->post('is_show_reserve');
+        $data['url_reserve'] = $this->input->post('url_reserve');
+
+        if(!empty($this->input->post('date_show_start_reserve'))) {
+          $data['date_show_start_reserve'] = General::ThaitoDBDateDathTime($this->input->post('date_show_start_reserve').':00');
+        }
+
+        if(!empty($this->input->post('date_show_end_reserve'))) {
+          $data['date_show_end_reserve'] = General::ThaitoDBDateDathTime($this->input->post('date_show_end_reserve').':00');
+        }
+
+        if(!empty($this->fnc_getDataPopup())) {
+            $this->db->where('popup_id', $id);
+            $this->db->update($this->main_tbl, $data);
+        } else {
+            $this->db->insert($this->main_tbl, $data);
+        }
+
+        $Counter = new Counter;
+        $Counter->logAction($fileName, $id, 0, 'ManagePopUp', '79', $this->user_id);
+    }
+
+    private function fnc_getDataPopup()
+    {
+        return $this->db->count_all_results($this->main_tbl);
+    }
+
+    #แปลงชื่อก่อนอัพโหลด
+
+    private function fnc_uploadImg($image_data, $text = false)
+    {
+        $exp = explode('.', $image_data['name']);
+        $ext = end($exp);
+
+        $data['file_name'] = md5(date('Y-m-dh:i:s')) .(!empty($text) ? '_'.$text : ''). '.' . $ext;
+        $data['path'] = $this->path . $data['file_name'];
+        $new_file = strtolower($data['file_name']);
+        $data['type'] = strrchr($new_file, '.');
+        return $data;
+    }
+
+    #ดึงข้อมูล เพื่อลบรูป
+
+    private function fnc_getImg($pop_up)
+    {
+        // $this->db->limit(1);
+        // $this->db->select('*');
+        $this->db->where('popup_id', $pop_up);
+        $data = $this->db->get($this->main_tbl)->result_array();
+
+        $getData = NULL;
+        if (!empty($data)) {
+            $getData = reset($data);
+            $getData['delete'] = $this->path . $getData['file_name'];
+            $getData['delete_reserve'] = $this->path . $getData['file_name_reserve'];
+        }
+
+        return $getData;
+    }
+
+}

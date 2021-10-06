@@ -1,0 +1,506 @@
+<?php
+$widthImg = 1700;
+$heightImg = 900;
+$max_upload = min(ini_get('post_max_size'), ini_get('upload_max_filesize'));
+$max_upload = str_replace('M', '', $max_upload);
+$max_upload = ($max_upload * 1024) * 1024;
+
+?>
+
+<script language="javascript" type="text/javascript">
+    var widthImg = '<?= $widthImg?>';
+    var heightImg = '<?= $heightImg?>';
+    var maxUpload = '<?= $max_upload?>';
+
+    function bytesToSize(bytes) {
+        var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        if (bytes == 0) return '0 Byte';
+        var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+        return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+    }
+
+    function readURL(input, id) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $('#' + id).show();
+                $('#' + id).attr('src', e.target.result);
+            }
+
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    $(function () {
+        $("#post").validationEngine();
+        $(window).dblclick(function () {
+            jQuery('#post').validationEngine('hide');
+        });
+
+        if ($('#previewImage').attr('src') == '') {
+            $('#previewImage').hide();
+        }
+
+        if ($('#previewImageReserve').attr('src') == '') {
+            $('#previewImageReserve').hide();
+        }
+        
+        var sizeMax = bytesToSize(maxUpload);
+        var sizeMax = sizeMax.split(' ');
+        $('.maxSizeFile').html('<strong><u>' + sizeMax[0] + '</u></strong> ' + sizeMax[1]);
+
+        var _URL = window.URL || window.webkitURL;
+        $("#image_popup, #image_popup_reserve").change(function (e) {
+            var file, img;
+            var current = this;
+            var idPreview = 'previewImage';
+            if(this.id == 'image_popup_reserve') {
+                idPreview = 'previewImageReserve';
+            } 
+            if ((file = this.files[0])) {
+                img = new Image();
+                img.onload = function () {
+                    readURL(current, idPreview);
+                };
+
+                img.src = _URL.createObjectURL(file);
+            }
+
+        });
+    });
+</script>
+<div class="main-container">
+    <div class="pd-ltr-20 xs-pd-20-10">
+        <div class="pd-20 pb-40 card-box mb-30">
+            <div class="row">
+                <div class="col-md-12">
+
+                    <div class="row">
+                        <div class="col-6">
+                          <h4 class="text-blue h4"><?= $title_page ?></h4>
+                        </div>
+
+                        <div class="col-6">
+                          <div class="pull-right">
+                            <nav aria-label="breadcrumb" role="navigation">
+                              <ol class="breadcrumb pd-0">
+                                <li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+                                <li class="breadcrumb-item active" aria-current="page"><?= $title_page ?></li>
+                              </ol>
+                            </nav>
+                          </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="main-box clearfix">
+                                <div class="main-box-body clearfix">
+                                    <form role="form" id="post" method="post"
+                                          action="<?= $action_link . 'insert/' ?>"
+                                          enctype="multipart/form-data">
+                                        
+                                        <div class="subjectHead">รูปภาพ Pop Up </div>
+                                        <section class="blockPopup">
+                                            <div class="form-group">
+                                                <label for="url"><strong>ลิงก์เชื่อมโยง</strong></label>
+                                                <div class="well">
+                                                    <input type="text" class="form-control validate[custom[url]]"
+                                                        id="url" name="url" placeholder="ลิงก์เชื่อมโยง"
+                                                        value="<?= $getForm['url'] ?>">
+                                                    <p style="padding-top: 10px;"><span class="red">*</span>Ex. <span class="red">https://</span>www.exemple.com</p>
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="image_popup"><strong>รูปภาพ Popup</strong>&nbsp;<span
+                                                            style="color: #f02323">*</span></label>
+                                                <div>
+                                                    <img id="previewImage"
+                                                        style="max-width: <?= $widthImg ?>px;max-height: <?= $heightImg ?>px; width:100%; height: 100%; margin-top: 10px;margin-bottom: 15px;"
+                                                        src="<?= $getForm['img'] ?>">
+                                                </div>
+                                                <input type="file" id="image_popup" name="image_popup"
+                                                    accept=".jpg, .jpeg, .png, .gif" class="<?= (!empty($getForm['img']) ? '' : 'validate[required]')?>">
+                                                <br>
+                                                <span style="color: #f02323">*</span>&nbsp;<span>อัพโหลดไฟล์ได้เฉพาะไฟล์นามสกุล .jpg .jpeg .png .gif</span>
+                                                &nbsp;&nbsp;<span style="color: #f02323">*</span>&nbsp;<span id="textSizeFile">ขนาดไฟล์ ไม่เกิน <span
+                                                            id="maxSizeFile" class="maxSizeFile"></span></span>
+                                                <br>
+                                                <span style="color: #f02323">*</span>&nbsp;<span id="textWidthHeightFile">ขนาดความกว้าง (Width) ไม่น้อยกว่าหรือเท่ากับ <strong><u><?= $widthImg ?></u></strong> พิกเซล (pixels) และ ขนาดความสูง (Height) ไม่น้อยกว่าหรือเท่ากับ <strong><u><?= $heightImg ?></u></strong> พิกเซล (pixels)</span>
+                                                <br>
+                                            </div>
+                                        
+                                            <div class="form-group">
+                                                    <label for="show_status1"><strong>สถานะ</strong></label>&nbsp;
+                                                    <span class="red">*</span>
+                                                    <div class="jumbotron radio p-3 pt-4">
+                                                        <input type="radio" name="is_show" id="show_status1"
+                                                            value="1"
+                                                            <?= ($getForm['is_show'] == null) || $getForm['is_show'] == 1 ? 'checked' : '' ?>>
+                                                        <label for="show_status1">
+                                                            เผยแพร่
+                                                        </label>
+                                                        &nbsp;&nbsp;
+                                                        <input type="radio" name="is_show" id="show_status2"
+                                                            value="2"
+                                                            <?= isset($getForm) && $getForm['is_show'] == 2 ? 'checked' : '' ?>>
+                                                        <label for="show_status2">
+                                                            ไม่เผยแพร่
+                                                        </label>
+                                                    </div>
+                                            </div>
+
+                                            <div class="form-group mb-0" id="date_show">
+                                                <label for="type_date_show_1"><strong>กำหนดวันและเวลาในการแสดงผล</strong></label>&nbsp;
+                                                <span class="red">*</span>
+                                                <div class="jumbotron radio p-3 pt-4">
+                                                    <input type="radio" name="type_date_show" id="type_date_show_1"
+                                                        value="1"
+                                                        <?= ($getForm['type_date_show'] == null) || $getForm['type_date_show'] == 1 ? 'checked' : '' ?>>
+                                                    <label for="type_date_show_1">
+                                                        แสดงผลตลอดเวลา
+                                                    </label>
+                                                    &nbsp;&nbsp;
+                                                    <input type="radio" name="type_date_show" id="type_date_show_2"
+                                                        value="2"
+                                                        <?= isset($getForm) && $getForm['type_date_show'] == 2 ? 'checked' : '' ?>>
+                                                    <label for="type_date_show_2">
+                                                        แสดงผลตามช่วงเวลา
+                                                    </label>
+
+                                                    <div class="form-group row blockDate">
+                                                        <label class="col-md-3 col-4 col-sm-3 my-auto text-right"><strong>ช่วงเวลา : </strong></label>
+                                                        <div class="col-md-2 col-4 col-sm-3">
+                                                            <input type="text" name="date_show_start"
+                                                                class="form-control text-center validate[required]" id="date_show_start"
+                                                                value="<?= (!empty($getForm['date_show_start']) ? $getForm['date_show_start'] : '')?>" readonly
+                                                                placeholder="วันที่เริ่มต้น" autocomplete="off">
+                                                        </div>
+                                                        <label class="col-md-1 col-4 col-sm-1 my-auto text-center"><strong>ถึง</strong></label>
+                                                        <div class="col-md-2 col-8 col-sm-3">
+                                                            <input type="text" name="date_show_end"
+                                                                class="form-control text-center validate[required]" id="date_show_end"
+                                                                value="<?= (!empty($getForm['date_show_end']) ? $getForm['date_show_end'] : '')?>" readonly
+                                                                placeholder="วันที่สิ้นสุด" autocomplete="off">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </section>
+                                        <div>
+                                            <hr>
+                                        </div>
+
+                                        <div class="subjectHead">รูปภาพ Pop Up สำรอง (กำหนดเวลา)</div>
+                                        <section class="blockPopup">
+                                            <div class="form-group">
+                                                <label for="url_reserve"><strong>ลิงก์เชื่อมโยง</strong></label>
+                                                <div class="well">
+                                                    <input type="text" class="form-control validate[custom[url]]"
+                                                        id="url_reserve" name="url_reserve" placeholder="ลิงก์เชื่อมโยง"
+                                                        value="<?= $getForm['url_reserve'] ?>">
+                                                    <p style="padding-top: 10px;"><span class="red">*</span>Ex. <span class="red">https://</span>www.exemple.com</p>
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="image_popup_reserve"><strong>รูปภาพ Popup</strong>&nbsp;<span
+                                                            style="color: #f02323">*</span></label>
+                                                <div>
+                                                    <img id="previewImageReserve"
+                                                        style="max-width: <?= $widthImg ?>px;max-height: <?= $heightImg ?>px; width:100%; height: 100%; margin-top: 10px;margin-bottom: 15px;"
+                                                        src="<?= $getForm['img_reserve'] ?>">
+                                                </div>
+                                                <input type="file" id="image_popup_reserve" name="image_popup_reserve"
+                                                    accept=".jpg, .jpeg, .png, .gif" class="<?= (!empty($getForm['img_reserve']) ? '' : '')?>">
+                                                <br>
+                                                <span style="color: #f02323">*</span>&nbsp;<span>อัพโหลดไฟล์ได้เฉพาะไฟล์นามสกุล .jpg .jpeg .png .gif</span>
+                                                &nbsp;&nbsp;<span style="color: #f02323">*</span>&nbsp;<span id="textSizeFile">ขนาดไฟล์ ไม่เกิน <span
+                                                            id="maxSizeFile" class="maxSizeFile"></span></span>
+                                                <br>
+                                                <span style="color: #f02323">*</span>&nbsp;<span id="textWidthHeightFile">ขนาดความกว้าง (Width) ไม่น้อยกว่าหรือเท่ากับ <strong><u><?= $widthImg ?></u></strong> พิกเซล (pixels) และ ขนาดความสูง (Height) ไม่น้อยกว่าหรือเท่ากับ <strong><u><?= $heightImg ?></u></strong> พิกเซล (pixels)</span>
+                                                <br>
+                                            </div>
+                                        
+                                            <div class="form-group">
+                                                <label for="show_status1"><strong>สถานะ</strong></label>&nbsp;
+                                                <span class="red">*</span>
+                                                <div class="jumbotron radio p-3 pt-4">
+                                                    <input type="radio" name="is_show_reserve" id="show_status_reserve_1"
+                                                        value="1"
+                                                        <?= ($getForm['is_show_reserve'] == null) || $getForm['is_show_reserve'] == 1 ? 'checked' : '' ?>>
+                                                    <label for="show_status_reserve_1">
+                                                        เผยแพร่
+                                                    </label>
+                                                    &nbsp;&nbsp;
+                                                    <input type="radio" name="is_show_reserve" id="show_status_reserve_2"
+                                                        value="2"
+                                                        <?= isset($getForm) && $getForm['is_show_reserve'] == 2 ? 'checked' : '' ?>>
+                                                    <label for="show_status_reserve_2">
+                                                        ไม่เผยแพร่
+                                                    </label>
+
+                                                    <div class="form-group row blockDateReserve">
+                                                        <label class="col-md-3 col-4 col-sm-3 my-auto text-right"><strong>ช่วงเวลา : </strong></label>
+                                                        <div class="col-md-2 col-4 col-sm-3">
+                                                            <input type="text" name="date_show_start_reserve"
+                                                                class="form-control text-center validate[required]" id="date_show_start_reserve"
+                                                                value="<?= (!empty($getForm['date_show_start_reserve']) ? $getForm['date_show_start_reserve'] : '')?>" readonly
+                                                                placeholder="วันที่เริ่มต้น" autocomplete="off">
+                                                        </div>
+                                                        <label class="col-md-1 col-4 col-sm-1 my-auto text-center"><strong>ถึง</strong></label>
+                                                        <div class="col-md-2 col-8 col-sm-3">
+                                                            <input type="text" name="date_show_end_reserve"
+                                                                class="form-control text-center validate[required]" id="date_show_end_reserve"
+                                                                value="<?= (!empty($getForm['date_show_end_reserve']) ? $getForm['date_show_end_reserve'] : '')?>" readonly
+                                                                placeholder="วันที่สิ้นสุด" autocomplete="off">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </section>
+
+                                        
+                                            
+                                        <div class="form-group text-center">
+                                            <a href="<?= $action_link ?>">
+                                                <button type="button" class="btn btn-danger"><i class="fa fa-times"></i>&nbsp;ยกเลิก
+                                                </button>
+                                            </a>
+                                            &nbsp;&nbsp;
+                                            <button type="submit" class="btn btn-success"><i class="fa fa-save"></i>&nbsp;บันทึก
+                                            </button>
+
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script language="javascript" type="text/javascript">
+
+    $(document).on('change', '.btn-file :file', function () {
+        var input = $(this),
+            numFiles = input.get(0).files ? input.get(0).files.length : 1,
+            label = input.val().replace(/\\/g, '/').replace(/.*\//, '');
+        input.trigger('fileselect', [numFiles, label]);
+    });
+
+    $(document).ready(function () {
+        $('.btn-file :file').on('fileselect', function (event, numFiles, label) {
+
+            var input = $(this).parents('.input-group').find(':text'),
+                log = numFiles > 1 ? numFiles + ' files selected' : label;
+
+            if (input.length) {
+                input.val(log);
+            } else {
+                if (log)
+                    alert(log);
+            }
+        });
+
+        var show_status = '<?= $getForm['is_show'] ?>';
+        $('input[name=is_show]').each(function (index, el) {
+            var check = $(this).prop("checked");
+            if (check == true) {
+              if($(this).val() == 1) {
+                  $('#date_show').show(500);
+              } else {
+                  $('#date_show').hide(500);
+              }
+            }
+        });
+
+        $("input[name=is_show]").change(function () {
+            if($(this).val() == 1) {
+                $('#date_show').show(500);
+            } else {
+                $('#date_show').hide(500);
+            }
+        });
+
+        var show_status = '<?= $getForm['is_show_reserve'] ?>';
+        $('input[name=is_show_reserve]').each(function (index, el) {
+            var check = $(this).prop("checked");
+            if (check == true) {
+              if($(this).val() == 1) {
+                  $('.blockDateReserve').show(500);
+              } else {
+                  $('.blockDateReserve').hide(500);
+              }
+            }
+        });
+
+        $("input[name=is_show_reserve]").change(function () {
+            if($(this).val() == 1) {
+                $('.blockDateReserve').show(500);
+            } else {
+                $('.blockDateReserve').hide(500);
+            }
+        });
+
+        $('.blockDate').hide(500);
+        var type_date_show = '<?= $getForm['type_date_show'] ?>';
+        $('input[name=type_date_show]').each(function (index, el) {
+            var check = $(this).prop("checked");
+            if (check == true) {
+              if($(this).val() == 2) {
+                  $('.blockDate').show(500);
+              } else {
+                  $('.blockDate').hide(500);
+              }
+            }
+        });
+
+        $("input[name=type_date_show]").change(function () {
+            if($(this).val() == 2) {
+                $('.blockDate').show(500);
+            } else {
+                $('.blockDate').hide(500);
+            }
+        });
+
+        $.datetimepicker.setLocale('th');
+        $('#date_show_start').datetimepicker({
+            timepicker: false,
+            yearOffset: 543,
+            format: 'd-m-Y',
+            scrollInput: false,
+            scrollMonth: false,
+            formatDate: 'd-m-Y',
+            onShow:function( ct ){
+                if($('#date_show_end').val()) {
+                    var arr = $('#date_show_end').val().split("-");
+                    var year = arr[2].split(' ');
+                    var new_date = arr[0]+"-"+arr[1]+"-"+(parseInt(year[0])-543).toString();
+                }
+                this.s
+                this.setOptions({
+                    maxDate:$('#date_show_end').val()? new_date : false
+                });
+            },
+        });
+
+        $('#date_show_start_reserve').datetimepicker({
+            timepicker: false,
+            yearOffset: 543,
+            format: 'd-m-Y',
+            scrollInput: false,
+            scrollMonth: false,
+            formatDate: 'd-m-Y',
+            onShow:function( ct ){
+                if($('#date_show_end_reserve').val()) {
+                    var arr = $('#date_show_end_reserve').val().split("-");
+                    var year = arr[2].split(' ');
+                    var new_date = arr[0]+"-"+arr[1]+"-"+(parseInt(year[0])-543).toString();
+                }
+                this.s
+                this.setOptions({
+                    maxDate:$('#date_show_end_reserve').val()? new_date : false
+                });
+            },
+        });
+        $('#date_show_end').datetimepicker({
+            timepicker: false,
+            yearOffset: 543,
+            format: 'd-m-Y',
+            scrollInput: false,
+            scrollMonth: false,
+            formatDate: 'd-m-Y',
+            onShow:function( ct ){
+                if($('#date_show_start').val()) {
+                    var arr = $('#date_show_start').val().split("-");
+                    var year = arr[2].split(' ');
+                    var new_date = arr[0]+"-"+arr[1]+"-"+(parseInt(year[0])-543).toString();
+                }
+                this.setOptions({
+                    minDate: $('#date_show_start').val() ? new_date :false
+                })
+            },
+        });
+
+        $('#date_show_end_reserve').datetimepicker({
+            timepicker: false,
+            yearOffset: 543,
+            format: 'd-m-Y',
+            scrollInput: false,
+            scrollMonth: false,
+            formatDate: 'd-m-Y',
+            onShow:function( ct ){
+                if($('#date_show_start_reserve').val()) {
+                    var arr = $('#date_show_start_reserve').val().split("-");
+                    var year = arr[2].split(' ');
+                    var new_date = arr[0]+"-"+arr[1]+"-"+(parseInt(year[0])-543).toString();
+                }
+                this.setOptions({
+                    minDate: $('#date_show_start_reserve').val() ? new_date :false
+                })
+            },
+        });
+
+
+        // $('#date_start_time, #date_end_time').datetimepicker({
+        //     datepicker: false,
+        //     format: 'H:i',
+        // });
+    });
+
+</script>
+
+<style type="text/css" media="screen">
+    .btn-file {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-file input[type=file] {
+        position: absolute;
+        top: 0;
+        right: 0;
+        min-width: 100%;
+        min-height: 100%;
+        font-size: 100px;
+        text-align: right;
+        filter: alpha(opacity=0);
+        opacity: 0;
+        background: red;
+        cursor: inherit;
+        display: block;
+    }
+
+    .btn {
+        font-family: 'Inter', sans-serif;
+        letter-spacing: 0;
+        font-weight: 500;
+        padding: 0.600rem 1rem !important;
+    }
+
+    .progress {
+        margin-bottom: 0px;
+    }
+
+    .progress-bar {
+        color: #222;
+    }
+
+    .blockPopup {
+        padding: 20px;
+    }
+
+    .subjectHead {
+        padding-bottom: 2px;
+        font-weight: bold;
+        border-bottom: 1px solid;
+        color: #152127;
+    }
+
+    .blockDateReserve .form-control {
+        background-color: #ffffff;
+    }
+</style>

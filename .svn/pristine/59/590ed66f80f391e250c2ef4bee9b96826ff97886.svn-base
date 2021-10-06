@@ -1,0 +1,262 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class ManageDirector_model extends CI_Model
+{
+    #เรียกตารางจากฐานข้อมูล
+
+    private $tbl = 'manage_director';
+    private $manage_resume_tbl = 'manage_resume';
+
+    ##Pagination
+    private $per_page = 50;
+
+    ## Search
+    private $s_element = array('stext' => FALSE, 'status' => 'all');
+
+    ## Match data
+    private $status = array('1' => 'เผยแพร่', '2' => 'ไม่เผยแพร่');
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->user_id = $this->session->cmu_web_session['id'];
+    }
+
+    public function getData($page)
+    {
+        // $this->fnc_calPageOffset($page);
+        $this->fnc_setElementSearchFromSession();
+        $this->db->select('t1.*, t1.prename as prename_other, t1.position as position_other, t2.prename, t2.first_name, t2.last_name, t2.position');
+        $this->db->order_by('t1.s_order', 'asc');
+        $this->db->order_by('t1.time_create', 'desc');
+        $this->db->join($this->manage_resume_tbl.' t2', 't2.id = t1.id_resume');
+        $data = $this->db->get($this->tbl.' t1')->result_array();
+        if (!empty($data)) {
+            $getData = [];
+            foreach ($data as $key => $value) {
+                $value['show_status'] = !empty($value['show_status']) ? $value['show_status'] : '-';
+                // if(!empty($value['prename_other']) && $value['prename_other'] != $value['prename']) {
+                //     $value['name_other'] = $value['prename_other'].$value['first_name'].' '.$value['last_name'];
+                // } else {
+                //     $value['name_other'] = '';
+                // }
+
+                // if(!empty($value['position_other']) && $value['position_other'] != $value['position']) {
+                //     $value['position_other'] = $value['position_other'];
+                // } else {
+                //     $value['position_other'] = '';
+                // }
+
+               
+                $getData[] = $value;
+            }
+            return $getData;
+        } else {
+            return [];
+        }
+    }
+
+    // public function getCountData()
+    // {
+    //     $this->fnc_setElementSearchFromSession();
+    //     return $this->db->count_all_results($this->tbl);
+    // }
+
+    public function getForm($id)
+    {
+
+        if(!empty($id)) {
+            $this->db->select('t1.*, t1.prename as prename_other, t1.prename_en as prename_en_other, t1.position as position_other, t1.position_en as position_en_other, t2.prename, t2.first_name, t2.last_name, t2.position');
+            $this->db->where('t1.id', $id);
+            $this->db->join($this->manage_resume_tbl.' t2', 't2.id = t1.id_resume');
+            $data = $this->db->get($this->tbl.' t1')->row_array();
+            if (!empty($data)) {
+                return $data;
+            }
+        }
+
+
+        $fields = $this->db->list_fields($this->tbl);
+        $getData = [];
+        foreach($fields as $key => $value) {
+            $getData[$value] = '';
+        }
+
+        return $getData;
+    }
+
+
+    public function getSelectData($id)
+    {
+        $this->db->where('t2.id', $id);
+        $this->db->join($this->tbl.' t2', 't2.id_resume = t1.id', 'left');
+        $data = $this->db->get($this->manage_resume_tbl.' t1')->row_array();
+
+        if (!empty($data)) {
+            return $data;
+        }
+        return false;
+
+    }
+
+    public function selectNeweOrder()
+    {
+        $this->db->order_by('s_order', 'desc');
+        $this->db->select('s_order');
+        $data = $this->db->get($this->tbl)->row_array();
+
+        if(!empty($data)) {
+            return $data['s_order'] + 1;
+        } else {
+            return 1;
+        }
+    }
+
+
+    public function getDataAjax()
+    {
+        if (!empty($_GET) && !empty($_GET['q'])) {
+            $this->db->where("(CONCAT(REPLACE(t1.prename,' ',''), REPLACE(t1.first_name,' ',''), REPLACE(t1.last_name, ' ','')) LIKE '%".str_replace(' ', '', $_GET['q'])."%' OR TRIM(t1.position) LIKE '%".$_GET['q']."%')");
+        }
+        $this->db->select('t1.*');
+        $this->db->join($this->tbl.' t2', 't2.id_resume = t1.id', 'left');
+        $this->db->where('t2.id IS NULL');
+        $data = $this->db->get($this->manage_resume_tbl.' t1')->result_array();
+
+        if (!empty($data)) {
+            $getData = [];
+            foreach($data as $key => $value) {
+                $getData[] = ['id' => $value['id'], 'text' => $value['prename'].$value['first_name'].' '.$value['last_name'].' (ตำแหน่ง : '.$value['position'].')'];
+            }
+
+            return $getData;
+        } else {
+            return [];
+        }
+    }
+
+    
+    public function getDataResume($id)
+    {
+        $this->db->where('id', $id);
+        $data = $this->db->get($this->manage_resume_tbl)->row_array();
+
+        if (!empty($data)) {
+            $this->path = './file_upload/manage_resume/';
+            if (!empty($data['file_name']) && file_exists($this->path . $data['file_name'])) {
+                $data['img'] = base_url() . $data['file_path'] . $data['file_name'];
+            } else {
+                $data['img'] = base_url() . 'statics/images/DEFAULT_PROFILE.png';
+            }
+            return $data;
+        } else {
+            return [];
+        }
+    }
+
+    public function insertData($id)
+    {
+        
+        $data = $this->input->post();    
+        if(!empty($id)) {
+            $dataByID = $this->getSelectData($id);    
+            if(!empty($dataByID)) {
+                $Counter = new Counter;
+                $Counter->logAction($dataByID['prename'].$dataByID['first_name'].' '.$dataByID['last_name'], $id, 0, 'director', '87', $this->user_id);
+            }
+            
+            $this->db->where('id', $id);
+            $this->db->update($this->tbl, $data);
+        } else {
+            $time_create = date('Y-m-d h:i:s');
+            $data['time_create'] = date('Y-m-d h:i:s');
+            $data['s_order'] = $this->selectNeweOrder();
+            $this->db->insert($this->tbl, $data);
+            $id = $this->db->insert_id();
+            $dataByID = $this->getSelectData($id);    
+            $Counter = new Counter;
+            $Counter->logAction($dataByID['prename'].$dataByID['first_name'].' '.$dataByID['last_name'], $id, 0, 'director', '86', $this->user_id);
+        }
+    }
+
+
+    public function deleteData($id)
+    {
+        $dataByID = $this->getSelectData($id);
+        if(!empty($dataByID)) {
+            $Counter = new Counter;
+            $Counter->logAction($dataByID['prename'].$dataByID['first_name'].' '.$dataByID['last_name'], $id, 0, 'director', '88', $this->user_id);
+        }
+        $this->db->where('id', $id);
+        $this->db->delete($this->tbl);
+
+    }
+
+//     ## Search
+
+    private function fnc_setElementSearchFromSession()
+    {
+        $form_search_element = $this->session->userdata('form_search_element');
+
+
+        if ($form_search_element == null) {
+            return;
+        }
+        foreach ($this->s_element as $key => $value) {
+            if (isset($form_search_element['element'][$key]))
+                $this->s_element[$key] = $form_search_element['element'][$key];
+        }
+
+        $stext = trim($this->db->escape_str($this->s_element['stext']));
+        $status = $this->s_element['status'];
+
+        if ($stext != '') {
+            $this->db->where("t1.id_resume IN (SELECT id FROM ".$this->manage_resume_tbl." WHERE (CONCAT(REPLACE(prename,' ',''), REPLACE(first_name,' ',''), REPLACE(last_name, ' ','')) LIKE '%".str_replace(' ', '', $stext)."%' OR TRIM(position) LIKE '%".$stext."%'))");
+
+        }
+
+        if ($status != 'all') {
+            $this->db->where('t1.show_status', $status);
+        }
+    }
+
+    public function getSElement()
+    {
+        return $this->s_element;
+    }
+
+    public function saveOrder($id, $order)
+    {
+        $data = array(
+            's_order' => $order
+        );
+
+        $this->db->where('id', $id);
+        $this->db->update($this->tbl, $data);
+
+
+        return 'เรียงลำดับข้อมูลแล้ว';
+    }
+
+//     ##Pagination
+
+    public function getPerPage()
+    {
+        return $this->per_page;
+    }
+
+    private function fnc_calPageOffset($page)
+    {
+        $offset = ($page * $this->per_page) - $this->per_page;
+
+        $this->db->limit($this->per_page, $offset);
+    }
+
+
+}
+
+/* End of file New_model.php */
+/* Location: ./application/models/New_model.php */

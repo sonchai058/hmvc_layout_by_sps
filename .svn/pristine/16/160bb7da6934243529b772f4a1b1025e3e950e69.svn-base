@@ -1,0 +1,73 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class ManageRecommendResources extends MDL_Controller {
+
+	public function __construct()
+    {
+        parent::__construct();
+         ## Search
+        parent::setSearchSession();
+        $this->path_upload = './file_upload/';
+    }
+
+	public function index($page = 1)
+	{
+		$data['title'] = 'จัดการข้อมูล e-Resources';
+        $data['title_page'] = 'จัดการข้อมูล e-Resources';
+
+        // $data['category'] = $this->model->getCategory();
+        // $data['status'] = $this->model->getStatus();
+        // _print_r($data);
+
+        //Pagination
+        $num = $this->model->getCountResources();
+        $per_page = $this->model->getPerPage();
+        parent::pagination($page, $num, $per_page, 4);
+        $data['getResources'] = $this->model->getResources($page);
+        $data['form_search_element'] = $this->model->getSElement();
+        // _print_r($data);
+		parent::view('manage_recommend_e_resources/index', $data);
+	}
+
+	#ดึงค่ามาโชว์ในฟอร์ม เพิ่ม-แก้ไข
+
+    public function form($rs_id = FALSE)
+    {
+        $data['title'] = ' e-Resources';
+        $data['title_sub'] = ' e-Resources';
+        $data['title_page'] = $rs_id != FALSE ? 'แก้ไข e-Resources' : 'เพิ่ม e-Resources';
+        $data['getForm'] = $this->model->getForm($rs_id);
+        // _print_r($data);
+        parent::view('manage_recommend_e_resources/form', $data);
+    }
+
+	public function insert($id = FALSE)
+    {
+        $data = $this->model->insertResources($id);
+        if (!empty($data)) {
+            if ($id != FALSE) {
+                echo "<SCRIPT LANGUAGE='JavaScript'>
+                          window.alert('ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด')
+                          window.location.href='" . base_url() . 'news/ManageBgSearch/index/' . $id . "'
+                          </SCRIPT>";
+            } else {
+                echo "<SCRIPT LANGUAGE='JavaScript'>
+                          window.alert('ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด')
+                          window.location.href='" . base_url() . 'news/ManageBgSearch/index' . "'
+                          </SCRIPT>";
+            }
+        } else {
+            redirect(base_url() . 'management/ManageRecommendResources');
+        }
+    }
+
+    public function delete($id = FALSE)
+    {
+        $this->model->delete($id);
+        redirect(base_url() . 'management/ManageRecommendResources');
+    }
+}
+
+/* End of file ManageRecommendResources.php */
+/* Location: ./application/modules/management/controllers/ManageRecommendResources.php */

@@ -1,0 +1,506 @@
+<div class="d-flex align-items-center flex-wrap justify-content-center" ng-app="searchApp" ng-controller="searchController" ng-cloak>
+	<div class="container">
+		<div class="row align-items-center" id="filter-control">
+			<div class="col-lg-12 col-md-12">
+				<div class="search-detail-box position-relative">
+					<div class="clearfix"></div>
+					<div class="row">
+						<div class="col-lg-12 col-md-12 col-12 mb-3">
+							<div class="row">
+								<div class="col-lg-10 col-12">
+	                                <input type="text" ng-model="query.command.stext" ng-enter="searchMain()" ng-disabled="loading" class="form-control inputSearch" placeholder="ค้นหา">
+								</div>
+								<div class="col-lg-2 col-12 text-center my-auto">
+	                              	<button type="button" class="btn btn-primary mr-1" ng-click="searchMain()" ng-disabled="loading">
+	                                    <i class="fa fa-search"></i>
+	                                </button>
+	                                <button type="button" class="btn btn-danger" ng-click="searchReset()" ng-disabled="loading">
+	                                    <i class="fa fa-refresh"></i>
+	                                </button>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="clearfix"></div>
+					<div class="blockTotalSearch">
+	                    <div class="row">
+	                        <div class="col-12 mt-auto">
+	                            <div class="textTotalSearch">
+	                            	<?= _po('All results')?>
+	                            	<span class="textTotalSearchNumber">{{total | number}}</span>
+	                            	<?= _po('List')?>
+	                            </div>
+	                        </div>
+	                    </div>
+	                </div>
+	                <div ng-show="loading" class="row my-3">
+			            <div class="col-12 text-center ">
+			                <div class="p-5">
+			                    <img src="<?= STATIC_PATH ?>/images/loader.gif" class="img-responsive" alt="Image">
+			                </div>
+			            </div>
+			        </div>
+
+
+			        <div ng-show="!loading && total == 0" class="row my-3">
+	                	<div class="col-12 text-center ">
+			                <div class="pt-4 pb-2">
+			                    <div class="alert alert-danger text-center">- <?= _po('No data item found')?> -</div>
+			                </div>
+			            </div>
+			        </div>
+
+					<div ng-hide="loading"  class="row">
+						<div class="col-lg-4 col-md-4">
+							<div class="blockFilter" ng-show="aggs.menu.length > 0">
+						        <div class="filterHeader">
+						          <a>
+						          	<?= _po('Subject')?>
+						            <i class="fas fa-caret-up"></i>
+						          </a>
+						        </div>
+						        <div class="blockFilterData">
+						          <div class="filterData" ng-repeat="(key, value) in aggs.menu | orderBy : '-doc_count' track by key" >
+						            <label class="filterCheckbox">
+						              <input type="checkbox" ng-click="setFilter($event, value.category, value.key)" ng-disabled="loading" value="1">
+						              <span class="textFilterCheckbox ng-binding">{{value.label}} ({{value.doc_count | number}})</span>
+						              <span class="afterFilterCheckbox"></span>
+						            </label>
+						          </div>
+						        </div>
+						    </div>
+
+						    <div class="blockFilter" ng-show="aggs.news.length > 0">
+						        <div class="filterHeader">
+						          <a>
+						          	<?= _po('News')?>
+						            <i class="fas fa-caret-up"></i>
+						          </a>
+						        </div>
+						        <div class="blockFilterData">
+						          <div class="filterData ng-scope" ng-repeat="(key, value) in aggs.news track by key" >
+						            <label class="filterCheckbox">
+						              <input type="checkbox" ng-click="setFilter($event, 'news', value.key)" ng-disabled="loading" value="1">
+						              <span class="textFilterCheckbox ng-binding">{{value.label}} ({{value.doc_count | number}})</span>
+						              <span class="afterFilterCheckbox"></span>
+						            </label>
+						          </div>
+						        </div>
+						    </div>
+
+						    <div class="blockFilter" ng-show="aggs.pubyear.length > 0">
+						        <div class="filterHeader">
+						          <a>
+						          	<?= _po('Pubyear')?>
+						            <i class="fas fa-caret-up"></i>
+						          </a>
+						        </div>
+						        <div class="blockFilterData">
+						          <div class="filterData ng-scope" ng-repeat="(key, value) in aggs.pubyear track by key" >
+						            <label class="filterCheckbox">
+						              <input type="checkbox" ng-click="setFilter($event, 'pubyear', value.key)" ng-disabled="loading" value="1">
+						              <span class="textFilterCheckbox ng-binding">{{value.key + 543}} ({{value.doc_count | number}})</span>
+						              <span class="afterFilterCheckbox"></span>
+						            </label>
+						          </div>
+						        </div>
+						    </div>
+						</div>
+						<div class="col-lg-8 col-md-8">
+							<div class="row">
+					           
+								<div ng-show="!loading && layout == 'list'" class="col-12">
+                					<div class="calloutSbs" ng-repeat="(key,ele) in list track by key">
+					                    <div class="subjectSearchData">
+					                        <a ng-show="ele.target != ''" title="{{ele.title}}" href="{{ele.url}}" target="_blank" data-ng-click="insertCounterPageType((ele.category == 'menu_top' ? 'html_detail_top' : 'html_detail')'', ele.pk)">
+					                            {{ele.title}}
+					                        </a>
+					                        <a ng-hide="ele.target != ''" title="{{ele.title}}" href="{{ele.url}}">
+					                            {{ele.title}}
+					                        </a>
+					                    </div>
+
+					                    <div ng-show="ele.content != undefined" class="textSearchDataContentList" ng-bind-html="ele.content"></div>
+
+					                    <div ng-show="ele.lvl1_title != undefined" class="textSearchData">
+					                        <span class="">{{ele.category_name}} : </span>
+					                        {{ele.lvl1_title}}
+					                        <span ng-show="ele.lvl2_title != undefined">
+					                            <i class="fa fa-angle-double-right"></i>
+					                            {{ele.lvl2_title}}
+					                        </span>
+					                    </div>
+
+					                    <div class="textSearchData">
+                                            <span class="time-box"><img class="time-icon" src="<?= LAYOUT_PATH.'images/CMU_WEB/time.png' ?>" alt=""> &nbsp;&nbsp;{{ele.create_dt}}</span>
+					                    </div>
+					                </div>
+					            </div>
+							</div>
+						</div>
+					</div>
+
+
+					<div class="clearfix"></div>
+					<div class="row align-items-center mt-5" ng-show="paging.all_page > 1 && !loading">
+						<div class="col-12">
+							<div class="container font-adell">
+	  							<div class="mainbox">
+								    <div class="pgn fullprevnext">
+								      <ul class="pgn__list" role="navigation" aria-labelledby="paginglabel">
+								        <li class="prev" title="<?= _po('Previous')?>">
+								            <a ng-if="paging.cur_page > 1" ng-click="changePage(paging.cur_page - 1)" rel="prev">
+                                                <i class="icon-copy ti-angle-left"></i>
+                                                <?= _po('Previous')?>
+                                            </a>
+								        </li>
+								        <li class="pgn__item">
+			                    			<a ng-repeat="value in paginationData" ng-click="changePage(value)" 
+			                    			class="{{paging.cur_page == value ? 'current' : ''}}">
+			                    				{{value}}
+			                    			</a>
+								        </li>
+								        <li class="next" title="<?= _po('Next')?>" >
+								            <a ng-if="paging.cur_page < paging.all_page" ng-click="changePage(paging.cur_page + 1)" rel="next">
+                                                <?= _po('Next')?> 
+                                                <i class="icon-copy ti-angle-right"></i>
+                                            </a>
+								        </li>
+								      </ul>
+								    </div>
+								</div>
+							</div>
+						</div>
+  					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+  $(document).ready(function () {
+    $('.filterHeader a').click(function () {
+      var prevElements = $(this).closest(".blockFilter").find('.blockFilterData');
+      if(prevElements.css('display') == 'block') {
+        $(this).closest(".blockFilter").find('.blockFilterData').hide(500);
+        $(this).find('i').removeClass('fa-caret-up');
+        $(this).find('i').addClass('fa-caret-down');
+      } else {
+        $(this).closest(".blockFilter").find('.blockFilterData').show(500);
+        $(this).find('i').removeClass('fa-caret-down');
+        $(this).find('i').addClass('fa-caret-up');
+      }
+    });
+
+    $('.filterCheckbox [type="checkbox"]').click(function () {
+      if($(this).prop('checked')) {
+        $(this).closest(".filterCheckbox").removeClass('active');
+        $(this).closest(".filterCheckbox").addClass('active');
+      } else {
+        $(this).closest(".filterCheckbox").removeClass('active');
+      }
+    });
+
+    if(window.matchMedia("(max-width: 767px)").matches){
+      $(".filterHeader a").each(function( index, element ) {
+        var prevElements = $(element).closest(".blockFilter").find('.blockFilterData');
+        $(element).closest(".blockFilter").find('.blockFilterData').hide(500);
+        $(element).find('i').removeClass('fa-caret-up');
+        $(element).find('i').addClass('fa-caret-down');
+      });
+    }
+  });
+</script>
+
+<script>
+let searchApp = angular.module("searchApp", ['ngSanitize']);
+
+searchApp.directive('ngEnter', function () {
+    return function (scope, element, attrs) {
+        element.bind("keydown keypress", function (event) {
+            if (event.which === 13) {
+                scope.$apply(function () {
+                    scope.$eval(attrs.ngEnter);
+                });
+
+                event.preventDefault();
+            }
+        });
+    };
+});
+
+
+searchApp.controller('searchController', function ($scope, $http, $filter, $window, $timeout, phpData) {
+
+    let api_url = phpData.classLink;
+    let LINK = phpData.LINK;
+    let per_page = (typeof phpData.per_page !== 'undefined' ? phpData.per_page : 10);
+    let proto = {
+        'command': {
+            'stext': '',
+            'start': '',
+            'end': '',
+            'sub_query': {
+                'keyword': [],
+                'lvl2': {
+                    'parent': 0,
+                    'pk': 0,
+                    'active': false
+                }
+            }
+        },
+        'filter': {
+            'data': {
+                'menu':[],
+                'menu_top':[],
+                'news':[],
+                'pubyear': [],
+                'online_library_course' : []
+            },
+            'filter_include': true,
+        },
+        'aggregate': true,
+        'per_page': per_page
+    };
+
+
+    $scope.loading = true;
+
+    $scope.query = angular.copy(proto);
+    $scope.query.command.stext = phpData.stext;
+
+
+    $scope.paging = {
+        'cur_page': 1,
+        'all_page': 1,
+        'offset': 0
+    };
+
+    $scope.total = 0;
+    $scope.list = [];
+    $scope.keyword = [];
+    $scope.aggs = [];
+    $scope.layout = 'list';
+    $scope.paginationData = [];
+    $scope.paginationNotShowFirst = false;
+    $scope.paginationNotShowLast = false;
+    $scope.paginationNotShowHidden = false;
+
+    let func_stickyControl = function () {
+        let win_bottom = this.pageYOffset + this.innerHeight;
+        let ele_top = $('#filter-control').offset().top;
+        let ele_height = $('#filter-control').height();
+        let ele_bottom = ele_top + ele_height + 16;
+
+        if (win_bottom <= ele_bottom) {
+            if (!$('#filter-control').hasClass("sticky-bg"))
+                $('#filter-control').addClass('sticky-bg');
+        } else {
+            if ($('#filter-control').hasClass("sticky-bg"))
+                $('#filter-control').removeClass('sticky-bg');
+        }
+    };
+
+
+    let fnc_calPageOffset = function (page) {
+
+        let offset = (page - 1) * $scope.query.per_page;
+
+        if (offset >= 0) {
+            $scope.paging.cur_page = page;
+            return offset
+        } else {
+            $scope.paging.cur_page = 1;
+            return 0;
+        }
+
+    };
+
+
+    let fnc_numPage = function () {
+        return $scope.query.per_page > 0 ? Math.ceil($scope.total / $scope.query.per_page) : 0;
+    };
+
+
+    let fnc_search = function () {
+        $scope.loading = true;
+        $('.slide-fade').removeClass('fade-show');
+
+        $scope.data = [];
+
+
+        $http.post(api_url + 'find/' + $scope.paging.offset,
+            'data=' + encodeURIComponent(angular.toJson($scope.query)),
+            {headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8;'}}
+        ).then(function (res) {
+            $scope.list = res.data.list;
+            $scope.total = res.data.total;
+
+            $scope.paging.all_page = fnc_numPage();
+
+            if (typeof (res.data.aggs) !== 'undefined') {
+                $scope.keyword = res.data.keyword;
+                $scope.aggs = res.data.aggs;
+            }
+
+            if ($scope.query.aggregate) {
+                $('.lvl1-label').removeClass('rotate');
+                $('.lvl1-children').css('max-height', '0');
+            }
+
+            $scope.query.command.sub_query.lvl2.active = false;
+            $scope.query.aggregate = false;
+            $scope.loading = false;
+
+            $timeout(function () {
+                func_stickyControl();
+                if (document.documentElement.scrollTop > 200 || document.body.scrollTop > 200)
+                    window.scrollTo({top: 0, behavior: 'smooth'});
+            }, 50);
+            pagitionSet();
+
+        });
+    };
+
+    let fnc_resetFilter = function () {
+        $(".filterCheckbox input[type=checkbox]").prop('checked', false);
+        $scope.query.filter = angular.copy(proto.filter);
+
+    };
+
+    $scope.setFilter = function (e, field, val) {
+        if ($scope.query.filter.data.hasOwnProperty(field)) {
+            let my_filter = $scope.query.filter.data[field];
+            let index = my_filter.indexOf(val);
+
+            if (jQuery(angular.element(e.currentTarget)).is(':checked')) {
+                if (index === -1) my_filter.push(val);
+            } else {
+                if (index > -1) my_filter.splice(index, 1);
+            }
+
+        }
+        $scope.query.filter.filter_include = true;
+        $scope.changePage(1);
+    };
+
+    $scope.lvl2Filter = function (pk, parent) {
+        $scope.query.command.sub_query.lvl2.active = true;
+        $scope.query.command.sub_query.lvl2.pk = pk;
+        $scope.query.command.sub_query.lvl2.parent = parent;
+        $scope.changePage(1);
+    };
+
+    $scope.dataFilter = function (bool) {
+        $scope.query.filter.filter_include = bool;
+        $scope.changePage(1);
+    };
+
+
+    $scope.searchReset = function () {
+        $scope.query = angular.copy(proto);
+        fnc_resetFilter();
+        $scope.changePage(1);
+    };
+
+    $scope.searchMain = function () {
+        $scope.query.aggregate = true;
+        fnc_resetFilter();
+        $scope.changePage(1);
+    };
+
+    $scope.changePage = function (page) {
+        page = parseInt(page);
+        if (page < 1) page = 1;
+        if (page > $scope.paging.all_page) page = $scope.paging.all_page;
+        $scope.paging.offset = fnc_calPageOffset(page);
+        fnc_search();
+    };
+
+
+    $scope.changeLayout = function (layout) {
+        if ($scope.layout != layout) {
+            $scope.loading = true;
+
+            $timeout(function () {
+                $scope.loading = false;
+            }, 500);
+            $scope.layout = layout;
+        }
+    }
+
+    let pagitionSet = function () {
+        $scope.paginationData = [];
+        var start = $scope.paging.cur_page;
+        var end = $scope.paging.all_page;
+        var check_start = Math.ceil($scope.paging.cur_page - 2);
+        var check_end = Math.ceil($scope.paging.cur_page + 2);
+
+        if($scope.paging.cur_page < 3) {
+            start = 1;
+        } else if($scope.paging.all_page < ($scope.paging.cur_page + 3)){
+            if(($scope.paging.cur_page + 3) > $scope.paging.all_page) {
+                start = Math.ceil($scope.paging.all_page - 4);
+                if (start < 1) {
+                	start = 1;
+                }
+            } else {
+            	start = 1;
+            }
+        } else {
+            start = check_start;
+        }
+
+        var maxStart = 0;
+
+        for (i= start; i <= Math.ceil(start + 2); i++) {
+            if (end >= i) {
+                $scope.paginationData.push(i);
+                maxStart = i;
+            } 
+        }
+
+        if($scope.paginationData.length == 3) {
+            if(end >= maxStart) {
+               for (i= Math.ceil(maxStart + 1); i < (maxStart + 3); i++) { 
+                    if(end >= i) {
+                		$scope.paginationData.push(i);
+                    }
+                } 
+            }
+        }
+
+
+        $timeout(function () {
+		    $('.pgn').mgPgnation();
+		}, 1000);
+    }
+
+    $scope.insertCounterPageType = function (type, id) {
+        $http.post(LINK + 'Index/insertCounterPageType/' + type + '/' + id,).then(function (res) {});
+    }
+
+    let fnc_init = function () {
+        fnc_search();
+        angular.element($window).bind("scroll", function () {
+            func_stickyControl();
+        });
+    };
+    fnc_init();
+});
+
+</script>
+<script>
+
+    <?php
+    $phpData = [
+        'classLink' => base_url() . 'Search/',
+        'static' => STATIC_PATH,
+        'LINK' => base_url(),
+        'stext' => $searchIndex,
+        'per_page' => 10
+    ];
+    ?>
+    searchApp.value('phpData', <?= json_encode($phpData) ?>);
+</script>

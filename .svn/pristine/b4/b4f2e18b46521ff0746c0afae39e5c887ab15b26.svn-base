@@ -1,0 +1,30 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class ManagePopUp extends MDL_Controller {
+
+	public function __construct()
+    {
+        parent::__construct();
+        $this->path_upload = './file_upload/';
+    }
+
+	public function index()
+	{
+		$data['title'] = 'จัดการ Pop Up';
+        $data['title_sub'] = 'จัดการ Pop Up';
+        $data['title_page'] = 'จัดการ Pop Up';
+		$data['getForm'] = $this->model->getForm();
+		parent::view('manage_pop_up/form', $data);
+	}
+
+	public function insert()
+    {
+        $this->model->insertData();
+        redirect(base_url() . 'management/ManagePopUp');
+    }
+
+}
+
+/* End of file ManageBgSearch.php */
+/* Location: ./application/modules/management/controllers/ManageBgSearch.php */

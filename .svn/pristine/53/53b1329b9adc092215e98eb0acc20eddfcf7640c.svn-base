@@ -1,0 +1,138 @@
+<?php
+
+class Calendar_model extends CI_Model
+{
+    private $val_lang;
+    private $calendar_tbl = 'calendar';
+    private $calendar_group_tbl = 'calendar_group';
+    private $calendar_news_tbl = 'calendar_news';
+    private $calendar_gallery_tbl = 'calendar_gallery';
+    private $gallery_category_tbl = 'gallery_category';
+    private $news_tbl = 'news';
+
+    public function __construct()
+    {
+        parent::__construct();
+        $val_lang = $this->session->userdata('LANGUAGE');
+
+        if ($val_lang == 'US')
+           $val_lang = 'en';
+
+        if (!empty($val_lang)) {
+           $this->val_lang = strtolower($val_lang);
+        }
+
+    }
+
+    public function getCalendar()
+    {
+        $this->db->select('id, title, detail, start, end, title_en, detail_en, calendar_group');
+        $data = $this->db->get('calendar')->result_array();
+
+        if (!empty($data)) {
+            $getData = [];
+            foreach ($data as $key => $value) {
+                $value['id'] = intval($value['id']);
+                $value['title'] = $this->val_lang == 'en' && trim($value['title_en'] != '') ? $value['title_en'] : $value['title'];
+                $value['detail'] = $this->val_lang == 'en' && trim($value['detail_en'] != '') ? $value['detail_en'] : $value['detail'];
+                $value['color'] = $this->fnc_getCalendarColor($value['calendar_group']);
+                $getData[] = $value;
+            }
+            // _print_r($getData);
+            return $getData;
+        } else {
+            return [];
+        }
+    }
+
+    private function fnc_getCalendarColor($calendar_group)
+    {
+        $this->db->select('cg_color');
+        $this->db->where('cg_id', $calendar_group);
+        $data = $this->db->get($this->calendar_group_tbl)->row_array();
+
+        return $data['cg_color'];
+    }
+
+    public function getCalendarGroup()
+    {
+        $data = $this->db->get($this->calendar_group_tbl)->result_array();
+
+        if(!empty($data)) {
+            $getData = [];
+            foreach ($data as $key => $value) {
+                if ($this->val_lang == 'en') {
+                    if (!empty($value['cg_name_en'])) {
+                        $value['cg_name'] = $value['cg_name_en'];
+                    }
+                }
+                $getData[] = $value;
+            }
+            return $getData;
+        } else {
+          return [];
+        }
+    }
+
+    public function getCalendarDetail($id)
+    {
+        $this->db->where('id', $id);
+        $rs = $this->db->get($this->calendar_tbl)->row_array();
+        // _print_r($rs);
+        if (!empty($rs)) {
+
+            // $rs['time_update'] = General::getDateFormatCMU($rs['time_update']);
+
+            if ($this->val_lang == 'en') {
+                if (!empty($rs['title_en'])) {
+                    $rs['title'] = $rs['title_en'];
+                }
+
+                if (!empty($rs['detail_en'])) {
+                    $rs['detail'] = $rs['detail_en'];
+                }
+
+                $rs['StartAndEnd'] = str_replace("/", " ", General::dateTime_en($rs['start'])).' - '.str_replace("/", " ", General::dateTime_en($rs['end']));
+
+            }else{
+                $rs['StartAndEnd'] = str_replace("/", " ", General::dateTimeThai($rs['start'])).' - '.str_replace("/", " ", General::dateTimeThai($rs['end']));
+            }
+
+
+        }
+        // _print_r($rs);
+        return $rs;
+    }
+
+    public function getCalendarTable()
+    {
+        $get = $this->input->get();
+        // $get = $this->input->post();
+        // _print_r($get); 
+        $start = date('Y-m-d',strtotime($get['start']));
+        $end = date('Y-m-d',strtotime($get['end']));
+
+        $this->db->select('id, title, detail, start, end, title_en, detail_en, calendar_group');
+        $this->db->where('DATE(start) >=', $start);
+        $this->db->where('DATE(end) <=', $end);
+        $this->db->order_by('start', 'asc');
+        $data = $this->db->get('calendar')->result_array();
+        // _print_r($this->db->last_query());
+        if (!empty($data)) {
+            $getData = [];
+            foreach ($data as $key => $value) {
+                $value['id'] = intval($value['id']);
+                $value['title'] = $this->language == 'en' && trim($value['title_en'] != '') ? $value['title_en'] : $value['title'];
+                $value['detail'] = $this->language == 'en' && trim($value['detail_en'] != '') ? $value['detail_en'] : $value['detail'];
+                $value['color'] = $this->fnc_getCalendarColor($value['calendar_group']);
+                $value['start_date'] = $this->language == 'en' ? General::dayEng($value['start']) : General::dayThai2($value['start']);
+                $value['end_date'] = $this->language == 'en' ? General::dayEng($value['end']) : General::dayThai2($value['end']);
+                $getData[] = $value;
+            }
+            // _print_r($getData);
+            return $getData;
+        } else {
+            return [];
+        }
+    }
+}

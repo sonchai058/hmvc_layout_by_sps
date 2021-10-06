@@ -1,0 +1,188 @@
+<div class="d-flex align-items-center flex-wrap justify-content-center">
+	<div class="container">
+		<div class="row align-items-center">
+			<div class="col-lg-12 col-md-12">
+				<div class="news-detail-box position-relative" itemscope itemtype="http://schema.org/NewsArticle">
+					<div class="row">
+						<div class="col-lg-9 col-md-8">
+							<h2 class="title-html-detail" itemprop="name"><?= $news_detail['news_title'] ?></h2>
+						</div>
+						<div class="col-lg-3 col-md-3">
+							<div class="row mt-sm-30 pull-right">
+								<div class="col-lg-4 col-md-4 col-4">
+									<div class="social-icon cursor-point">
+										<a onclick="shareSocial('facebook', '<?= base_url().'News/NewsDetail/'.$news_detail['news_id'] ?>', '<?= $news_detail['news_title']?>','<?= mb_substr(str_replace('"', '', $this->db->escape_str(strip_tags($news_detail['news_description']))), 0, 300, "utf-8")?>', '<?= base_url().'file_upload/news/'.$news_detail['news_image'] ?>')">
+		                                	<i class="fab fa-facebook-square"></i>
+		                                </a>
+									</div>
+								</div>
+								<div class="col-lg-4 col-md-4 col-4">
+									<div class="social-icon cursor-point">
+										<a onclick="shareSocial('twitter', '<?= base_url().'News/NewsDetail/'.$news_detail['news_id'] ?>', '<?= $news_detail['news_title']?>','<?= mb_substr(str_replace('"', '', $this->db->escape_str(strip_tags($news_detail['news_description']))), 0, 300, "utf-8")?>', '<?= base_url().'file_upload/news/'.$news_detail['news_image'] ?>')">
+		                                    <i class="fab fa-twitter"></i>
+		                                </a>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="clearfix"></div>
+					<div class="row align-items-center mt-4">
+						<div class="col-lg-12 col-md-12 text-center">
+							<div class="img-news-detail">
+								<img itemprop="image" src="<?= base_url().'file_upload/news/'.$news_detail['news_image'] ?>" class="w-60 img-fluid" alt="">
+							</div>
+						</div>
+					</div>
+
+					<div class="clearfix"></div>
+					<div class="row align-items-center mt-3 mb-3" commentSBS="Detail">
+						<div class="col-lg-12 col-md-12">
+							<div class="news-detail divFontChangeData" itemprop="description">
+								<?= str_replace("font-family", "font-family: 'KanitLight'; font-familyx", $news_detail['news_description']) ?>
+							</div>
+						</div>
+					</div>
+					<?php if (!empty($news_detail['gallery']) && !empty($news_detail['gallery']['imgData'])): ?>
+						<div class="clearfix"></div>
+						<div class="row align-items-center mt-3 mb-3" commentSBS="Gallery">
+							<div class="col-lg-12 col-md-12">
+								<div class="news-detail">
+									<div class="text-center">
+										<h4 class="textTitleGalleryDetail"><?= _po('Gallery') ?></h4>
+									</div>
+									<div class="textSubjectGalleryDetail mt-3 text-center">
+			                            <?= $news_detail['news_title'] ?>
+			                        </div>
+
+			                        <div class="row justify-content-md-center mt-4">
+			                            <div class="col-12 col-sm-12 col-md-12 col-lg-12 pb-4">
+			                            	<div class="row">
+	                                            <?php foreach ($news_detail['gallery']['imgData'] as $key => $value): ?>
+	                                        		<div class="col-lg-3 col-md-4 col-12 mt-mobile mt-tablet" data-aos="flip-left" data-aos-duration="1200" data-aos-delay="<?= ($key * 100) ?>">
+		                                                    <a href="<?= LINK . $value['file_path'] . 'news/' . $value['file_name'] ?>"
+		                                                       class="fancybox" rel="group" data-fancybox="gallery">
+		                                                        <img src="<?= LINK . $value['file_path'] . 'news/' . $value['file_name'] ?>"
+		                                                             alt="imageGallery" style="width:220px;height: 138px;" class="img-fluid">
+		                                                    </a>
+	                                            	</div>
+                                                <?php endforeach; ?>
+                                            </div>
+			                            </div>
+			                        </div>
+			                    </div>
+			                </div>
+			            </div>
+					<?php endif ?>
+
+                    <?php if (!empty($news_detail['gallery']) && !empty($news_detail['gallery']['fileData'])): ?>
+                        <div class="clearfix"></div>
+                        <div class="row align-items-center mt-3 mb-3" commentSBS="Gallery">
+                            <div class="col-lg-12 col-md-12">
+                                <div class="news-detail">
+                                    <div class="text-center">
+                                        <h4 class="textTitleGalleryDetail"><?= _po('Attachment') ?></h4>
+                                    </div>
+                                    <div class="textSubjectGalleryDetail mt-3 text-center">
+                                        <?= $news_detail['news_title'] ?>
+                                    </div>
+
+                                    <div class="row justify-content-md-center mt-4">
+                                        <div class="col-12 col-sm-12 col-md-12 col-lg-12 pb-4">
+                                            <ul class="list-group list-group-flush">
+                                                <?php foreach ($news_detail['gallery']['fileData'] as $key => $value): ?>
+                                                    <li class="list-group-item">
+                                                        <a href="<?= LINK . $value['file_path'] . 'news/' . $value['file_name'] ?>"
+                                                           download="<?= $value['file_name_original']?>">
+                                                            <i class="fas fa-file-download text-success"></i>
+                                                            &nbsp;<?= $value['file_name_original']?>
+                                                        </a>
+                                                    </li>
+                                                <?php endforeach; ?>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif ?>
+					<div class="clearfix"></div>
+					<div class="row position-absolute block-time-detail">
+						<div class="col-lg-12 col-md-12">
+							<div class="row mt-sm-30  pull-right">
+								<span class="time-box"><img class="time-icon" src="<?= LAYOUT_PATH.'images/CMU_WEB/time.png' ?>" alt="" itemprop="datePublished"> &nbsp;&nbsp;<?= $news_detail['time_update'] ?></span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<script type="text/javascript">
+	AOS.init();
+    $(document).ready(function () {
+        var title = '<?= (!empty($news_detail['news_title']) ? $news_detail['news_title'] : '')?>';
+        if (title != '') {
+            document.title = '<?=str_replace('"', '', $news_detail['news_title'])?>';
+            $('#hiddenNews > a').text('<?=$news_detail['news_title']?>');
+            $('#hiddenNews > a').attr('title', '<?=$news_detail['news_title']?>');
+
+            $('#hiddenNews').show();
+        }
+
+        var gallerCount = '<?= (!empty($news_detail['gallery']) ? COUNT($news_detail['gallery']) : 0)?>';
+
+        if (gallerCount > 0) {
+            $(".fancybox").fancybox({
+            	openEffect	: 'none',
+				closeEffect	: 'none',
+                helpers: {
+                    overlay: {
+                        locked: false
+                    }
+                },
+                buttons : [ 
+				    'slideShow',
+				    'zoom',
+				    'fullScreen',
+				    'close'
+				],
+				thumbs : {
+				    autoStart : true
+				}
+            });
+            var gallerySlider = $('.gallerySlider');
+            gallerySlider.owlCarousel({
+                animateOut: 'slideOutRight',
+                animateIn: 'slideInLeft',
+                loop: false,
+                dots: false,
+                margin: 10,
+                nav: true,
+                autoplay: true,
+                autoplayTimeout: 5000,
+                autoplayHoverPause: true,
+                responsiveClass: true,
+                navText: ['<i class="fa fa-arrow-left" aria-hidden="true"></i>', '<i class="fa fa-arrow-right" aria-hidden="true"></i>'],
+                responsive: {
+                    0: {
+                        items: (gallerCount >= 2 ? 2 : gallerCount),
+                    },
+                    600: {
+                        items: (gallerCount >= 2 ? 2 : gallerCount),
+                    },
+                    1024: {
+                        items: (gallerCount >= 3 ? 3 : gallerCount),
+                    },
+                    1200: {
+                        items: (gallerCount >= 3 ? 3 : gallerCount),
+                    }
+                }
+
+            });
+        }
+    });
+</script>

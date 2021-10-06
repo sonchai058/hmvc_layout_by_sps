@@ -1,0 +1,43 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class ImageResize
+{
+    protected $ci;
+
+    public function __construct()
+    {
+        $this->ci =& get_instance();
+    }
+
+    public function resizeImageThumbnail($source, $destination, $width = 400, $height = 300, $quality = 80)
+    {
+        $imgInfo = getimagesize($source); 
+        $mime = $imgInfo['mime']; 
+        switch($mime){ 
+            case 'image/jpeg': 
+                $image = imagecreatefromjpeg($source); 
+                $imgResized = imagescale($image , $width, $height);
+                imagejpeg($imgResized, $destination, $quality);
+                break; 
+            case 'image/png': 
+                $image = imagecreatefrompng($source); 
+                $imgResized = imagescale($image , $width, $height);
+                imagepng($imgResized, $destination, $quality);
+                break; 
+            case 'image/gif': 
+                $image = imagecreatefromgif($source); 
+                $imgResized = imagescale($image , $width, $height);
+                imagegif($imgResized, $destination, $quality);
+                break; 
+            default: 
+                $image = imagecreatefromjpeg($source);
+                $imgResized = imagescale($image , $width, $height);
+                imagejpeg($imgResized, $destination, $quality);
+        } 
+    }
+
+}
+
+/* End of file ExportCSV.php */
+/* Location: ./application/libraries/ExportCSV.php */

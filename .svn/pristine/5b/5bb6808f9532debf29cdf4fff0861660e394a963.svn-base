@@ -1,0 +1,33 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Sarawut
+ * Date: 27/6/2018 AD
+ * Time: 10:36
+ */
+
+class DataResume extends MY_Controller
+{
+
+    public function __construct()
+    {
+        parent::__construct();
+        ## Search
+        parent::setSearchSession();
+    }
+
+
+    public function index($id)
+    {
+        $dataResume = $this->model->getResume($id);
+        if(empty($dataResume)){
+            show_404();
+        }
+
+        $data['dataResume'] = $dataResume;
+        parent::view('data_resume', $data);
+        $Counter = new Counter;
+        $Counter->counterPageInfo('data_resume', $id, 0);
+    }
+
+}

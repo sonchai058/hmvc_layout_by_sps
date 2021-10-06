@@ -1,0 +1,154 @@
+<div class="main-container">
+  <div class="pd-ltr-20 xs-pd-20-10">
+    <div class="pd-20 card-box mb-30">
+  		<div class="clearfix mb-20">
+          <div class="row">
+            <div class="col-4">
+              <h4 class="text-blue h4"><?= $title_page ?></h4>
+            </div>
+
+            <div class="col-8">
+              <div class="pull-right">
+                <nav aria-label="breadcrumb" role="navigation">
+      						<ol class="breadcrumb pd-0">
+      							<li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+      							<li class="breadcrumb-item"><a href="<?= $action_link ?>"><?= $title ?></a></li>
+                    <li class="breadcrumb-item"><a href="<?= $action_link . 'MenuSub/' . $menu_id ?>">จัดการเมนูรอง</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">จัดการเมนูย่อย</li>
+
+      						</ol>
+      					</nav>
+              </div>
+            </div>
+          </div>
+  		</div>
+
+
+      <div class="header-leftSBS">
+        <div class="header-search">
+          <form method="post"
+                action="<?= $action_link.'MenuUnit/'.$menu_id.'/'.$sub_id ?>">
+
+
+            <div class="form-group mb-4">
+              <i class="dw dw-search2 search-icon mx-auto"></i>
+              <input type="text" class="form-control search-input " name="form_search_element[gtext]" placeholder="ค้นหา" value="<?= $form_search_element['gtext'] ?>">
+            </div>
+
+            <div class="form-group row w-50 pull-left">
+              <label class="col-sm-12 col-md-3 my-auto text-right">สถานะ : </label>
+              <div class="col-sm-12 col-md-9">
+                <select id="status" name="form_search_element[status]" class="form-control input_search">
+                    <option value="all">-- ทั้งหมด --</option>
+                    <option value="1" <?= $form_search_element['status'] == 1 ? 'selected' : ''?>>เผยแพร่</option>
+                    <option value="2" <?= $form_search_element['status'] == 2 ? 'selected' : ''?>>ไม่เผยแพร่</option>
+                </select>
+							</div>
+            </div>
+
+            <div class="form-group row">
+              <label class="col-sm-12 col-md-3 my-auto text-right">การเชื่อมโยง : </label>
+              <div class="col-sm-12 col-md-9">
+                <select id="type_menu" name="form_search_element[type_menu]" class="form-control input_search">
+                    <option value="all">-- ทั้งหมด --</option>
+                    <option value="0" <?= $form_search_element['type_menu'] == '0' ? 'selected' : ''?>>ไม่เชื่อมโยง</option>
+                    <option value="1" <?= $form_search_element['type_menu'] == 1 ? 'selected' : ''?>>เชื่อมโยงเนื้อหา HTML</option>
+                    <option value="2" <?= $form_search_element['type_menu'] == 2 ? 'selected' : ''?>>เชื่อมโยง URL ภายนอก</option>
+                    <option value="3" <?= $form_search_element['type_menu'] == 3 ? 'selected' : ''?>>เชื่อมโยงโมดูลระบบ</option>
+                </select>
+							</div>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <div class="form-group mt-3 text-center">
+                <button type="submit" class="btn btn-primary mr-1">
+                    <i class="fa fa-search"></i> ค้นหา
+                </button>
+                <button type="submit" name="reset" value="clear" class="btn btn-danger">
+                    <i class="fa fa-refresh"></i> ล้างค่า
+                </button>
+            </div>
+          </form>
+        </div>
+      </div>
+  		<div class="table-responsive">
+				<table id="tableListData" class="table table-striped">
+					<thead>
+						<tr>
+							<th class="text-center w-10" scope="col">ลำดับ</th>
+							<th class="text-center w-15" scope="col">ชื่อเมนูย่อย</th>
+              <th class="text-center w-10" scope="col">สถานะ</th>
+							<th class="text-center w-15" scope="col">การเชื่อมโยง</th>
+              <th class="text-center w-15" scope="col">วันที่สร้าง</th>
+							<th class="text-center w-35" scope="col">
+                <a href="<?= $action_link . 'FormUnit/' . $menu_id . '/' . $sub_id ?>"
+                   title="เพิ่มเมนูย่อย" class="btn btn-success">
+                    <i class="fa fa-plus"></i> เพิ่มเมนูย่อย
+                </a>
+              </th>
+						</tr>
+					</thead>
+					<tbody>
+            <?php if(!empty($getList)): foreach ($getList as $key => $value): ?>
+              <tr id="<?= $value['menu_id'] ?>" order="<?= ++$this->start_no ?>">
+								<td class="text-center" scope="row"><?= $this->start_no ?></td>
+								<td><?= $value['menu_name'] ?></td>
+                <td class="text-center"><?= $status[$value['show_status']] ?></td>
+								<td class="text-center"><?= $link[$value['type_menu']]?></td>
+                <td class="text-center"><?= General::dayThai2($value['time_create'])?></td>
+								<td class="text-center">
+                  <a href="<?= $action_link . 'FormUnit/' . $menu_id . '/' . $sub_id . '/' . $value['menu_id'] ?>"
+                     class="table-link btn btn-warning" title="แก้ไข">
+                      <i class="fa fa-edit"></i> แก้ไข
+                  </a>
+                  <a href="<?= $action_link . 'DeleteUnit/' . $menu_id . '/' . $sub_id . '/' . $value['menu_id'] ?>"
+                     class="table-link btn btn-danger" title="ลบ"
+                     onclick="return confirm('คุณต้องการลบเมนูย่อยนี้')">
+                        <i class="fa fa-trash-o"></i> ลบ
+                  </a>
+                </td>
+							</tr>
+            <?php endforeach; else:?>
+              <tr class="text-center">
+                  <td colspan="7"><strong>- ไม่พบข้อมูล -</strong></td>
+              </tr>
+            <?php endif;?>
+
+					</tbody>
+				</table>
+			</div>
+
+      <div class="text-center">
+          <a href="<?= $action_link . 'MenuSub/' . $menu_id ?>">
+              <button class="btn btn-warning">
+                  <i class="fa fa-arrow-left"></i> ย้อนกลับ
+              </button>
+          </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script language="javascript" type="text/javascript">
+    $(document).ready(function () {
+        var count_col = $('#tableListData tbody tr').attr('order');
+        $('#tableListData tbody').tableDnD({
+            onDrop: function (table, row)
+            {
+                var rows = table.rows;
+                for (var i = 0; i < rows.length; i++) {
+                    var menu_id = rows[i].getAttribute('id');
+                    var order = ((parseInt(count_col) + parseInt(i)));
+                    $('tr[id=' + menu_id + '] td:first').text(order);
+                    var url = '<?= $action_link ?>updateOrder/' + menu_id + '/' + order;
+                    $.get(url, function (data) {
+                        // $('.alert').show();
+                        // $('.alert p#text_error').text(data);
+                    });
+                }
+            }
+
+        });
+    });
+</script>

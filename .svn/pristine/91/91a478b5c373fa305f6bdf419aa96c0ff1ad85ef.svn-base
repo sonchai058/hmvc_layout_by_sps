@@ -1,0 +1,885 @@
+<?php
+include("ES_keyword.php");
+
+
+if (!defined('BASEPATH')) exit('No direct script access allowed');
+
+class ElasticIndex
+{
+
+    var $base_url = "http://localhost:9200/cmu_web/";
+
+    private $es_index_tbl = 'es_index_type';
+    private $es_field_tbl = 'es_index_field';
+    private $bib_tbl = 'biblio';
+    private $bib_field_tbl = 'biblio_field';
+    private $template_tbl = 'template';
+    private $menu_tbl = 'manage_menu';
+    private $users_tbl = 'users';
+
+
+    public function __construct($base_url = "")
+    {
+        $this->_ci = &get_instance();
+        // $this->_ci->load->helper("thsplitlib/segment");
+        // $this->segment = new Segment();
+
+
+        $staff_session = $this->_ci->session->userdata('user_central');
+        $this->user_id = $staff_session['id'];
+        $this->dep_id = $staff_session['location_id'];
+
+
+        if ($base_url > "") {
+            $this->base_url = ($base_url);
+        }
+    }
+
+
+    public function curlPOST($url, $data, $method = "POST", $is_raw_json = false)
+    {
+        if ($is_raw_json) {
+            $content = $data;
+        } else {
+            $content = json_encode($data);
+        }
+
+        $method = trim(strtoupper($method));
+
+        $curl = curl_init($url);
+        curl_setopt($curl, CURLOPT_HEADER, false);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_HTTPHEADER,
+            array("Content-type: application/json"));
+        if ($method == "POST") {
+            curl_setopt($curl, CURLOPT_POST, true);
+        } else {
+            curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
+        }
+
+        if ($content > "") {
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $content);
+        }
+
+        $json_response = curl_exec($curl);
+
+        $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
+        if ($status != 200 && $status != 201) {
+            return array(
+                "result" => "error",
+                "message" => "Error: call to URL $url failed with status $status, response $json_response, curl_error " . curl_error($curl) . ", curl_errno " . curl_errno($curl)
+            );
+            //die("Error: call to URL $url failed with status $status, response $json_response, curl_error " . curl_error($curl) . ", curl_errno " . curl_errno($curl));
+        }
+
+        curl_close($curl);
+
+        $response = json_decode($json_response, true);
+        return $response;
+    }
+
+
+    public function initialIndex($type)
+    {
+
+        $body2 = '{
+          "settings": {
+                "index": {
+                    "max_result_window" : 2000000
+                },
+                "analysis": {
+                  "analyzer": {
+                    "sbs": {
+                      "type":      "custom",
+                      "tokenizer": "standard",
+                      "char_filter": [
+                        "html_strip",
+                        "thai_number_filter"
+                      ],
+                      "filter": [
+                        "lowercase",
+                        "asciifolding"
+                      ]
+                    }
+                  },
+                  "char_filter": {
+                    "thai_number_filter": {
+                        "type": "mapping",
+                        "mappings": [
+                                "๐ => 0",
+                                "๑ => 1",
+                                "๒ => 2",
+                                "๓ => 3",
+                                "๔ => 4",
+                                "๕ => 5",
+                                "๖ => 6",
+                                "๗ => 7",
+                                "๘ => 8",
+                                "๙ => 9"
+                        ]
+                    }
+                  }
+                }
+          },
+          "mappings": {
+            "' . $type . '": {
+              "properties": {
+                "pk": {
+                  "type": "text",
+                  "analyzer": "keyword",
+                  "search_analyzer": "standard"
+                },
+                "lvl1_pk": {
+                  "type": "text",
+                  "analyzer": "keyword",
+                  "search_analyzer": "standard",
+                  "fielddata": true
+                },
+                "lvl2_pk": {
+                  "type": "text",
+                  "analyzer": "keyword",
+                  "search_analyzer": "standard",
+                  "fielddata": true
+                },
+                "category": {
+                  "type": "text",
+                  "analyzer": "keyword",
+                  "search_analyzer": "standard",
+                  "fielddata": true
+                },
+                "title": {
+                  "type": "text",
+                  "analyzer": "sbs",
+                  "search_analyzer": "thai"
+                },
+                 "title_en": {
+                  "type": "text",
+                  "analyzer": "sbs",
+                  "search_analyzer": "thai"
+                },
+                "author": {
+                  "type": "text",
+                  "analyzer": "sbs",
+                  "search_analyzer": "standard"
+                },
+                "author_full": {
+                  "type": "text",
+                  "analyzer": "keyword",
+                  "search_analyzer": "standard",
+                  "fielddata": true
+                },
+                "pubyear": {
+                  "type": "text",
+                  "analyzer": "keyword",
+                  "search_analyzer": "standard",
+                  "fielddata": true
+                },
+                "keyword": {
+                  "type": "text",
+                  "fielddata": true
+                 },
+                "content": {
+                  "type": "text",
+                  "analyzer": "sbs",
+                  "search_analyzer": "thai"
+                },
+                "content_en": {
+                  "type": "text",
+                  "analyzer": "sbs",
+                  "search_analyzer": "thai"
+                },
+                "url": {
+                  "type": "text",
+                  "analyzer": "keyword",
+                  "search_analyzer": "standard"
+                },
+                "create_dt": {
+                  "type": "date",
+                  "format": "yyyy-MM-dd HH:mm:ss"
+                },
+                "time_update": {
+                  "type": "date",
+                  "format": "yyyy-MM-dd HH:mm:ss"
+                },
+                "userid": {
+                  "type": "text",
+                  "analyzer": "keyword",
+                  "search_analyzer": "standard"
+                },
+                "status": {
+                  "type": "text",
+                  "analyzer": "keyword",
+                  "search_analyzer": "standard"
+                },
+                "type_date_show": {
+                  "type": "text",
+                  "analyzer": "keyword",
+                  "search_analyzer": "standard"
+                },
+                "date_start": {
+                  "type": "date",
+                  "format": "yyyy-MM-dd HH:mm:ss"
+                },
+                "date_end": {
+                  "type": "date",
+                  "format": "yyyy-MM-dd HH:mm:ss"
+                },
+                "usage_level": {
+                  "type": "text",
+                  "analyzer": "keyword",
+                  "search_analyzer": "standard"
+                },
+                "type_usage": {
+                  "type": "text",
+                  "analyzer": "keyword",
+                  "search_analyzer": "standard"
+                },
+                "record_id": {
+                  "type": "text",
+                  "analyzer": "keyword",
+                  "search_analyzer": "standard"
+                },
+                "view": {
+                    "type": "integer"
+                },
+                "download": {
+                    "type": "integer"
+                }
+              }
+            }
+          }
+        }';
+
+        $url = trim($this->base_url, '/');
+        $ret = $this->curlPOST($url, $body2, "PUT", true);
+
+        return $ret;
+    }
+
+    private function fnc_getViewKnow($id)
+    {
+        $this->_ci->db->select('num');
+        $this->_ci->db->where('record_id', $id);
+        $obj = $this->_ci->db->get('counter_detail_info_all')->row();
+        return is_object($obj) ? (int)$obj->num : 0;
+    }
+
+    public function setView($type, $data_type, $id)
+    {
+        $ret = 'not found';
+        if ($data_type == 'know') {
+            $view = $this->fnc_getViewKnow($id);
+            if ($view > 0) {
+                $script = [
+                    'script' => [
+                        "inline" => "ctx._source.view = params.count;",
+                        'params' => [
+                            'count' => $view
+                        ]
+                    ]
+                ];
+
+                $url = $this->base_url . $type . "/" . $data_type . '_' . $id . '/_update';
+                $ret = $this->curlPOST($url, $script);
+            }
+        }
+        return $ret;
+    }
+
+
+    public function purgeIndex()
+    {
+
+        $url = trim($this->base_url, '/');
+        $ret = $this->curlPOST($url, "", "DELETE");
+        return $ret;
+
+    }
+
+
+    public function deleteDocument($type, $id)
+    {
+
+        $url = $this->base_url . $type . "/" . $id;
+        $ret = $this->curlPOST($url, "", "DELETE");
+        return $ret;
+    }
+
+    public function Document($type, $id)
+    {
+
+        $url = $this->base_url . $type . "/" . $id;
+        $ret = $this->curlPOST($url, "", "DELETE");
+        return $ret;
+    }
+
+
+    public function index($type = 'cmu_web', $data_type = '', $id, $body = array())
+    {
+
+        $this->_ci->db = $this->_ci->load->database('default', true);
+        $id = intval($id);
+        if ($id <= 0) {
+            die("Invalid ID");
+        }
+
+        if (!is_array($body)) {
+            die("Empty body array");
+        }
+
+        $id_es = $data_type . '_' . $id;
+
+        $url = $this->base_url . $type . "/" . $id_es;
+
+        $content = $this->getContent($data_type, $id);
+        $body = array_merge($content, $body);
+        $ret = array();
+        if (!empty($body)) {
+
+            if (isset($body['pk'])) {
+                $body['pk'] = $body['pk'] != '' ? (int)$body['pk'] : '';
+
+            }
+
+            if (isset($body['lvl1_pk']) && !is_array($body['lvl1_pk'])) {
+                $body['lvl1_pk'] = $body['lvl1_pk'] != '' ? (int)$body['lvl1_pk'] : '';
+            } elseif (isset($body['lvl1_pk']) && is_array($body['lvl1_pk'])) { // km
+
+                foreach ($body['lvl1_pk'] as $key => $value) {
+                    $body['lvl1_pk'][$key] = (int)$value;
+                }
+            }
+
+            if (isset($body['lvl2_pk'])) {
+                $body['lvl2_pk'] = $body['lvl2_pk'] != '' ? (int)$body['lvl2_pk'] : '';
+
+            }
+
+            if (isset($body['pubyear'])) {
+                $body['pubyear'] = $body['pubyear'] != '' ? (int)$body['pubyear'] : '';
+            }
+
+            if (isset($body['userid'])) {
+                $body['userid'] = $body['userid'] != '' ? (int)$body['userid'] : '';
+            }
+
+
+
+            if (isset($body['content'])) {
+                if (is_array($body['content'])) {
+                    $body['content'] = implode('', $body['content']);
+                }
+                $body['content'] = htmlentities(strip_tags($body['content']));
+            }
+
+            if (isset($body['content_en'])) {
+                if (is_array($body['content_en'])) {
+                    $body['content_en'] = implode('', $body['content_en']);
+                }
+                $body['content_en'] = htmlentities(strip_tags($body['content_en']));
+            }
+
+
+            $body = array_filter($body);
+            // km
+            if (isset($body['status']) && $body['status'] == 2) {
+                $ret = $this->deleteDocument($type, $id_es);
+
+            } else {
+                $ret = $this->curlPOST($url, $body);
+                $this->setView($type, $data_type, $id);
+            }
+
+
+        }
+
+
+        if (isset($_GET['debug'])) {
+            echo "<pre>";
+            print_r($body);
+            echo "</pre>";
+        }
+        return $ret;
+
+        /*
+        เชคที่ $ret['result'] ถ้าไม่เป็น "error" แสดงว่าไม่มีปัญหา
+        */
+
+    }
+
+    public function getContent($data_type = '', $id = '')
+    {
+        $data = array();
+        $es_info = $this->getEsTypeInfoByName($data_type);
+
+        if (empty($es_info)) {
+            die("Invalid ID");
+        }
+
+        $es_type_id = $es_info['es_type_id'];
+        $data = $this->getDataField($es_type_id, $id);
+
+
+        return $data;
+    }
+
+
+    public function getDataField($es_type_id = '', $id = '')
+    {
+        $this->_ci->db->where('es_type_id', $es_type_id);
+        $rs = $this->_ci->db->get($this->es_field_tbl)->result_array();
+
+
+        $data = array();
+        if (!empty($rs)) {
+            if ($es_type_id == 1 || $es_type_id == 2) {
+                $data = $this->getDataMenu($es_type_id, $id, $rs);
+            } elseif ($es_type_id == 3) {
+                $data = $this->getDataNews($es_type_id, $id, $rs);
+            } elseif ($es_type_id == 4) {
+                $data = $this->getDataOnline($es_type_id, $id, $rs);
+            }
+
+        }
+
+        $data = array_filter($data);
+
+        return $data;
+    }
+
+
+    public function getEsTypeInfoByName($es_prefix = '')
+    {
+        $this->_ci->db->where('es_prefix', $es_prefix);
+        $rs = $this->_ci->db->get($this->es_index_tbl)->row_array();
+
+        return $rs;
+    }
+
+    public function getEsTypeInfo($es_type_id = '')
+    {
+        $this->_ci->db->where('es_type_id', $es_type_id);
+        $rs = $this->_ci->db->get($this->es_index_tbl)->row_array();
+
+        return $rs;
+    }
+
+    public function getDetailUser($id = '')
+    {
+
+        $this->_ci->db = $this->_ci->load->database('km_users', true);
+
+        $this->_ci->db->where('id', $id);
+        return $this->_ci->db->get($this->users_tbl)->row_array();
+
+    }
+
+    public function getBibInfo($bibid = '')
+    {
+        $this->_ci->db->where('bibid', $bibid);
+        return $this->_ci->db->get($this->bib_tbl)->row_array();
+
+    }
+
+    public function getMenuInfo($menu_id = '')
+    {
+        $this->_ci->db->where('menu_id', $menu_id);
+        return $this->_ci->db->get($this->menu_tbl)->row_array();
+
+    }
+
+
+    public function genAutoKeyword($data = array())
+    {
+        $keyword = array();
+        if (!empty($data)) {
+
+            $text = '';
+            if (isset($data['title'])) {
+                $text .= $data['title'];
+            }
+
+            if (isset($data['content'])) {
+                $text .= ' ' . $data['content'];
+            }
+
+            if ($text != '') {
+
+                $text = htmlentities(strip_tags($text));
+                //  die('xxx');
+                $this->eskeyword = new ES_keyword();
+
+                $keyword = $this->eskeyword->get($text);
+
+            }
+        }
+        return $keyword;
+
+    }
+
+    public function getDataMenu($es_type_id, $id, $fields = array())
+    {
+
+        $es_info = $this->getEsTypeInfo($es_type_id);
+
+        $genAutoKeyword = array();
+        $custom = array();
+        foreach ($fields as $key => $value) {
+
+            #$field_select
+            $field_where = $value['pk'];
+
+            #field_id
+            $field_select = str_replace('#es_prefix#', '', $value['field_match']);
+            $field_select = str_replace('#table#', '', $field_select);
+            $field_select = str_replace('.', '', $field_select);
+
+            ## table
+            $table = str_replace('#es_prefix#', '', $value['field_match']);
+            $table = str_replace('#table#', $value['table_use'], $table);
+            $table = str_replace($field_select, '', $table);
+            $table = str_replace('.', '', $table);
+
+            $es_value = '';
+
+            $fieldSlash = array(
+                '#cur_id_content#' => $id,
+                '#es_prefix#' => $es_info['es_prefix'],
+                '#cur_year#' => date('Y'),
+                '#url#' => 'HtmlDetail/Detail/' . $id.'/'.($es_type_id == 1 ? 'main' : 'top'),
+                '#curent_day#' => date('Y-m-d'),
+                '#cur_user_id#' => $this->user_id,
+                '#cur_year#' => date('Y'),
+            );
+            if ($value['field_match'] == '#auto_keyword#') {
+                $genAutoKeyword[] = $value['es_fld_name'];
+
+            }
+
+            if (trim($es_value) == '') {
+
+                if (trim($table) != '') {
+                    $this->_ci->db->where($field_where, $id);
+                    $row_data = $this->_ci->db->get($table)->row_array();
+
+                    $es_value = $row_data[$field_select];
+
+                    if (strpos($es_value, ',') !== false) {
+                        $exp = explode(',', $es_value);
+                        $es_value = $exp;
+                    }
+                } else {
+
+                    $es_value = $value['field_match'];
+
+                    $es_value = str_replace('#es_prefix#', $es_info['es_prefix'], $es_value);
+                    $es_value = str_replace('#id#', $id, $es_value);
+
+                    if (isset($fieldSlash[$value['field_match']])) {
+                        $es_value = $fieldSlash[$value['field_match']];
+                    } else {
+                        // $es_valxue = '';
+
+                    }
+
+                }
+
+                if ($field_select == 'parent_id' && $es_value == '') {
+                    $es_value = $id;
+                }
+
+                if ($value['es_fld_name'] == 'pubyear' && $es_value != '') {
+                    $es_value = date('Y', strtotime($es_value));
+                }
+
+                if ($value['es_fld_name'] == 'create_dt' && $es_value != '') {
+                    $es_value = date('Y-m-d H:i:s', strtotime($es_value));
+                }
+
+                if ($value['es_fld_name'] == 'time_update' && $es_value != '') {
+                    $es_value = date('Y-m-d H:i:s', strtotime($es_value));
+                }
+
+                if ($value['es_fld_name'] == 'date_start' && $es_value != '') {
+                    $es_value = date('Y-m-d H:i:s', strtotime($es_value));
+                }
+
+                if ($value['es_fld_name'] == 'date_end' && $es_value != '') {
+                    $es_value = date('Y-m-d H:i:s', strtotime($es_value));
+                }
+
+
+                if ($value['es_fld_name'] == 'lvl2_pk') {
+                    $custom[] = $value['es_fld_name'];
+                    $es_value = '';
+                }
+
+            }
+
+
+            $data[$value['es_fld_name']] = $es_value;
+
+        }
+
+        if (!empty($custom)) {
+            foreach ($custom as $key => $field) {
+                $es_value = '';
+                if ($field == 'lvl2_pk' && $data['lvl1_pk'] !== $id) { // level แรกสุด
+                    $parent_info = $this->getMenuInfo($data['lvl1_pk']);
+                    if(!empty($parent_info['parent_id'])) {
+                        $data['lvl2_pk'] = (int)$data['lvl1_pk'];
+                        $data['lvl1_pk'] = (int)$parent_info['parent_id'];
+                    }
+                }
+            }
+        }
+
+        if($es_type_id == 1) {
+          $data['type_usage'] = 'menu';
+        } else {
+          $data['type_usage'] = 'menu_top';
+        }
+
+        $getUsageMenu = $this->fnc_getUsageMenu($id, $data['type_usage']);
+        if(!empty($getUsageMenu)) {
+          $data['record_id'] = $getUsageMenu;
+        }
+
+        return $data;
+    }
+
+    private function fnc_getUsageMenu($menu_id, $type_usage)
+    {
+      $this->_ci->db->where('menu_id', $menu_id);
+      $this->_ci->db->where('menu_type_catogory', $type_usage);
+      $data = $this->_ci->db->get('manage_user_group')->result_array();
+
+      if(!empty($data)) {
+        return array_column($data, 'menu_id');
+      } else {
+        return [];
+      }
+    }
+
+    public function getDataNews($es_type_id, $id, $fields = array())
+    {
+        $es_info = $this->getEsTypeInfo($es_type_id);
+
+        $genAutoKeyword = array();
+        $custom = array();
+        foreach ($fields as $key => $value) {
+
+            #$field_select
+            $field_where = $value['pk'];
+
+            #field_id
+            $field_select = str_replace('#es_prefix#', '', $value['field_match']);
+            $field_select = str_replace('#table#', '', $field_select);
+            $field_select = str_replace('.', '', $field_select);
+
+            ## table
+            $table = str_replace('#es_prefix#', '', $value['field_match']);
+            $table = str_replace('#table#', $value['table_use'], $table);
+            $table = str_replace($field_select, '', $table);
+            $table = str_replace('.', '', $table);
+
+            $es_value = '';
+
+            $fieldSlash = array(
+                '#cur_id_content#' => $id,
+                '#es_prefix#' => $es_info['es_prefix'],
+                '#cur_year#' => date('Y'),
+                '#url#' => 'News/NewsDetail/' . $id,
+                '#curent_day#' => date('Y-m-d'),
+                '#cur_user_id#' => $this->user_id,
+                '#cur_year#' => date('Y'),
+            );
+
+            if (trim($es_value) == '') {
+
+                if (trim($table) != '') {
+
+                    $this->_ci->db->where($field_where, $id);
+                    $row_data = $this->_ci->db->get($table)->row_array();
+
+                    $es_value = $row_data[$field_select];
+
+                    $set_explode = array();
+
+                    if (in_array($value['es_fld_name'], $set_explode)) {
+                        $exp = explode(',', $es_value);
+                        $es_value = $exp;
+                    }
+
+                } else {
+
+                    $es_value = $value['field_match'];
+
+                    $es_value = str_replace('#es_prefix#', $es_info['es_prefix'], $es_value);
+                    $es_value = str_replace('#id#', $id, $es_value);
+
+                    if (isset($fieldSlash[$value['field_match']])) {
+                        $es_value = $fieldSlash[$value['field_match']];
+                    }
+
+                }
+
+                if ($field_select == 'parent_id' && $es_value == '') {
+                    $es_value = $id;
+                }
+
+                if ($value['es_fld_name'] == 'pubyear' && $es_value != '') {
+                    $es_value = date('Y', strtotime($es_value));
+                }
+
+                if ($value['es_fld_name'] == 'create_dt' && $es_value != '') {
+                    $es_value = date('Y-m-d H:i:s', strtotime($es_value));
+                }
+
+                if ($value['es_fld_name'] == 'time_update' && $es_value != '') {
+                    $es_value = date('Y-m-d H:i:s', strtotime($es_value));
+                }
+
+                if ($value['es_fld_name'] == 'date_start' && $es_value != '') {
+                    $es_value = date('Y-m-d H:i:s', strtotime($es_value));
+                }
+
+                if ($value['es_fld_name'] == 'date_end' && $es_value != '') {
+                    $es_value = date('Y-m-d H:i:s', strtotime($es_value));
+                }
+
+                if ($value['es_fld_name'] == 'lvl2_pk') {
+                    $custom[] = $value['es_fld_name'];
+                    $es_value = '';
+                }
+
+            }
+
+
+            $data[$value['es_fld_name']] = $es_value;
+
+        }
+
+        if (!empty($custom)) {
+            foreach ($custom as $key => $field) {
+                $es_value = '';
+                if ($field == 'lvl2_pk' && $data['lvl1_pk'] !== $id) { // level แรกสุด
+                    $parent_info = $this->getMenuInfo($data['lvl1_pk']);
+                    $data['lvl2_pk'] = (int)$parent_info['parent_id'];
+                }
+            }
+        }
+        $data['url'] = 'News/NewsDetail/' . $id;
+
+
+        return $data;
+
+    }
+
+    public function getDataOnline($es_type_id, $id, $fields = array())
+    {
+        $es_info = $this->getEsTypeInfo($es_type_id);
+        $genAutoKeyword = array();
+        $custom = array();
+
+        foreach ($fields as $key => $value) {
+
+            #$field_select
+            $field_where = $value['pk'];
+
+            #field_id
+            $field_select = str_replace('#es_prefix#', '', $value['field_match']);
+            $field_select = str_replace('#table#', '', $field_select);
+            $field_select = str_replace('.', '', $field_select);
+
+            ## table
+            $table = str_replace('#es_prefix#', '', $value['field_match']);
+            $table = str_replace('#table#', $value['table_use'], $table);
+            $table = str_replace($field_select, '', $table);
+            $table = str_replace('.', '', $table);
+
+            $es_value = '';
+            $fieldSlash = array(
+                '#cur_id_content#' => $id,
+                '#es_prefix#' => $es_info['es_prefix'],
+                '#cur_year#' => date('Y'),
+                '#url#' => 'News/NewsDetail/' . $id,
+                '#curent_day#' => date('Y-m-d'),
+                '#cur_user_id#' => $this->user_id,
+                '#cur_year#' => date('Y'),
+            );
+
+            if (trim($es_value) == '') {
+
+                if (trim($table) != '') {
+
+                    $this->_ci->db->where($field_where, $id);
+                    $row_data = $this->_ci->db->get($table)->row_array();
+
+                    $es_value = $row_data[$field_select];
+
+                    $set_explode = array();
+
+                    if (in_array($value['es_fld_name'], $set_explode)) {
+                        $exp = explode(',', $es_value);
+                        $es_value = $exp;
+                    }
+
+                } else {
+
+                    $es_value = $value['field_match'];
+
+                    $es_value = str_replace('#es_prefix#', $es_info['es_prefix'], $es_value);
+                    $es_value = str_replace('#id#', $id, $es_value);
+
+                    if (isset($fieldSlash[$value['field_match']])) {
+                        $es_value = $fieldSlash[$value['field_match']];
+                    }
+
+                }
+
+                if ($field_select == 'parent_id' && $es_value == '') {
+                    $es_value = $id;
+                }
+
+                if ($value['es_fld_name'] == 'pubyear' && $es_value != '') {
+                    $es_value = date('Y', strtotime($es_value));
+                }
+
+                if ($value['es_fld_name'] == 'create_dt' && $es_value != '') {
+                    $es_value = date('Y-m-d H:i:s', strtotime($es_value));
+                }
+
+                if ($value['es_fld_name'] == 'time_update' && $es_value != '') {
+                    $es_value = date('Y-m-d H:i:s', strtotime($es_value));
+                }
+
+                if ($value['es_fld_name'] == 'date_start' && $es_value != '') {
+                    $es_value = date('Y-m-d H:i:s', strtotime($es_value));
+                }
+
+                if ($value['es_fld_name'] == 'date_end' && $es_value != '') {
+                    $es_value = date('Y-m-d H:i:s', strtotime($es_value));
+                }
+
+                if ($value['es_fld_name'] == 'lvl2_pk') {
+                    $custom[] = $value['es_fld_name'];
+                    $es_value = '';
+                }
+
+            }
+
+
+            $data[$value['es_fld_name']] = $es_value;
+
+        }
+
+
+//        $data['url'] = 'News/NewsDetail/' . $id;
+
+        return $data;
+
+    }
+}
+// END Class

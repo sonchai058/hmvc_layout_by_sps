@@ -1,0 +1,76 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class DataExecutiveDirector_model extends CI_Model {
+
+    private $tbl = 'manage_executive_director';
+	private $resume_tbl = 'manage_resume';
+    private $val_lang = 'th';
+    private $per_page = 10;
+
+	function __construct()
+    {
+        parent::__construct();
+        $this->load->library('session');
+        $this->user_id = $this->session->cmu_web_session['id'];
+        $this->path = './file_upload/manage_resume/';
+
+
+        if (!empty($_SESSION['LANGUAGE'])) {
+            $this->val_lang = strtolower($_SESSION['LANGUAGE']);
+        }else{
+            $this->val_lang = 'th';
+
+        }
+        
+    }
+
+    public function getDataExecutiveDirector()
+    {
+        $this->db->select('t2.*,
+            IF(t2.prename'.($this->val_lang == 'th' ? '' : '_en').' <> "" OR t2.prename'.($this->val_lang == 'th' ? '' : '_en').' <> NULL, t2.prename'.($this->val_lang == 'th' ? '' : '_en').', t2.prename) as prename,
+            IF(t2.first_name'.($this->val_lang == 'th' ? '' : '_en').' <> "" OR t2.first_name'.($this->val_lang == 'th' ? '' : '_en').' <> NULL, t2.first_name'.($this->val_lang == 'th' ? '' : '_en').', t2.first_name) as first_name,
+            IF(t2.last_name'.($this->val_lang == 'th' ? '' : '_en').' <> "" OR t2.last_name'.($this->val_lang == 'th' ? '' : '_en').' <> NULL, t2.last_name'.($this->val_lang == 'th' ? '' : '_en').', t2.last_name) as last_name,
+            IF(t2.position'.($this->val_lang == 'th' ? '' : '_en').' <> "" OR t2.position'.($this->val_lang == 'th' ? '' : '_en').' <> NULL, t2.position'.($this->val_lang == 'th' ? '' : '_en').', t2.position) as position,
+            IF(t2.affiliated'.($this->val_lang == 'th' ? '' : '_en').' <> "" OR t2.affiliated'.($this->val_lang == 'th' ? '' : '_en').' <> NULL, t2.affiliated'.($this->val_lang == 'th' ? '' : '_en').', t2.affiliated) as affiliated,
+            '
+        , false);
+        $this->db->where('t1.show_status', 1);
+        $this->db->order_by('t1.s_order', 'asc');
+        $this->db->order_by('t1.time_create', 'desc');
+        $this->db->join($this->resume_tbl.' t2', 't2.id = t1.id_resume');
+        $data = $this->db->get($this->tbl.' t1')->result_array();
+
+        if (!empty($data)) {
+            $getData = [];
+            foreach ($data as $key => $value) {
+                if (!empty($value['file_name']) && file_exists($this->path . $value['file_name'])) {
+                    $value['img'] = base_url() . $value['file_path'] . $value['file_name'];
+                } else {
+                    $value['img'] = base_url() . 'statics/images/DEFAULT_PROFILE.png';
+                }
+                $getData[] = $value;
+            }
+
+            return $getData;
+        } else {
+            return [];
+        }
+    }
+
+    public function getMenuName()
+    {
+        $this->db->where('module_id', 8);
+        $data = $this->db->get('manage_menu')->row_array();
+
+        if(!empty($data)) {
+            return ($this->val_lang == 'en' ? (!empty($data['menu_name_en']) ? $data['menu_name_en'] : $data['menu_name']) : $data['menu_name']);
+        } else {
+            return ($this->val_lang == 'en' ? 'Board of Executive Directors' :'คณะกรรมการบริหาร');
+        }
+    }
+
+}
+
+/* End of file DataExecutive_model.php */
+/* Location: ./application/models/DataExecutive_model.php */

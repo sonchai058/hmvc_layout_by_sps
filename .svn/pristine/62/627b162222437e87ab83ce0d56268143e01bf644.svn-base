@@ -1,0 +1,72 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class CalendarGroup extends MDL_Controller
+{
+
+    public function __construct()
+    {
+        parent::__construct();
+        ## Search
+        parent::setSearchSession();
+        $this->path_upload = './file_upload/';
+    }
+
+    #หน้าหลัก
+
+    public function index($page = 1)
+    {
+        $data['title'] = 'จัดการข้อมูลหมวดหมู่ปฏิทิน Online';
+        $data['title_page'] = 'จัดการข้อมูลหมวดหมู่ปฏิทิน Online';
+
+        // $data['category'] = $this->model->getCategory();
+        // $data['status'] = $this->model->getStatus();
+
+        ##Pagination
+        $num = $this->model->getCategoryCount();
+        $per_page = $this->model->getPerPage();
+        parent::pagination($page, $num, $per_page, 4);
+        $data['list'] = $this->model->getCategoryNews($page);
+        $data['form_search_element'] = $this->model->getSElement();
+        // _print_r($data['list']);
+        parent::view('calendar_group/index', $data);
+    }
+
+    #ดึงค่ามาโชว์ในฟอร์ม เพิ่ม-แก้ไข
+
+    public function form($category_id = FALSE)
+    {
+        if ($category_id != FALSE) {
+            $data['title'] = 'แก้ไขหมวดหมู่ปฏิทิน Online';
+            $data['title_sub'] = 'แก้ไขหมวดหมู่ปฏิทิน Online';
+        }else{
+            $data['title'] = 'เพิ่มหมวดหมู่ปฏิทิน Online';
+            $data['title_sub'] = 'เพิ่มหมวดหมู่ปฏิทิน Online';
+        }
+        $data['title_page'] = $category_id != FALSE ? 'แก้ไขหมวดหมู่ปฏิทิน Online' : 'เพิ่มหมวดหมู่ปฏิทิน Online';
+        $data['getForm'] = $this->model->getForm($category_id);
+        // _print_r($data['getForm']);
+        parent::view('calendar_group/form', $data);
+    }
+
+    #เพิ่มข้อมูลและแก้ไขข้อมูล
+
+    public function insert($category_id = FALSE)
+    {
+        $this->model->insert($category_id);
+        redirect(base_url() . 'management/CalendarGroup');
+    }
+
+    #ลบข้อมูล
+
+    public function delete($category_id = FALSE)
+    {
+        $this->model->delete($category_id);
+        redirect(base_url() . 'management/CalendarGroup');
+    }
+}
+
+/* End of file News.php */
+/* Location: ./application/controllers/News.php */

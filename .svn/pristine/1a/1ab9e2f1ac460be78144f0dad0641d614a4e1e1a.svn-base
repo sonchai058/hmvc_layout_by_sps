@@ -1,0 +1,94 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Sarawut
+ * Date: 27/6/2018 AD
+ * Time: 10:36
+ */
+
+class Index extends MY_Controller
+{
+
+    public function __construct()
+    {
+        parent::__construct();
+        ## Search
+        parent::setSearchSession();
+    }
+
+
+    public function index()
+    {
+        $data['bg_search'] = $this->model->getBgSearch();
+        $data['category_news'] = $this->model->getCategoryNews();
+        $data['online_lib_course'] = $this->model->getOnlineLibCourse();
+        $data['e_resources'] = $this->model->getRecommendResources();
+        $data['book'] = $this->model->getBook();
+        // $data['getCalendar'] = $this->model->getCalendar();
+        $data['getCalendarGroup'] = $this->model->getCalendarGroup();
+        // $data['getCalendarTable'] = $this->model->getCalendarTable();
+        $data['getRelatedAgencies'] = $this->model->getRelatedAgencies();
+        $data['getPopUp'] = $this->model->getPopUp();
+
+        parent::view('index', $data);
+    }
+
+    public function detail($id = false)
+    {
+        $data['getCalendarDateail'] = $this->model->getCalendarDetail($id);
+        // _print_r($data);
+        parent::view('calendar/detail', $data);
+
+        $Counter = new Counter;
+        $Counter->counterPageInfo('calendar', $id, 0);
+    }
+    
+    public function Search()
+    {
+        parent::view('search_page');
+
+        $Counter = new Counter;
+        $Counter->counterPageInfo('search', 0, 0);
+    }
+
+    public function CounterRecommendResource($rs_id = false)
+    {
+        $Counter = new Counter;
+        $Counter->counterPageInfo('recommend_resource', $rs_id, 0);
+    }
+
+    public function CounterArrival($book_id = false)
+    {
+        $Counter = new Counter;
+        $Counter->counterPageInfo('new_arrival', $book_id, 0);
+    }
+
+    public function CounterOnlineLibCourse($banner_id = false)
+    {
+        $Counter = new Counter;
+        $Counter->counterPageInfo('library_course', $banner_id, 0);
+    }
+
+    public function CounterRelatedAgencies($id = false)
+    {
+        $Counter = new Counter;
+        $Counter->counterPageInfo('related_agencies', $id, 0);
+    }
+
+    public function insertCounterPageType($type, $id = false)
+    {
+        $Counter = new Counter;
+        $Counter->counterPageInfo($type, $id, 0);
+    }
+
+    public function getCalendarPerMonth()
+    {
+        // $data['getCalendarTable'] = $this->model->getCalendarTable();
+        $data = $this->model->getCalendarTable();
+
+        header('Content-Type: application/json');
+        echo json_encode($data);
+        die();
+        // _print_r($data);
+    }
+}

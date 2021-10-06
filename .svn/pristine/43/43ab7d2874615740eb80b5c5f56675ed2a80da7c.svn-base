@@ -1,0 +1,292 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class ManageBgSearch_model extends CI_Model {
+
+	#เรียกตารางจากฐานข้อมูล
+
+    private $main_tbl = 'bg_search';
+
+    public function __construct()
+    {
+        parent::__construct();
+        #path สำหรับ insert Database
+        $this->path = 'file_upload/bg_search/';
+        $this->path_upload = 'file_upload/bg_search/';
+        $this->user_id = $this->session->cmu_web_session['id'];
+
+        $this->Elastic = new ElasticIndex();
+        $this->fnc_createTbl();
+    }
+	
+	private function fnc_createTbl()
+    {
+
+        $this->load->library('CreateTable');
+
+        $this->createtable->createTable('bg_search','
+          `bg_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+          `file_path` varchar(255) DEFAULT NULL,
+          `file_name` text ,
+          `file_name_original` varchar(255) DEFAULT NULL,
+          `file_path_night` varchar(255) DEFAULT NULL,
+          `file_name_night` text ,
+          `file_name_original_night` varchar(255) DEFAULT NULL,
+          `time_night` time DEFAULT NULL,
+          `time_upload` datetime DEFAULT NULL,
+          PRIMARY KEY (`bg_id`)');
+
+        $this->createtable->addColumn($this->main_tbl, 'time_night_end', 'time DEFAULT NULL');
+        // $this->createtable->addColumn($this->main_tbl, 'time_day', 'time DEFAULT NULL');
+        // $this->createtable->addColumn($this->main_tbl, 'time_day_end', 'time DEFAULT NULL');
+    }
+
+    #ดึงข้อมูลแสดงฟอร์มเพิ่ม - แก้ไข
+
+    public function getForm($id)
+    {
+        if ($id != '') {
+            $data = $this->fnc_getFormEdit($id);
+        } else {
+            $data = $this->fnc_getFormInsert();
+        }
+
+        return $data;
+    }
+
+    #ดึงข้อมูลแสดงฟอร์มเพิ่ม
+
+    private function fnc_getFormInsert()
+    {
+        $data = array(
+            'bg_id' => null,
+            'bg_path' => null,
+            'bg_image' => null,
+            'bg_date' => null,
+            'img' => null,
+            'img_night' => null,
+        );
+
+        return $data;
+    }
+
+    #ดึงข้อมูลแสดงฟอร์มแก้ไข
+
+    private function fnc_getFormEdit($id = false)
+    {
+        $this->db->where('bg_id', $id);
+        $data = $this->db->get($this->main_tbl)->result_array();
+
+        $getData = null;
+        if (!empty($data)) {
+
+            $getData = reset($data);
+            if (!empty($getData['file_name']) && file_exists($this->path . $getData['file_name'])) {
+                $getData['img'] = base_url() . $getData['file_path'] . $getData['file_name'];
+            } else {
+                $getData['img'] = null;
+            }
+
+            if (!empty($getData['file_name_night']) && file_exists($this->path . $getData['file_name_night'])) {
+                $getData['img_night'] = base_url() . $getData['file_path_night'] . $getData['file_name_night'];
+            } else {
+                $getData['img_night'] = null;
+            }
+        }
+
+        return $getData;
+    }
+
+    #เพิ่ม - แก้ไขข้อมูล
+
+    public function insertBgSearch($id)
+    {
+        $img = null;
+        if (!empty($_FILES)) {
+            $img = $this->fnc_uploadImg($_FILES['bg_image']);
+            $img_night = $this->fnc_uploadImg($_FILES['bg_image_night'], '_night');
+        }
+
+        if ($id != '') {
+            $data = $this->fnc_editBgSearch($id, $img, $img_night);
+            return $data;
+        } else {
+            $data = $this->fnc_insertBgSearch($img, $img_night);
+            return $data;
+        }
+    }
+
+    #เพิ่มข้อมูล
+
+    private function fnc_insertBgSearch($img, $img_night)
+    {
+        if ($_FILES["bg_image"]["name"] != "") {
+            if ($img['type'] == '.jpg' || $img['type'] == '.jpeg' || $img['type'] == '.png' || $img['type'] == '.gif') {
+                if (move_uploaded_file($_FILES["bg_image"]["tmp_name"], $img['path'])) {
+                    $data = array(
+                        'file_path' => $this->path_upload,
+                        'file_name' => $img['file_name'],
+                        'file_name_original' => $_FILES["bg_image"]["name"]
+                    );
+                }
+            } else {
+                $alert = 'ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด';
+                return $alert;
+            }
+        }
+
+        if ($_FILES["bg_image_night"]["name"] != "") {
+            if ($img_night['type'] == '.jpg' || $img_night['type'] == '.jpeg' || $img_night['type'] == '.png' || $img_night['type'] == '.gif') {
+                if (move_uploaded_file($_FILES["bg_image_night"]["tmp_name"], $img_night['path'])) {
+                    if(empty($data)) {
+                        $data = array(
+                            'file_path_night' => $this->path_upload,
+                            'file_name_night' => $img_night['file_name'],
+                            'file_name_original_night' => $_FILES["bg_image_night"]["name"]
+                        );
+                    } else {
+                        $data['file_path_night'] = $this->path_upload;
+                        $data['file_name_night'] = $img_night['file_name'];
+                        $data['file_name_original_night'] = $_FILES["bg_image_night"]["name"];
+                    }
+                }
+            } else {
+                $alert = 'ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด';
+                return $alert;
+            }
+        }
+
+        $dateUpdate = date('Y-m-d H:i:s');
+        $data['time_upload'] = $dateUpdate;
+
+        if(!empty($this->input->post('time_night'))) {
+            $data['time_night'] = $this->input->post('time_night');
+        }
+
+        // _print_r($data);
+        $this->db->insert($this->main_tbl, $data);
+
+        $Counter = new Counter;
+        $Counter->logAction($data['file_name'], 0, 0, 'ManageBgSearch', '66', $this->user_id);
+    }
+
+    #แก้ไขข้อมูล
+
+    private function fnc_editBgSearch($id, $img, $img_night)
+    {
+        $delete_img = $this->fnc_getImg($id);
+        if ($_FILES["bg_image"]["name"] != "") {
+            if ($img['type'] == '.jpg' || $img['type'] == '.jpeg' || $img['type'] == '.png' || $img['type'] == '.gif') {
+                if (move_uploaded_file($_FILES["bg_image"]["tmp_name"], $img['path'])) {
+                    $data = array(
+                        'file_path' => $this->path_upload,
+                        'file_name' => $img['file_name'],
+                        'file_name_original' => $_FILES["bg_image"]["name"]
+                    );
+
+                    if ($delete_img != '') {
+                        @unlink($delete_img['delete']);
+                    }
+                }
+            } else {
+                $alert = 'ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด';
+                return $alert;
+            }
+        }
+
+        if ($_FILES["bg_image_night"]["name"] != "") {
+            if ($img_night['type'] == '.jpg' || $img_night['type'] == '.jpeg' || $img_night['type'] == '.png' || $img_night['type'] == '.gif') {
+                if (move_uploaded_file($_FILES["bg_image_night"]["tmp_name"], $img_night['path'])) {
+                    if(empty($data)) {
+                        $data = array(
+                            'file_path_night' => $this->path_upload,
+                            'file_name_night' => $img_night['file_name'],
+                            'file_name_original_night' => $_FILES["bg_image_night"]["name"]
+                        );
+                    } else {
+                        $data['file_path_night'] = $this->path_upload;
+                        $data['file_name_night'] = $img_night['file_name'];
+                        $data['file_name_original_night'] = $_FILES["bg_image_night"]["name"];
+                    }
+
+
+                    if ($delete_img != '') {
+                        @unlink($delete_img['delete_night']);
+                    }
+                }
+            } else {
+                $alert = 'ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด';
+                return $alert;
+            }
+        }
+
+        $dateUpdate = date('Y-m-d H:i:s');
+        $data['time_upload'] = $dateUpdate;
+
+        if(!empty($this->input->post('time_night')) && !empty($this->input->post('time_night_end'))) {
+            $data['time_night'] = $this->input->post('time_night');
+            $data['time_night_end'] = $this->input->post('time_night_end');
+            // $data['time_day'] = $this->input->post('time_day_start');
+            // $data['time_day_end'] = $this->input->post('time_day_end');
+        }
+        $fileName = (!empty($data['file_name_original']) ? $data['file_name_original'] : (!empty($data['file_name_original_night']) ? $data['file_name_original_night'] : 'แก้ไขภาพพื้นหลัง'));
+
+        $this->db->where('bg_id', $id);
+        $this->db->update($this->main_tbl, $data);
+
+        $Counter = new Counter;
+
+        $Counter->logAction($fileName, $id, 0, 'ManageBgSearch', '67', $this->user_id);
+    }
+
+    #แปลงชื่อก่อนอัพโหลด
+
+    private function fnc_uploadImg($bg_image, $night = false)
+    {
+        $exp = explode('.', $bg_image['name']);
+        $ext = end($exp);
+
+        $data['file_name'] = md5(date('Y-m-dh:i:s')) .$night. '.' . $ext;
+        $data['path'] = $this->path . $data['file_name'];
+        $new_file = strtolower($data['file_name']);
+        $data['type'] = strrchr($new_file, '.');
+
+        return $data;
+    }
+
+    public function getBgId()
+    {
+    	$setData['bg_id'] = '';
+    	$rs = $this->db->get($this->main_tbl)->row_array();
+
+    	if (!empty($rs)) {
+    		$setData['bg_id'] = $rs['bg_id'];
+    	}
+
+    	return $setData['bg_id'];
+    }
+
+    #ดึงข้อมูล เพื่อลบรูป
+
+    private function fnc_getImg($bg_id)
+    {
+        // $this->db->limit(1);
+        // $this->db->select('*');
+        $this->db->where('bg_id', $bg_id);
+        $data = $this->db->get($this->main_tbl)->result_array();
+
+        $getData = NULL;
+        if (!empty($data)) {
+            $getData = reset($data);
+            $getData['delete'] = $this->path . $getData['file_name'];
+            $getData['delete_night'] = $this->path . $getData['file_name_night'];
+
+        }
+
+        return $getData;
+    }
+
+}
+
+/* End of file ManageBgSearch_model.php */
+/* Location: ./application/modules/management/models/ManageBgSearch_model.php */

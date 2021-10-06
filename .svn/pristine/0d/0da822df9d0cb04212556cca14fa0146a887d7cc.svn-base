@@ -1,0 +1,169 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class GetGeneral
+{
+    protected $ci;
+    private $member_tbl = 'member';
+    private $bank_tbl = 'bank_affiliated';
+    private $request_help_tbl = 'request_help';
+    private $request_transaction_tbl = 'request_transaction';
+    private $request_join_tbl = 'request_join';
+    private $catagory_tbl = 'help_category';
+    private $catagorySub_tbl = 'help_sub_category';
+    private $bank_transaction_tbl = 'bank_transaction';
+    private $request_transaction_detail_tbl = 'request_transaction_detail';
+    private $provinces_tbl = 'provinces';
+    private $amphure_tbl = 'amphures';
+    private $districts_tbl = 'districts';
+
+    public function __construct()
+    {
+        $this->ci =& get_instance();
+    }
+
+    public function GetProvince($id)
+    {
+      $this->ci->db->select('name_th');
+      $this->ci->db->where('id', $id);
+      $data = $this->ci->db->get('provinces')->row_array();
+
+      if(!empty($data)) {
+        return $data['name_th'];
+      } else {
+        return '';
+      }
+    }
+
+     public function GetAmphure($id)
+    {
+      $this->ci->db->select('name_th');
+      $this->ci->db->where('id', $id);
+      $data = $this->ci->db->get('amphures')->row_array();
+
+      if(!empty($data)) {
+        return $data['name_th'];
+      } else {
+        return '';
+      }
+    }
+
+    public function GetDistrict($id)
+    {
+      $this->ci->db->select('name_th');
+      $this->ci->db->where('id', $id);
+      $data = $this->ci->db->get('districts')->row_array();
+
+      if(!empty($data)) {
+        return $data['name_th'];
+      } else {
+        return '';
+      }
+    }
+
+    public function getTotalCredit($bank_id)
+    {
+        $dataCreditBankDeposit = $this->fnc_getCreditBankDeposit($bank_id);
+        $dataCreditMemberWithdraw= $this->fnc_getCreditBankWithdraw($bank_id);
+
+        return [
+          'credit_deposit' => $dataCreditBankDeposit,
+          'credit_withdraw' => $dataCreditMemberWithdraw,
+          'credit' => $dataCreditBankDeposit - $dataCreditMemberWithdraw,
+        ];
+    }
+
+    private function fnc_getCreditBankDeposit($bank_id)
+    {
+         $this->ci->db->select("IFNULL(SUM(t3.credit), 0) as credit");
+        $this->ci->db->where('t1.bank_id', $bank_id);
+        $this->ci->db->where('t2.status', 99);
+        $this->ci->db->where('t1.type_transesion', 2); //ฝาก
+        $this->ci->db->join($this->request_join_tbl.' t2', 't2.rq_provide_match = t1.rq_id');
+        $this->ci->db->join($this->request_transaction_detail_tbl.' t3', 't3.rq_id = t2.rq_id AND t3.date = t2.date');
+        $data = $this->ci->db->get($this->request_transaction_tbl.' t1')->row_array();
+        if(!empty($data)) {
+            return $data['credit'];
+        } else {
+            return 0;
+        }
+    }
+
+    private function fnc_getCreditBankWithdraw($bank_id)
+    {
+        $this->ci->db->select("IFNULL(SUM(t3.credit), 0) as credit");
+        $this->ci->db->where('t1.bank_id', $bank_id);
+        $this->ci->db->where('t2.status', 99);
+        $this->ci->db->where('t1.type_transesion', 1); //ถอน
+        $this->ci->db->join($this->request_join_tbl.' t2', 't2.rq_id = t1.rq_id');
+        $this->ci->db->join($this->request_transaction_detail_tbl.' t3', 't3.rq_id = t2.rq_id AND t3.date = t2.date');
+        $data = $this->ci->db->get($this->request_transaction_tbl.' t1')->row_array();
+
+        if(!empty($data)) {
+            return $data['credit'];
+        } else {
+            return 0;
+        }
+    } 
+
+    public function getBank($bank_id)
+    {
+        $this->ci->db->where('bank_id', $bank_id);
+        $data =  $this->ci->db->get($this->bank_tbl)->row_array();
+        if(!empty($data)) {
+          return $data;
+        } else {
+          return [];
+        }
+        
+    }
+
+    public function getTotalMemberCredit($mb_id)
+    {
+        $dataCreditDeposit = $this->fnc_getCreditMemberDeposit($mb_id);
+        $dataCreditWithdraw = $this->fnc_getCreditMemberWithdraw($mb_id);
+        
+        return [
+          'credit_deposit' => $dataCreditDeposit,
+          'credit_withdraw' => $dataCreditWithdraw,
+          'credit' => $dataCreditDeposit - $dataCreditWithdraw,
+        ];
+    }
+
+    private function fnc_getCreditMemberDeposit($mb_id)
+    {
+        $this->ci->db->select("IFNULL(SUM(t3.credit), 0) as credit");
+        $this->ci->db->where('t1.mb_id', $mb_id);
+        $this->ci->db->where('t2.status', 99);
+        $this->ci->db->where('t1.type_transesion', 2); //ฝาก
+        $this->ci->db->join($this->request_join_tbl.' t2', 't2.rq_provide_match = t1.rq_id');
+        $this->ci->db->join($this->request_transaction_detail_tbl.' t3', 't3.rq_id = t2.rq_id AND t3.date = t2.date');
+        $data = $this->ci->db->get($this->request_transaction_tbl.' t1')->row_array();
+
+        if(!empty($data)) {
+            return $data['credit'];
+        } else {
+            return 0;
+        }
+    }
+
+    private function fnc_getCreditMemberWithdraw($mb_id)
+    {
+        $this->ci->db->select("IFNULL(SUM(t3.credit), 0) as credit");
+        $this->ci->db->where('t1.mb_id', $mb_id);
+        $this->ci->db->where('t2.status', 99);
+        $this->ci->db->where('t1.type_transesion', 1); //ถอน
+        $this->ci->db->join($this->request_join_tbl.' t2', 't2.rq_id = t1.rq_id');
+        $this->ci->db->join($this->request_transaction_detail_tbl.' t3', 't3.rq_id = t2.rq_id AND t3.date = t2.date');
+        $data = $this->ci->db->get($this->request_transaction_tbl.' t1')->row_array();
+
+        if(!empty($data)) {
+            return $data['credit'];
+        } else {
+            return 0;
+        }
+    }
+}
+
+/* End of file ExportCSV.php */
+/* Location: ./application/libraries/ExportCSV.php */

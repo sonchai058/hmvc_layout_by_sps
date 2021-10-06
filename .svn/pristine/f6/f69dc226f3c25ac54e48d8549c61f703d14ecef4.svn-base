@@ -1,0 +1,251 @@
+<style>
+    .modal-footer {
+        justify-content: center;
+    }
+
+    .addTypeStore {
+        position: absolute;
+        right: 0;
+        margin-top: -13px;
+        color: #fff !important;
+    }
+
+    .modal-header {
+        background-color: #142127;
+    }
+
+    .modal-header .modal-title, .modal-header .close {
+        color: #fff;
+    }
+</style>
+<div class="main-container">
+    <div class="pd-ltr-20 xs-pd-20-10">
+        <div class="pd-20 pb-40 card-box mb-30">
+            <div class="row">
+                <div class="col-md-12">
+
+                    <div class="row">
+                        <div class="col-6">
+                            <h4 class="text-blue h4"><?= $title_sub ?></h4>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="pull-right">
+                                <nav aria-label="breadcrumb" role="navigation">
+                                    <ol class="breadcrumb pd-0">
+                                        <li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+                                        <li class="breadcrumb-item active" aria-current="page"><?= $title_page ?></li>
+                                    </ol>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="main-box clearfix">
+                                <div class="main-box-body clearfix">
+                                    <form role="form" id="post" method="post" action="<?= $action_link.'insertData/'.$data['id'] ?>" enctype="multipart/form-data">
+                                        <div class="form-group">
+                                            <label for="title"><strong>ชื่อฐานข้อมูลอิเล็กทรอนิกส์</strong>
+                                                &nbsp;<span style="color: #f02323">*</span></label>
+                                            <input type="text" class="form-control validate[required]" id="title" name="title"
+                                                   placeholder="ชื่อฐานข้อมูลอิเล็กทรอนิกส์" value="<?= $data['title'] ?>" maxlength="250">
+                                        </div>
+                                        <!-- <div class="form-group">
+                                            <label for="title_en"><strong>ชื่อฐานข้อมูลอิเล็กทรอนิกส์ภาษาอังกฤษ</strong></label>
+                                            <input type="text" class="form-control" id="title_en" name="title_en"
+                                                   placeholder="ชื่อฐานข้อมูลอิเล็กทรอนิกส์ภาษาอังกฤษ" value="<?= $data['title_en'] ?>" maxlength="250">
+                                        </div> -->
+
+                                        <div class="form-group">
+                                            <label for="description"><strong>รายละเอียด</strong></label>
+                                            <textarea name="description" id="description" class="form-control" rows="3"><?= $data['description'] ?></textarea>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="description_en"><strong>รายละเอียดภาษาอังกฤษ</strong></label>
+                                            <textarea name="description_en" id="description_en" class="form-control" rows="3"><?= $data['description_en'] ?></textarea>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="url"><strong>ที่อยู่ URL</strong>&nbsp;<span style="color: #f02323">*</span></label>
+                                            <input type="text" class="form-control validate[required, custom[url]]" id="url" name="url"
+                                                   placeholder="https://example.com" value="<?= $data['url'] ?>" maxlength="250">
+                                        </div>
+
+                                        <?php if(!empty($data) && !empty($data['getResourceType'])):?>
+                                            <div class="form-group">
+                                                <label for="resource_type">
+                                                    <strong>ประเภททรัพยากร</strong>&nbsp;<span style="color: #f02323">*</span>
+                                                </label>
+                                                <a title="เพิ่มประเภททรัพยากร" class="btn btn-sm btn-success addTypeStore">
+                                                    <i class="fa fa-plus"></i> เพิ่มประเภททรัพยากร
+                                                </a>
+
+                                                <select class="form-control select2 validate[required]" name="resource_type[]" id="resource_type" multiple="true">
+                                                    <?php foreach($data['getResourceType'] as $key => $value):?>
+                                                        <option value="<?= $key?>" <?= in_array($key, $data['resource_type']) ? 'selected' :''?>><?= $value?></option>
+                                                    <?php endforeach;?>
+                                                </select>
+                                            </div>
+                                        <?php endif;?>
+
+
+                                        <?php if(!empty($data) && !empty($data['getBranch'])):?>
+                                            <div class="form-group">
+                                                <label for="branch">
+                                                    <strong>สาขาวิชา</strong>&nbsp;<span style="color: #f02323">*</span>
+                                                </label>
+
+                                                <a title="เพิ่มสาขาวิชา" class="btn btn-sm btn-success addTypeStore">
+                                                    <i class="fa fa-plus"></i> เพิ่มสาขาวิชา
+                                                </a>
+
+                                                <select class="form-control select2 validate[required]" name="branch[]" id="branch" multiple="true">
+                                                    <?php foreach($data['getBranch'] as $key => $value):?>
+                                                        <option value="<?= $key?>" <?= in_array($key, $data['branch']) ? 'selected' :''?>><?= $value?></option>
+                                                    <?php endforeach;?>
+                                                </select>
+                                            </div>
+                                        <?php endif;?>
+
+                                        <?php if(!empty($data) && !empty($data['getSubscription'])):?>
+                                            <div class="form-group">
+                                                <label for="subscription">
+                                                    <strong>การบอกรับ</strong>&nbsp;<span style="color: #f02323">*</span>
+                                                </label>
+                                                <a title="เพิ่มการบอกรับ" class="btn btn-sm btn-success addTypeStore">
+                                                    <i class="fa fa-plus"></i> เพิ่มการบอกรับ
+                                                </a>
+
+                                                <select class="form-control select2 validate[required]" name="subscription[]" id="subscription" multiple="true">
+                                                    <?php foreach($data['getSubscription'] as $key => $value):?>
+                                                        <option value="<?= $key?>" <?= in_array($key, $data['subscription']) ? 'selected' :''?>><?= $value?></option>
+                                                    <?php endforeach;?>
+                                                </select>
+                                            </div>
+                                        <?php endif;?>
+
+                                        <div class="form-group">
+                                            <label><strong>สถานะ</strong></label>&nbsp;<span style="color: #f02323">*</span>
+                                            <div class="well radio radioformError">
+                                                <input class="validate[required] radio" type="radio" name="show_status" id="status1" value="1" <?= $data['show_status'] == 1 || $data['show_status'] == null ? 'checked' : '' ?>>
+                                                <label for="status1">
+                                                    เผยแพร่
+                                                </label>
+                                                <input class="validate[required] radio" type="radio" name="show_status" id="status2" value="2" <?= $data['show_status'] == 2 ? 'checked' : '' ?>>
+                                                <label for="status2">
+                                                    ไม่เผยแพร่
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group text-center">
+                                            <button type="button" class="btn btn-danger" onclick="window.location='<?= $action_link ?>index'">
+                                                <i class="fa fa-times"></i>&nbsp;ยกเลิก
+                                            </button>
+                                            &nbsp;&nbsp;
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fa fa-save"></i>&nbsp;บันทึก
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="dataTypeStore" tabindex="-1" role="dialog" aria-labelledby="dataTypeStoreTitle" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="dataTypeStoreTitle">Modal title</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" name="type_store" id="type_store">
+        <div class="form-group">
+            <label for="fld_value"><strong id="text_fld_value"></strong>&nbsp;<span style="color: #f02323">*</span></label>
+            <input type="text" class="form-control" id="fld_value" name="fld_value"
+                   placeholder="" value="" maxlength="250">
+        </div>
+
+        <div class="form-group blockEn">
+            <label for="fld_value_en">
+                <strong id="text_fld_value_en"></strong>
+            </label>
+            <input type="text" class="form-control" id="fld_value_en" name="fld_value_en"
+                   placeholder="" maxlength="250">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-dismiss="modal">
+            <i class="fa fa-times"></i>&nbsp;ยกเลิก
+        </button>
+        &nbsp;&nbsp;
+        <button type="button" class="btn btn-success" id="saveDataTypeStore">
+            <i class="fa fa-save"></i>&nbsp;บันทึก
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<script language="javascript" type="text/javascript">
+    $(document).ready(function() {
+        $("#post").validationEngine();
+        $(window).dblclick(function () {
+            jQuery('#post').validationEngine('hide');
+        });
+
+        $('.select2').select2();
+       
+        $('.addTypeStore').click(function(){
+            $('.blockEn').show();
+            $('#fld_value, #fld_value_en').val('');
+            $('#dataTypeStoreTitle').text($(this).attr('title'));
+            $('#text_fld_value').text($(this).attr('title').replace('เพิ่ม', ''));
+            $('#fld_value').attr('placeholder', $(this).attr('title').replace('เพิ่ม', ''));
+
+            $('#text_fld_value_en').text($(this).attr('title').replace('เพิ่ม', '') + 'ภาษาอังกฤษ');
+            $('#fld_value_en').attr('placeholder', $(this).attr('title').replace('เพิ่ม', '') + 'ภาษาอังกฤษ');
+
+            $('#type_store').val($(this).closest('div').find('select').attr('id'));
+
+            if($('#type_store').val() == 'resource_type') {
+                $('.blockEn').hide();
+            }
+            $('#dataTypeStore').modal('show');
+            setTimeout(function(){
+                jQuery('#post').validationEngine('hide');
+            }, 50);
+        });
+
+        $('#saveDataTypeStore').click(function() {
+            if($('#fld_value').val() != '') {
+                $.post('<?= $action_link.'insertDataTypeStore'?>', {'fld_value' : $('#fld_value').val(), 'fld_value_en' : $('#fld_value_en').val(), 'type_store' : $('#type_store').val()}, function(res){
+                    if($.isNumeric(res)) {
+                        var newOption = new Option(($('#fld_value').val() + ($('#fld_value_en').val() != '' ? ' (' + $('#fld_value_en').val()+ ')' : '')), res, false, true);
+                        $("#" + $('#type_store').val()).append(newOption).trigger('change');
+                    } else if(res == 'dup') {
+                        alert('ไม่สามารถเพิ่มข้อมูลได้เนื่องจากข้อมูลซ้ำในระบบ');
+                    } else {
+                        alert('ไม่สามารถเพิ่มข้อมูลได้');
+                    }
+
+                    $('#dataTypeStore').modal('hide');
+
+                });
+            } else {
+                alert('กรุณาระบุข้อมูล' + $('#text_fld_value').text());
+            }
+        });
+    });
+</script>

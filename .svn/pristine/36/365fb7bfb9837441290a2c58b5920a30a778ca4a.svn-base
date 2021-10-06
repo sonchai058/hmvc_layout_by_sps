@@ -1,0 +1,89 @@
+<div class="main-container">
+  <div class="pd-ltr-20 xs-pd-20-10">
+    <div class="pd-20 pb-40 card-box mb-30">
+  		<div class="clearfix mb-20">
+          <div class="row">
+            <div class="col-4">
+              <h4 class="text-blue h4"><?= $type ?></h4>
+            </div>
+
+            <div class="col-8" ng-show="step == 'start'">
+              <div class="pull-right">
+                <nav aria-label="breadcrumb" role="navigation">
+      						<ol class="breadcrumb pd-0">
+      							<li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                      <a href="<?= base_url().'ReportVisitor' ?>" class=" text-blue">รายงานและสถิติ</a></li>
+      							<li class="breadcrumb-item active" aria-current="page"><?= $type ?></li>
+      						</ol>
+      					</nav>
+              </div>
+            </div>
+          </div>
+  		</div>
+  		<div class="table-responsive">
+				<table id="tableListData" class="table table-striped">
+					<thead>
+						<tr>
+							<th class="text-center w-10" scope="col">ลำดับ</th>
+							<th class="text-center w-25" scope="col">รายการ</th>
+              <th class="text-center w-20" scope="col">วันที่เข้าชม</th>
+              <th class="text-center w-20" scope="col">จำนวนการเข้าชม</th>
+						</tr>
+					</thead>
+					<tbody>
+            <?php if(!empty($getData)): ?>
+              <?php $totalData = 0; ?>
+              <?php  foreach ($getData as $key => $value): ?>
+                <tr>
+                  <td class="text-center"><?= ++$this->start_no ?></td>
+                  <td><?= $value['name'] ?></td>
+                  <td class="text-center"><?= $value['c_date'] ?></td>
+                  <td class="text-center"><?= number_format($value['Total']) ?></td>
+  							</tr>
+                <?php $totalData = $totalData + $value['Total']; ?>
+              <?php endforeach;?>
+            <?php else: ?>
+              <tr class="text-center">
+                  <td colspan="4"><strong>- ไม่พบข้อมูล -</strong></td>
+              </tr>
+            <?php endif;?>
+					</tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" class="text-center">รวม</td>
+              <td class="text-center"><?= number_format($totalData) ?></td>
+            </tr>
+          </tfoot>
+				</table>
+			</div>
+
+      <!-- <div class="pagination" ng-show="step == 'start'">
+          <div class="paging">
+              <?php echo $this->my_pagination; ?>
+          </div>
+      </div> -->
+
+    </div>
+    <div class="text-center">
+        <a href="<?= $action_link?>">
+            <button class="btn btn-warning">
+                <i class="fa fa-arrow-left"></i> ย้อนกลับ
+            </button>
+        </a>
+    </div>
+  </div>
+</div>
+
+<style>
+    .progress {
+        height: 40px;
+        margin-top: 20px;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .fa-spin {
+        font-size: 46px;
+    }
+</style>

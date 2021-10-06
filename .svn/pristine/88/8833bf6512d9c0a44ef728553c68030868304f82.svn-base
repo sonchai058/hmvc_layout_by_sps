@@ -1,0 +1,1209 @@
+<?php
+include("application/libraries/ElasticIndex.php");
+
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class ManageMenuTop_model extends CI_Model
+{
+    #เรียกตารางจากฐานข้อมูล
+    protected $fontfamily = 'font-family: sukhumvitText !important;';
+    protected $fontsize = 'font-size: 14px!important;';
+    private $menu_tbl = 'manage_menu_top';
+    private $module_tbl = 'manage_menu_module';
+    private $article_tbl = 'article';
+    private $category_article_tbl = 'category_article';
+    private $user_group_tbl = 'user_group';
+    private $manage_user_group_tbl = 'manage_user_group';
+
+
+    ##Pagination
+    private $per_page = 25;
+
+    ## Search
+    private $s_element = array('gtext' => FALSE, 'status' => 'all', 'type_menu' => 'all');
+
+    ## Search Sub
+    private $s_element_sub = array('gtext' => FALSE, 'status' => 'all', 'type_menu' => 'all');
+
+
+    ## Search Article
+    private $s_element_article = array('satext' => FALSE, 'scategory' => FALSE);
+
+    ## Match data
+    private $status = array('1' => 'เผยแพร่', '2' => 'ไม่เผยแพร่');
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->user_id = $this->session->cmu_web_session['id'];
+        $this->fnc_createTbl();
+
+        $this->Elastic = new ElasticIndex();
+
+    }
+
+
+
+    private function fnc_createTbl()
+    {
+        $this->load->library('CreateTable');
+
+        // $this->createtable->createTable('manage_menu_module','
+        //   `module_id` int(11) NOT NULL AUTO_INCREMENT,
+        //   `module_name` VARCHAR(250) DEFAULT NULL,
+        //   `url` TEXT DEFAULT NULL,
+        //   `grp_name` VARCHAR(250) DEFAULT NULL,
+        //   PRIMARY KEY (`module_id`)');
+
+        $this->createtable->createTable('manage_menu_top','
+          `menu_id` int(11) NOT NULL AUTO_INCREMENT,
+          `parent_id` int(11) DEFAULT NULL,
+          `menu_name` VARCHAR(250) DEFAULT NULL,
+          `menu_name_en` VARCHAR(250) DEFAULT NULL,
+          `menu_class` VARCHAR(250) DEFAULT NULL,
+          `menu_link` TEXT,
+          `menu_method` VARCHAR(250) DEFAULT NULL,
+          `menu_icon` varchar(0) DEFAULT NULL,
+          `description` TEXT,
+          `menu_order` int(11) DEFAULT NULL,
+          `type_menu` int(1) DEFAULT NULL,
+          `show_status` int(1) DEFAULT NULL,
+          `module_id` int(11) DEFAULT NULL,
+          `description_en` TEXT,
+          `time_create` DATETIME DEFAULT NULL,
+          `time_update` DATETIME DEFAULT NULL,
+          `type_date_show` int(1) DEFAULT NULL,
+          `date_show_start` DATETIME DEFAULT NULL,
+          `date_show_end` DATETIME DEFAULT NULL,
+          `usage_level` int(1) DEFAULT NULL,
+          PRIMARY KEY (`menu_id`)');
+          $this->createtable->addColumn('manage_menu_top', 'type_date_show', 'int(1) DEFAULT NULL');
+          $this->createtable->addColumn('manage_menu_top', 'date_show_start', 'DATETIME DEFAULT NULL');
+          $this->createtable->addColumn('manage_menu_top', 'date_show_end', 'DATETIME DEFAULT NULL');
+          $this->createtable->addColumn('manage_menu_top', 'usage_level', 'int(1) DEFAULT NULL');
+          $this->createtable->addColumn('manage_menu_top', 'type_menu_category', 'VARCHAR(250) DEFAULT NULL');
+
+
+          $this->createtable->createTable('manage_user_group','
+          `menu_id` int(11) NOT NULL,
+          `grp_id` int(11) NOT NULL,
+          `menu_type_catogory` VARCHAR(250) NOT NULL,
+          `user_id` int(11) DEFAULT NULL,
+          PRIMARY KEY (`menu_id`, `grp_id`, `menu_type_catogory`)');
+    }
+
+    public function getList($page = 1)
+    {
+        // $this->fnc_calPageOffset($page);
+        $this->fnc_setElementSearchFromSession();
+
+        $this->db->order_by('-(menu_order)', 'desc');
+        $this->db->where('parent_id');
+        $data = $this->db->get($this->menu_tbl)->result_array();
+        $getData = array();
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                $value['check'] = $this->fnc_checkDelete($value['menu_id']);
+                $getData[] = $value;
+            }
+        }
+        return $getData;
+    }
+
+    private function fnc_checkDelete($menu_id)
+    {
+        $this->db->where('parent_id', $menu_id);
+        $data = $this->db->get($this->menu_tbl)->num_rows();
+
+        $getData = 0;
+        if (!empty($data)) {
+            $getData = $data;
+        }
+        return $getData;
+    }
+
+    public function getListCount()
+    {
+        $this->fnc_setElementSearchFromSession();
+
+        $this->db->order_by('-(menu_order)', 'desc');
+        $this->db->where('parent_id');
+        $data = $this->db->get($this->menu_tbl)->result_array();
+
+        $getData = array();
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                $getData[] = $value;
+            }
+        }
+        return count($getData);
+    }
+
+    public function getUserGroup()
+    {
+        return $this->db->get($this->user_group_tbl)->result_array();
+    }
+
+    public function getForm($menu_id)
+    {
+
+        if ($menu_id != '') {
+            $data = $this->fnc_getFormEdit($menu_id);
+        } else {
+            $data = $this->fnc_getFormInsert();
+        }
+
+        return $data;
+    }
+
+    private function fnc_getFormEdit($menu_id)
+    {
+        $this->db->where('menu_id', $menu_id);
+        $data = $this->db->get($this->menu_tbl)->row_array();
+        $getData = null;
+        if (!empty($data)) {
+            $getData = $data;
+            // $getData['description'] = str_replace('font-family', $this->fontfamily . ' font-familyx', $getData['description']);
+//            $getData['description'] = str_replace('font-size', $this->fontsize . ' font-sizex', $getData['description']);
+            // $getData['description'] = str_replace('vertical-align', 'vertical-align: top; vertical-alignx', $getData['description']);
+
+            // $getData['description_en'] = str_replace('font-family', $this->fontfamily . ' font-familyx', $getData['description_en']);
+//            $getData['description_en'] = str_replace('font-size', $this->fontsize . ' font-sizex', $getData['description_en']);
+            // $getData['description_en'] = str_replace('vertical-align', 'vertical-align: top; vertical-alignx', $getData['description_en']);
+//            $getData['article_title'] = $this->getTitleArticle($getData['article_id']);
+            if($getData['type_date_show'] == 2) {
+              $getData['date_show_start'] = General::DBtoThaiDateDathTime($getData['date_show_start']);
+              $getData['date_show_end'] = General::DBtoThaiDateDathTime($getData['date_show_end']);
+              $getData['user_grp'] = $this->fnc_getManageUserGroup($menu_id);
+            } else {
+              $getData['date_show_start'] = null;
+              $getData['date_show_end'] = null;
+              $getData['user_grp'] = $this->fnc_getManageUserGroup($menu_id);
+            }
+        }
+
+        return $getData;
+    }
+
+    private function fnc_getManageUserGroup($menu_id)
+    {
+        $this->db->where('menu_id', $menu_id);
+        $rs = $this->db->get($this->manage_user_group_tbl)->result_array();
+
+        $getData = array();
+        if (!empty($rs)) {
+            foreach ($rs as $key => $value) {
+                $getData[] = $value['grp_id'];
+            }
+            return $getData;
+        }
+        return $getData;
+    }
+
+    private function fnc_getFormInsert()
+    {
+        $data = array(
+            'menu_id' => null,
+            'menu_name' => null,
+            'menu_name_en' => null,
+            'menu_link' => null,
+            'show_status' => null,
+            'type_menu' => null,
+            'module_id' => null,
+            'description' => null,
+            'description_en' => null,
+            'show_status' => 1,
+            'type_date_show' => 1,
+            'usage_level' => 1,
+            'user_grp' => [],
+        );
+
+        return $data;
+    }
+
+    public function insert($menu_id)
+    {
+        if ($menu_id != '') {
+            return $this->fnc_edit($menu_id);
+        } else {
+            return $this->fnc_insert();
+        }
+    }
+
+    private function fnc_insert()
+    {
+        // _print_r($this->input->post());
+        $description = str_replace("'", '"', htmlentities($this->input->post('description')));
+        $description = html_entity_decode($description);
+
+        $description_en = str_replace("'", '"', htmlentities($this->input->post('description_en')));
+        $description_en = html_entity_decode($description_en);
+
+        $dateUpdate = date('Y-m-d H:i:s');
+        $data = array(
+            'menu_name' => $this->input->post('menu_name'),
+            'menu_name_en' => $this->input->post('menu_name_en'),
+            'menu_link' => $this->input->post('menu_link'),
+            'show_status' => $this->input->post('show_status'),
+            'type_menu' => $this->input->post('type_menu'),
+            'module_id' => $this->input->post('module_id'),
+            'time_create' => $dateUpdate,
+            'description' => $description,
+            'description_en' => $description_en,
+            'time_update' => $dateUpdate,
+            'type_date_show' => $this->input->post('type_date_show'),
+            'usage_level' => $this->input->post('usage_level'),
+            'type_menu_category' => 'menu_top',
+        );
+        if(!empty($this->input->post('date_show_start'))) {
+          $data['date_show_start'] = General::ThaitoDBDateDathTime($this->input->post('date_show_start').':00');
+        }
+
+        if(!empty($this->input->post('date_show_end'))) {
+          $data['date_show_end'] = General::ThaitoDBDateDathTime($this->input->post('date_show_end').':00');
+        }
+        
+        $this->db->insert($this->menu_tbl, $data);
+        $menu_id = $this->db->insert_id();
+        
+        ##ระดับการใช้งาน = เฉพาะกลุ่มเจ้าหน้าที่กำหนด
+        $user_grp = $this->input->post('user_grp');
+        if ($data['usage_level'] == 3) {
+            if (!empty($user_grp)) {
+                foreach ($user_grp as $key => $value) {
+                    $data = array(
+                        'menu_id' => $menu_id,
+                        'grp_id' => $value,
+                        'menu_type_catogory' => 'menu_top',
+                        'user_id' => $this->user_id,
+                    );
+
+                    $this->db->insert($this->manage_user_group_tbl, $data);
+                }
+            }
+        }
+
+        $this->fnc_getMaxOrder(false, $menu_id);
+        if ($data['show_status'] == 1 && $data['type_menu'] > 0) {
+            $ret = $this->Elastic->index($this->es_type, 'menu_top', $menu_id);
+        } else {
+            $ret = $this->Elastic->deleteDocument($this->es_type, 'menu_top_' . $menu_id);
+        }
+
+        $Counter = new Counter;
+        $Counter->logAction($data['menu_name'], $menu_id, $data['type_menu'], 'menu_top', '63', $this->user_id);
+
+    }
+
+    private function fnc_getMaxOrder($parent = false, $menu_id)
+    {
+        $this->db->select('MAX(menu_order) as orderData');
+        if (!empty($parent)) {
+            $this->db->where('parent_id', $parent);
+        } else {
+            $this->db->where('parent_id');
+        }
+
+        $data = $this->db->get($this->menu_tbl)->row_array();
+
+        if (!empty($data)) {
+            $order = $data['orderData'] + 1;
+        } else {
+            $order = 1;
+        }
+
+        $this->db->where('menu_id', $menu_id);
+        $this->db->update($this->menu_tbl, ['menu_order' => $order]);
+    }
+
+    private function fnc_edit($menu_id)
+    {
+        // _print_r($menu_id);
+        // _print_r($this->input->post());
+        $description = str_replace("'", '"', htmlentities($this->input->post('description')));
+        $description = html_entity_decode($description);
+
+        $description_en = str_replace("'", '"', htmlentities($this->input->post('description_en')));
+        $description_en = html_entity_decode($description_en);
+
+        $dateUpdate = date('Y-m-d H:i:s');
+        $data = array(
+            'menu_name' => $this->input->post('menu_name'),
+            'menu_name_en' => $this->input->post('menu_name_en'),
+            'menu_link' => $this->input->post('menu_link'),
+            'show_status' => $this->input->post('show_status'),
+            'type_menu' => $this->input->post('type_menu'),
+            'module_id' => $this->input->post('module_id'),
+            'description' => $description,
+            'description_en' => $description_en,
+            'time_update' => $dateUpdate,
+            'type_date_show' => $this->input->post('type_date_show'),
+            'usage_level' => $this->input->post('usage_level'),
+        );
+
+        if(!empty($this->input->post('date_show_start'))) {
+          $data['date_show_start'] = General::ThaitoDBDateDathTime($this->input->post('date_show_start').':00');
+        }
+
+        if(!empty($this->input->post('date_show_end'))) {
+          $data['date_show_end'] = General::ThaitoDBDateDathTime($this->input->post('date_show_end').':00');
+        }
+
+        $dataByID = $this->fnc_getFormEdit($menu_id);
+        if (!empty($dataByID)) {
+            $Counter = new Counter;
+            $Counter->logAction($dataByID['menu_name'], $menu_id, $dataByID['type_menu'], 'menu_top', '64', $this->user_id);
+        }
+
+        $this->db->where('menu_id', $menu_id);
+        $this->db->update($this->menu_tbl, $data);
+
+        ##ระดับการใช้งาน = เฉพาะกลุ่มเจ้าหน้าที่กำหนด
+        $user_grp = $this->input->post('user_grp');
+        if ($data['usage_level'] == 3) {
+
+            ##ลบข้อมูลกลุ่มเจ้าหน้าที่เดิม
+            $this->db->delete($this->manage_user_group_tbl, array('menu_id' => $menu_id));
+
+            if (!empty($user_grp)) {
+                foreach ($user_grp as $key => $value) {
+                    $data = array(
+                        'menu_id' => $menu_id,
+                        'grp_id' => $value,
+                        'menu_type_catogory' => 'menu_top',
+                        'user_id' => $this->user_id,
+                    );
+
+                    $this->db->insert($this->manage_user_group_tbl, $data);
+                }
+            }
+        }
+
+        if ($data['show_status'] == 1 && $data['type_menu'] > 0) {
+            $ret = $this->Elastic->index($this->es_type, 'menu_top', $menu_id);
+        } else {
+            $ret = $this->Elastic->deleteDocument($this->es_type, 'menu_top_' . $menu_id);
+        }
+
+    }
+
+    public function delete($menu_id)
+    {
+        $dataByID = $this->fnc_getFormEdit($menu_id);
+        if (!empty($dataByID)) {
+            $Counter = new Counter;
+            $Counter->logAction($dataByID['menu_name'], $menu_id, $dataByID['type_menu'], 'menu_top', '65', $this->user_id);
+        }
+        $this->db->delete($this->menu_tbl, array('menu_id' => $menu_id));
+        ##ลบข้อมูลกลุ่มเจ้าหน้าที่เดิม
+        $this->db->delete($this->manage_user_group_tbl, array('menu_id' => $menu_id));
+
+        $ret = $this->Elastic->deleteDocument($this->es_type, 'menu_top_' . $menu_id);
+
+    }
+
+    ## Search
+
+    private function fnc_setElementSearchFromSession()
+    {
+        $form_search_element = $this->session->userdata('form_search_element');
+
+
+        if ($form_search_element == null) {
+            return;
+        }
+        foreach ($this->s_element as $key => $value) {
+            if (isset($form_search_element['element'][$key]))
+                $this->s_element[$key] = $form_search_element['element'][$key];
+        }
+
+        $gtext = trim($this->db->escape_str($this->s_element['gtext']));
+        $status = $this->s_element['status'];
+        $type_menu = $this->s_element['type_menu'];
+
+        if ($gtext != '') {
+            $this->db->where("(menu_name LIKE '%{$gtext}%' or menu_name_en LIKE '%{$gtext}%')");
+//            $this->db->like('menu_name', $gtext);
+//            $this->db->or_like('menu_name_en', $gtext);
+        }
+
+        if ($status != 'all') {
+            $this->db->where('show_status', $status);
+        }
+
+        if ($type_menu != 'all') {
+            $this->db->where('type_menu', $type_menu);
+        }
+    }
+
+    public function getSElement()
+    {
+        return $this->s_element;
+    }
+
+    ##Pagination
+
+    public function getPerPage()
+    {
+        return $this->per_page;
+    }
+
+    private function fnc_calPageOffset($page)
+    {
+        $offset = ($page * $this->per_page) - $this->per_page;
+
+        $this->db->limit($this->per_page, $offset);
+
+    }
+
+    ## เมนูย่อย
+
+    public function getSub($menu_id, $page = 1)
+    {
+        $this->fnc_setElementSearchFromSessionSub();
+
+//        $offset = ($page * $this->per_page) - $this->per_page;
+
+//        $this->db->order_by('-(menu_order) DESC OFFSET ' . $offset . ' ROWS FETCH NEXT ' . $this->per_page . ' ROWS ONLY');
+        $this->db->order_by('-(menu_order) DESC');
+
+        $this->db->where('parent_id', $menu_id);
+        $data = $this->db->get($this->menu_tbl)->result_array();
+        $getData = array();
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                $value['check'] = $this->fnc_checkDelete($value['menu_id']);
+                $getData[] = $value;
+            }
+        }
+        return $getData;
+    }
+
+    public function getSubCount($menu_id)
+    {
+        $this->fnc_setElementSearchFromSessionSub();
+
+        $this->db->order_by('-(menu_order)', 'desc');
+        $this->db->where('parent_id', $menu_id);
+        $data = $this->db->get($this->menu_tbl)->result_array();
+
+        $getData = array();
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                $getData[] = $value;
+            }
+        }
+        return count($getData);
+    }
+
+    public function getFormSub($menu_id, $sub_id)
+    {
+
+        if ($menu_id != '' && $sub_id != '') {
+            $data = $this->fnc_getFormEditSub($menu_id, $sub_id);
+        } else {
+            $data = $this->fnc_getFormInsertSub();
+        }
+
+        return $data;
+    }
+
+    private function fnc_getFormEditSub($menu_id, $sub_id)
+    {
+        $this->db->where('menu_id', $sub_id);
+        $data = $this->db->get($this->menu_tbl)->row_array();
+        // _print_r($data);
+        $getData = null;
+        if (!empty($data)) {
+            $getData = $data;
+            // $getData['description'] = str_replace('font-family', $this->fontfamily . ' font-familyx', $getData['description']);
+//            $getData['description'] = str_replace('font-size', $this->fontsize . ' font-sizex', $getData['description']);
+            // $getData['description'] = str_replace('vertical-align', 'vertical-align: top; vertical-alignx', $getData['description']);
+
+            // $getData['description_en'] = str_replace('font-family', $this->fontfamily . ' font-familyx', $getData['description_en']);
+//            $getData['description_en'] = str_replace('font-size', $this->fontsize . ' font-sizex', $getData['description_en']);
+            // $getData['description_en'] = str_replace('vertical-align', 'vertical-align: top; vertical-alignx', $getData['description_en']);
+//            $getData['article_title'] = $this->getTitleArticle($getData['article_id']);
+              if($getData['type_date_show'] == 2) {
+                $getData['date_show_start'] = General::DBtoThaiDateDathTime($getData['date_show_start']);
+                $getData['date_show_end'] = General::DBtoThaiDateDathTime($getData['date_show_end']);
+                $getData['user_grp'] = $this->fnc_getManageUserGroup($sub_id);
+              } else {
+                $getData['date_show_start'] = null;
+                $getData['date_show_end'] = null;
+                $getData['user_grp'] = $this->fnc_getManageUserGroup($sub_id);
+              }
+        }
+
+        return $getData;
+    }
+
+    private function fnc_getFormInsertSub()
+    {
+        $data = array(
+            'menu_id' => null,
+            'parent_id' => null,
+            'menu_name' => null,
+            'menu_name_en' => null,
+            'menu_link' => null,
+            'show_status' => null,
+            'type_menu' => null,
+            'module_id' => null,
+            'description' => null,
+            'description_en' => null,
+            'show_status' => 1,
+            'type_date_show' => 1,
+            'usage_level' => 1,
+            'user_grp' => [],
+        );
+
+        return $data;
+    }
+
+    public function insertSub($menu_id, $sub_id)
+    {
+        if ($menu_id != '' && $sub_id != '') {
+            return $this->fnc_editSub($menu_id, $sub_id);
+        } else {
+            return $this->fnc_insertSub($menu_id);
+        }
+    }
+
+    private function fnc_insertSub($menu_id)
+    {
+        // _print_r($this->input->post());
+        $description = str_replace("'", '"', htmlentities($this->input->post('description')));
+        $description = html_entity_decode($description);
+        $description_en = str_replace("'", '"', htmlentities($this->input->post('description_en')));
+        $description_en = html_entity_decode($description_en);
+
+        $dateUpdate = date('Y-m-d H:i:s');
+        $data = array(
+            'menu_name' => $this->input->post('menu_name'),
+            'menu_name_en' => $this->input->post('menu_name_en'),
+            'menu_link' => $this->input->post('menu_link'),
+            'show_status' => $this->input->post('show_status'),
+            'type_menu' => $this->input->post('type_menu'),
+            'module_id' => $this->input->post('module_id'),
+            'time_create' => $dateUpdate,
+            'parent_id' => $menu_id,
+            'description' => $description,
+            'description_en' => $description_en,
+            'time_update' => $dateUpdate,
+            'type_date_show' => $this->input->post('type_date_show'),
+            'usage_level' => $this->input->post('usage_level'),
+        );
+
+        if(!empty($this->input->post('date_show_start'))) {
+          $data['date_show_start'] = General::ThaitoDBDateDathTime($this->input->post('date_show_start').':00');
+        }
+
+        if(!empty($this->input->post('date_show_end'))) {
+          $data['date_show_end'] = General::ThaitoDBDateDathTime($this->input->post('date_show_end').':00');
+        }
+
+        $parent_id = $menu_id;
+        $this->db->insert($this->menu_tbl, $data);
+        $menu_id = $this->db->insert_id();
+        ##ระดับการใช้งาน = เฉพาะกลุ่มเจ้าหน้าที่กำหนด
+        if ($data['usage_level'] == 3) {
+            $user_grp = implode("|",$this->input->post('user_grp'));
+            $data = array(
+                'menu_id' => $menu_id,
+                'grp_id' => $user_grp,
+                'user_id' => $this->user_id,
+            );
+
+            $this->db->insert($this->manage_user_group_top_tbl, $data);
+        }
+
+        $this->fnc_getMaxOrder($parent_id, $menu_id);
+
+        if ($data['show_status'] == 1 && $data['type_menu'] > 0) {
+            $ret = $this->Elastic->index($this->es_type, 'menu', $menu_id);
+        } else {
+            $ret = $this->Elastic->deleteDocument($this->es_type, 'menu_' . $menu_id);
+        }
+
+
+        $Counter = new Counter;
+        $Counter->logAction($data['menu_name'], $menu_id, $data['type_menu'], 'sub_menu', '36', $this->user_id);
+
+    }
+
+    private function fnc_editSub($menu_id, $sub_id)
+    {
+        // _print_r($this->input->post());
+        $description = str_replace("'", '"', htmlentities($this->input->post('description')));
+        $description = html_entity_decode($description);
+        $description_en = str_replace("'", '"', htmlentities($this->input->post('description_en')));
+        $description_en = html_entity_decode($description_en);
+
+        $dateUpdate = date('Y-m-d H:i:s');
+        $data = array(
+            'menu_name' => $this->input->post('menu_name'),
+            'menu_name_en' => $this->input->post('menu_name_en'),
+            'menu_link' => $this->input->post('menu_link'),
+            'show_status' => $this->input->post('show_status'),
+            'type_menu' => $this->input->post('type_menu'),
+            'module_id' => $this->input->post('module_id'),
+            'parent_id' => $menu_id,
+            'description' => $description,
+            'description_en' => $description_en,
+            'time_update' => $dateUpdate,
+            'type_date_show' => $this->input->post('type_date_show'),
+            'usage_level' => $this->input->post('usage_level'),
+        );
+
+        if(!empty($this->input->post('date_show_start'))) {
+          $data['date_show_start'] = General::ThaitoDBDateDathTime($this->input->post('date_show_start').':00');
+        }
+
+        if(!empty($this->input->post('date_show_end'))) {
+          $data['date_show_end'] = General::ThaitoDBDateDathTime($this->input->post('date_show_end').':00');
+        }
+
+
+        $dataByID = $this->fnc_getFormEditSub($menu_id, $sub_id);
+        if(!empty($dataByID)) {
+            $Counter = new Counter;
+            $Counter->logAction($dataByID['menu_name'], $sub_id, $dataByID['type_menu'], 'sub_menu', '37', $this->user_id);
+        }
+//        _print_r($data);
+        $this->db->where('menu_id', $sub_id);
+        $this->db->update($this->menu_tbl, $data);
+
+        ##ระดับการใช้งาน = เฉพาะกลุ่มเจ้าหน้าที่กำหนด
+        if ($data['usage_level'] == 3) {
+            $user_grp = implode("|",$this->input->post('user_grp'));
+            $data = array(
+                'grp_id' => $user_grp,
+                'user_id' => $this->user_id,
+            );
+            $this->db->where('menu_id', $sub_id);
+            $this->db->update($this->manage_user_group_top_tbl, $data);
+        }
+
+        if ($data['show_status'] == 1 && $data['type_menu'] > 0) {
+            $ret = $this->Elastic->index($this->es_type, 'menu', $sub_id);
+        } else {
+            $ret = $this->Elastic->deleteDocument($this->es_type, 'menu_' . $sub_id);
+        }
+    }
+
+    public function deleteSub($menu_id)
+    {
+
+        $dataByID = $this->fnc_getFormEditSub('xx', $menu_id);
+        if(!empty($dataByID)) {
+            $Counter = new Counter;
+            $Counter->logAction($dataByID['menu_name'], $menu_id, $dataByID['type_menu'], 'sub_menu', '38', $this->user_id);
+        }
+
+        $this->db->delete($this->menu_tbl, array('menu_id' => $menu_id));
+
+        $ret = $this->Elastic->deleteDocument($this->es_type, 'menu_' . $menu_id);
+
+    }
+
+    public function saveOrder($menu_id, $order)
+    {
+        $data = array(
+            'menu_order' => $order
+        );
+
+        $this->db->where('menu_id', $menu_id);
+        $this->db->update($this->menu_tbl, $data);
+
+        return 'เรียงลำดับข้อมูลแล้ว';
+    }
+
+    ## Search Sub
+
+    private function fnc_setElementSearchFromSessionSub()
+    {
+        $form_search_element = $this->session->userdata('form_search_element');
+
+
+        if ($form_search_element == null) {
+            return;
+        }
+        foreach ($this->s_element_sub as $key => $value) {
+            if (isset($form_search_element['element'][$key]))
+                $this->s_element_sub[$key] = $form_search_element['element'][$key];
+        }
+
+        $gtext = trim($this->db->escape_str($this->s_element_sub['gtext']));
+        $status = $this->s_element_sub['status'];
+        $type_menu = $this->s_element_sub['type_menu'];
+        if ($gtext != '') {
+            $this->db->where("(menu_name LIKE '%{$gtext}%' or menu_name_en LIKE '%{$gtext}%')");
+//            $this->db->like('menu_name', $gtext);
+//            $this->db->or_like('menu_name_en', $gtext);
+        }
+
+        if ($status != 'all') {
+            $this->db->where('show_status', $status);
+        }
+
+        if ($type_menu != 'all') {
+            $this->db->where('type_menu', $type_menu);
+        }
+    }
+
+    public function getSElementSub()
+    {
+        return $this->s_element_sub;
+    }
+
+    public function getUnit($menu_id, $sub_id, $page = 1)
+    {
+        // $this->fnc_calPageOffset($page);
+        $this->fnc_setElementSearchFromSessionSub();
+
+//        $offset = ($page * $this->per_page) - $this->per_page;
+//
+//        $this->db->order_by('-(menu_order) DESC OFFSET ' . $offset . ' ROWS FETCH NEXT ' . $this->per_page . ' ROWS ONLY');
+
+        $this->db->order_by('-(menu_order)', 'desc');
+        $this->db->where('parent_id', $sub_id);
+        $data = $this->db->get($this->menu_tbl)->result_array();
+        $getData = array();
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                $getData[] = $value;
+            }
+        }
+        return $getData;
+    }
+
+    public function getUnitCount($menu_id, $sub_id)
+    {
+        $this->fnc_setElementSearchFromSessionSub();
+
+        $this->db->order_by('-(menu_order)', 'desc');
+        $this->db->where('parent_id', $sub_id);
+        $data = $this->db->get($this->menu_tbl)->result_array();
+
+        $getData = array();
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                $getData[] = $value;
+            }
+        }
+        return count($getData);
+    }
+
+    public function getFormUnit($sub_id, $unit_id)
+    {
+
+        if ($sub_id != '' && $unit_id != '') {
+            $data = $this->fnc_getFormEditUnit($sub_id, $unit_id);
+        } else {
+            $data = $this->fnc_getFormInsertUnit();
+        }
+
+        return $data;
+    }
+
+    private function fnc_getFormEditUnit($sub_id, $unit_id)
+    {
+        $this->db->where('menu_id', $unit_id);
+        $data = $this->db->get($this->menu_tbl)->row_array();
+
+        $getData = null;
+        if (!empty($data)) {
+            $getData = $data;
+//             $getData['description'] = str_replace('font-family','font-familyx',$getData['description']);
+            // $getData['description'] = str_replace('font-family', $this->fontfamily . ' font-familyx', $getData['description']);
+//            $getData['description'] = str_replace('font-size', $this->fontsize . ' font-sizex', $getData['description']);
+            // $getData['description'] = str_replace('vertical-align', 'vertical-align: top; vertical-alignx', $getData['description']);
+
+            // $getData['description_en'] = str_replace('font-family', $this->fontfamily . ' font-familyx', $getData['description_en']);
+//            $getData['description_en'] = str_replace('font-size', $this->fontsize . ' font-sizex', $getData['description_en']);
+            // $getData['description_en'] = str_replace('vertical-align', 'vertical-align: top; vertical-alignx', $getData['description_en']);
+//            $getData['article_title'] = $this->getTitleArticle($getData['article_id']);
+              if($getData['type_date_show'] == 2) {
+                $getData['date_show_start'] = General::DBtoThaiDateDathTime($getData['date_show_start']);
+                $getData['date_show_end'] = General::DBtoThaiDateDathTime($getData['date_show_end']);
+                $getData['user_grp'] = $this->fnc_getManageUserGroup($unit_id);
+              } else {
+                $getData['date_show_start'] = null;
+                $getData['date_show_end'] = null;
+                $getData['user_grp'] = $this->fnc_getManageUserGroup($unit_id);
+              }
+        }
+        return $getData;
+    }
+
+    private function fnc_getFormInsertUnit()
+    {
+        $data = array(
+            'menu_id' => null,
+            'parent_id' => null,
+            'menu_name' => null,
+            'menu_name_en' => null,
+            'menu_link' => null,
+            'show_status' => null,
+            'type_menu' => 1,
+            'module_id' => null,
+            'description' => null,
+            'description_en' => null,
+            'show_status' => 1,
+            'type_date_show' => 1,
+            'usage_level' => 1,
+            'user_grp' => [],
+        );
+
+        return $data;
+    }
+
+    public function insertUnit($sub_id, $unit_id)
+    {
+        if ($sub_id != '' && $unit_id != '') {
+            return $this->fnc_editUnit($sub_id, $unit_id);
+        } else {
+            return $this->fnc_insertUnit($sub_id);
+        }
+    }
+
+    private function fnc_insertUnit($sub_id)
+    {
+        $description = str_replace("'", '"', htmlentities($this->input->post('description')));
+        $description = html_entity_decode($description);
+        $description_en = str_replace("'", '"', htmlentities($this->input->post('description_en')));
+        $description_en = html_entity_decode($description_en);
+
+        $dateUpdate = date('Y-m-d H:i:s');
+        $data = array(
+            'menu_name' => $this->input->post('menu_name'),
+            'menu_name_en' => $this->input->post('menu_name_en'),
+            'menu_link' => $this->input->post('menu_link'),
+            'show_status' => $this->input->post('show_status'),
+            'type_menu' => $this->input->post('type_menu'),
+            'module_id' => $this->input->post('module_id'),
+            'time_create' => $dateUpdate,
+            'parent_id' => $sub_id,
+            'description' => $description,
+            'description_en' => $description_en,
+            'time_update' => $dateUpdate,
+            'type_date_show' => $this->input->post('type_date_show'),
+            'usage_level' => $this->input->post('usage_level'),
+        );
+
+        if(!empty($this->input->post('date_show_start'))) {
+          $data['date_show_start'] = General::ThaitoDBDateDathTime($this->input->post('date_show_start').':00');
+        }
+
+        if(!empty($this->input->post('date_show_end'))) {
+          $data['date_show_end'] = General::ThaitoDBDateDathTime($this->input->post('date_show_end').':00');
+        }
+
+
+        $this->db->insert($this->menu_tbl, $data);
+
+        $menu_id = $this->db->insert_id();
+
+        ##ระดับการใช้งาน = เฉพาะกลุ่มเจ้าหน้าที่กำหนด
+        if ($data['usage_level'] == 3) {
+            $user_grp = implode("|",$this->input->post('user_grp'));
+            $data = array(
+                'menu_id' => $menu_id,
+                'grp_id' => $user_grp,
+                'user_id' => $this->user_id,
+            );
+
+            $this->db->insert($this->manage_user_group_top_tbl, $data);
+        }
+
+        $this->fnc_getMaxOrder($sub_id, $menu_id);
+
+        if ($data['show_status'] == 1 && $data['type_menu'] > 0) {
+            $ret = $this->Elastic->index($this->es_type, 'menu', $menu_id);
+        } else {
+            $ret = $this->Elastic->deleteDocument($this->es_type, 'menu_' . $menu_id);
+        }
+
+        $Counter = new Counter;
+        $Counter->logAction($data['menu_name'], $menu_id, $data['type_menu'], 'unit_menu', '39', $this->user_id);
+    }
+
+    private function fnc_editUnit($sub_id, $unit_id)
+    {
+        $description = str_replace("'", '"', htmlentities($this->input->post('description')));
+        $description = html_entity_decode($description);
+        $description_en = str_replace("'", '"', htmlentities($this->input->post('description_en')));
+        $description_en = html_entity_decode($description_en);
+
+        $dateUpdate = date('Y-m-d H:i:s');
+        $data = array(
+            'menu_name' => $this->input->post('menu_name'),
+            'menu_name_en' => $this->input->post('menu_name_en'),
+            'menu_link' => $this->input->post('menu_link'),
+            'show_status' => $this->input->post('show_status'),
+            'type_menu' => $this->input->post('type_menu'),
+            'module_id' => $this->input->post('module_id'),
+            'parent_id' => $sub_id,
+            'description' => $description,
+            'description_en' => $description_en,
+            'time_update' => $dateUpdate,
+            'type_date_show' => $this->input->post('type_date_show'),
+            'usage_level' => $this->input->post('usage_level'),
+        );
+
+        if(!empty($this->input->post('date_show_start'))) {
+          $data['date_show_start'] = General::ThaitoDBDateDathTime($this->input->post('date_show_start').':00');
+        }
+
+        if(!empty($this->input->post('date_show_end'))) {
+          $data['date_show_end'] = General::ThaitoDBDateDathTime($this->input->post('date_show_end').':00');
+        }
+
+        $dataByID = $this->fnc_getFormEditUnit($sub_id, $unit_id);
+        if(!empty($dataByID)) {
+            $Counter = new Counter;
+            $Counter->logAction($dataByID['menu_name'], $unit_id, $dataByID['type_menu'], 'unit_menu', '40', $this->user_id);
+        }
+
+        $this->db->where('menu_id', $unit_id);
+        $this->db->update($this->menu_tbl, $data);
+
+        ##ระดับการใช้งาน = เฉพาะกลุ่มเจ้าหน้าที่กำหนด
+        if ($data['usage_level'] == 3) {
+            $user_grp = implode("|",$this->input->post('user_grp'));
+            $data = array(
+                'grp_id' => $user_grp,
+                'user_id' => $this->user_id,
+            );
+            $this->db->where('menu_id', $unit_id);
+            $this->db->update($this->manage_user_group_top_tbl, $data);
+        }
+        
+        if ($data['show_status'] == 1 && $data['type_menu'] > 0) {
+            $ret = $this->Elastic->index($this->es_type, 'menu', $unit_id);
+        } else {
+            $ret = $this->Elastic->deleteDocument($this->es_type, 'menu_' . $unit_id);
+        }
+    }
+
+    public function deleteUnit($unit_id)
+    {
+        $dataByID = $this->fnc_getFormEditUnit('xxx', $unit_id);
+        if(!empty($dataByID)) {
+            $Counter = new Counter;
+            $Counter->logAction($dataByID['menu_name'], $unit_id, $dataByID['type_menu'], 'unit_menu', '41', $this->user_id);
+        }
+
+        $this->db->delete($this->menu_tbl, array('menu_id' => $unit_id));
+        $ret = $this->Elastic->deleteDocument($this->es_type, 'menu_' . $unit_id);
+
+    }
+
+    ##Article
+
+    public function getArticle($page = 1)
+    {
+        $this->fnc_calPageOffset($page);
+        $this->fnc_setElementSearchFromSessionArticle();
+
+        $this->db->order_by('article_id', 'desc');
+        $data = $this->db->get($this->article_tbl)->result_array();
+
+        $getData = array();
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+
+                $value['cat_article_title'] = $this->fnc_getCategory($value['cat_article_id']);
+                $getData[] = $value;
+            }
+        }
+        return $getData;
+    }
+
+    public function getModule($menu_id)
+    {
+        $module_use = $this->fnc_getModuleUse($menu_id);
+        if (!empty($module_use)) {
+            $this->db->where_not_in('module_id', $module_use);
+        }
+        $this->db->order_by('module_id', 'desc');
+        $data = $this->db->get($this->module_tbl)->result_array();
+
+        $getData = array();
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                $getData[$value['grp_name']][] = $value;
+            }
+        }
+
+        return $getData;
+    }
+
+    private function fnc_getModuleUse($menu_id)
+    {
+        if (!empty($menu_id)) {
+            $this->db->where('menu_id <> ', $menu_id);
+        }
+
+        $this->db->where('module_id <>', '');
+        $data = $this->db->get($this->menu_tbl)->result_array();
+
+        if (!empty($data)) {
+            return array_column($data, 'module_id');
+        } else {
+            return [];
+        }
+    }
+
+    private function fnc_getCategory($cat_article_id)
+    {
+        $this->db->where('cat_article_id', $cat_article_id);
+        $data = $this->db->get($this->category_article_tbl)->result_array();
+
+        $getData = null;
+        if (!empty($data)) {
+            $getData = reset($data);
+            $getData = $getData['cat_article_title'];
+        }
+        return $getData;
+    }
+
+    #นับข้อมูลข่าวที่ดึงออกมา แสดงการแบ่งหน้า Main
+
+    public function getArticleCount()
+    {
+        $this->fnc_setElementSearchFromSessionArticle();
+        $this->db->order_by('article_id', 'desc');
+        $data = $this->db->get($this->article_tbl)->result_array();
+
+        $getData = array();
+        if (!empty($data)) {
+            $getData = $data;
+        }
+        return count($getData);
+    }
+
+    public function getCategory()
+    {
+        $data = $this->db->get($this->category_article_tbl)->result_array();
+
+        $getData = array();
+
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                $getData[$value['cat_article_id']] = $value['cat_article_title'];
+            }
+        }
+
+        return $getData;
+    }
+
+    public function getTitleArticle($article_id)
+    {
+        $this->db->where('article_id', $article_id);
+        $data = $this->db->get($this->article_tbl)->result_array();
+        $getData = null;
+        if (!empty($data)) {
+            $getData = reset($data);
+            $getData = $getData['article_title'];
+        }
+
+        return $getData;
+    }
+
+    public function getArticleView($article_id)
+    {
+
+        $this->db->where('article_id', $article_id);
+        $data = $this->db->get($this->article_tbl)->result_array();
+        $getData = null;
+        if (!empty($data)) {
+            $getData = reset($data);
+        }
+
+        return $getData;
+    }
+
+    public function getMenuName($menu_id)
+    {
+
+        $this->db->where('menu_id', $menu_id);
+        $data = $this->db->get($this->menu_tbl)->row_array();
+        $getData = '';
+        if (!empty($data)) {
+            $getData = $data['menu_name'];
+        }
+
+        return $getData;
+    }
+
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+    public function getSElementArticle()
+    {
+        return $this->s_element_article;
+    }
+
+    ## Search
+
+    private function fnc_setElementSearchFromSessionArticle()
+    {
+        $form_search_element = $this->session->userdata('form_search_element');
+
+
+        if ($form_search_element == null) {
+            return;
+        }
+        foreach ($this->s_element_article as $key => $value) {
+            if (isset($form_search_element['element'][$key]))
+                $this->s_element_article[$key] = $form_search_element['element'][$key];
+        }
+
+        $satext = trim($this->db->escape_str($this->s_element_article['satext']));
+        $scategory = trim($this->db->escape_str($this->s_element_article['scategory']));
+        if ($satext != '') {
+            $this->db->like('article_title', $satext);
+        }
+
+        if ($scategory != 'all') {
+            $this->db->where('cat_article_id', $scategory);
+        }
+    }
+
+    public function checkTitle()
+    {
+        if (!empty($this->input->post('menu_id'))) {
+            $this->db->where('menu_id <>', $this->input->post('menu_id'));
+        }
+        $this->db->where('parent_id is null');
+        $this->db->where('menu_name', $this->input->post('menu_name'));
+        $data = $this->db->get($this->menu_tbl)->num_rows();
+        if ($data > 0) {
+            return false;
+        }
+        return true;
+    }
+
+    public function checkTitleSub()
+    {
+        if (!empty($this->input->post('menu_id'))) {
+            $this->db->where('menu_id <>', $this->input->post('menu_id'));
+        }
+        $this->db->where('parent_id', $this->input->post('parent_id'));
+        $this->db->where('menu_name', $this->input->post('menu_name'));
+        $data = $this->db->get($this->menu_tbl)->num_rows();
+        if ($data > 0) {
+            return false;
+        }
+        return true;
+    }
+
+}
+
+/* End of file New_model.php */
+/* Location: ./application/models/New_model.php */

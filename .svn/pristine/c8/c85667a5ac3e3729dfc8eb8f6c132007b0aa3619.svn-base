@@ -1,0 +1,145 @@
+<?php
+
+if(!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class ReportVisitor extends MDL_Controller
+{
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->path = 'file_upload/temp_export_csv/';
+        @mkdir($this->path);
+    }
+
+    #หน้าบทความ
+
+    public function index($page = 1, $export = FALSE)
+    {
+        ## Search
+        parent::setSearchSession();
+        $data['title'] = 'รายงานและสถิติ';
+        $data['title_page'] = 'รายงานสถิติผู้เข้าชมเว็บไซต์';
+        ##Pagination
+        $data['getData'] = $this->model->getData();
+        // _print_r($data['getData']);
+        $data['headTable'] = $this->model->getHeadTable();
+        // _print_r($data['headTable']);
+        $data['form_search_element'] = $this->model->getSElement();
+        $data['getYear'] = $this->model->getYear();
+
+        // _print_r($data);
+        parent::view('report_visitor/index', $data);
+    }
+
+    public function export()
+    {
+        $raw = json_decode($_POST['send_data'], true);
+        $token = $raw['token'];
+        $page = $raw['page'];
+        $search = $raw['search'];
+        $numPage = 1;
+        $file_name = 'ReportVisitor_'.date('Y_m_d').$token;
+        // $head = array(
+        //     'monthName' => 'เดือน',
+        //     'Total' => 'จำนวนผู้เข้าชม',
+        // );
+        $head = $this->model->getHeadTableCSV();
+        $data = $this->model->getDataCSV($page, $head, $search);
+        // _print_r($data);
+        if($page == 1) {
+            $data[0] = [
+              0 => 'ประจำปี '.((!empty($search['yearSearch']) ? $search['yearSearch'] : DATE('Y')) + 543)
+            ];
+            $data[1] = $head;
+        }
+        ksort($data); //sort key
+        $result['math'] = $this->model->mathData($page, $numPage);
+        $result['file_path'] = $this->exportTocsv($file_name, $data, $page);
+        $result['next_page'] = number_format($page + 1);
+
+        echo json_encode($result);
+        die();
+    }
+
+    #library Export CSV
+
+    public function exportTocsv($curent_file, $data, $page = 1)
+    {
+
+        $file_creat = $this->path.basename($curent_file, '.php').'.csv';
+
+        if($page == 1) {
+            @unlink($file_creat);
+            fopen($file_creat, "w");
+            chmod($file_creat, 0777);
+        }
+
+        if(!empty($data)) {
+            foreach($data as $line => $vv) {
+                foreach($vv as $kk => $value_data) {
+
+                    $value_data = str_replace("'", '', $value_data);
+                    // $value_data = iconv("utf-8", "tis-620//TRANSLIT", $value_data);
+                    $data_csv[$line][$kk] = (string) $value_data;
+                }
+            }
+
+            $this->exportPutCSV($file_creat, $data_csv);
+            return $file_creat;
+        }
+
+        return '';
+    }
+
+    function exportPutCSV($filepath, $data, $header = array())
+    {
+        if($fp = fopen($filepath, 'a')) {
+            fputs($fp, "\xEF\xBB\xBF");
+            // fopen a : เขียนต่อท้าย โดยเปิดขึ้นมาแล้วเขียนต่อท้ายไฟล์ ถ้าไม่มีไฟล์จะสร้างไฟล์
+            foreach($data as $line) {
+                fputcsv($fp, $line);
+                fseek($fp, -1, SEEK_CUR);
+                fwrite($fp, "");
+            }
+            fclose($fp);
+        } else {
+            return false;
+        }
+        return true;
+    }
+
+    public function getDetailVisitor($type = false, $monthDate = false, $site_id = false)
+    {
+        $data['getData'] = $this->model->getDataDetail($type,$monthDate,$site_id);
+        if ($type == 'recommend_resource') {
+            $data['type'] = 'Recommend e-Resources';
+        }elseif ($type == 'new_arrival') {
+            $data['type'] = 'หนังสือ';
+        }elseif ($type == 'news') {
+            $data['type'] = $this->model->getTypeNews($site_id);
+        }elseif ($type == 'calendar') {
+            $data['type'] = 'ปฏิทิน';
+        }elseif ($type == 'library_course') {
+            $data['type'] = 'Online Library Course';
+        }elseif($type == 'database_store'){
+            $data['type'] = 'ฐานข้อมูลอิเล็กทรอนิกส์';
+        } elseif($type == 'data_resume'){
+            $data['type'] = 'ประวัติส่วนตัว';
+        } elseif($type == 'html_detail'){
+            $data['type'] = 'เมนู';
+        } elseif($type == 'html_detail_top'){
+            $data['type'] = 'เมนูด้านบน';
+        } else{
+            $data['type'] = 'เว็บไซต์ที่เกี่ยวข้อง';
+        }
+        // _print_r($data);
+        parent::view('report_visitor/report_detail', $data);
+    }
+
+}
+
+/* End of file News.php */
+/* Location: ./application/controllers/News.php */

@@ -1,0 +1,121 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class ManageCookieText_model extends CI_Model
+{
+
+    private $log_action_tbl = 'log_action';
+    private $tbl_cookie_text = 'cookie_text';
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        #path สำหรับ insert Database
+        $this->path = 'file_upload/cookie/';
+        $this->path_upload = 'file_upload/cookie/';
+
+        $this->fnc_createTbl();
+    }
+
+    private function fnc_createTbl()
+    {
+        $this->load->library('CreateTable');
+
+        $this->createtable->createTable($this->tbl_cookie_text,'
+          `id` INT NOT NULL AUTO_INCREMENT,
+          `detail` TEXT,
+          `detail_en` TEXT,
+          `time_create` DATETIME,
+          `show_status` INT(1) DEFAULT 1,
+          PRIMARY KEY (id)');
+
+        $this->createtable->addColumn($this->tbl_cookie_text, 'type_menu', 'int(1) DEFAULT NULL');
+        $this->createtable->addColumn($this->tbl_cookie_text, 'url', 'VARCHAR(250)');
+        $this->createtable->addColumn($this->tbl_cookie_text, 'file_path', 'VARCHAR(250)');
+        $this->createtable->addColumn($this->tbl_cookie_text, 'file_name', 'VARCHAR(250)');
+    }
+
+    public function getData()
+    {
+        $getData = array(
+            'detail' => '',
+            'detail_en' => '',
+            'show_status' => '1',
+            'type_menu' => null,
+        );
+
+        $data = $this->db->get($this->tbl_cookie_text)->row_array();
+        // _print_r($data);
+        if(!empty($data)){
+            $getData = $data;
+        }
+        return $getData;
+    }
+
+    public function insert()
+    {
+        $file = null;
+        $post = $this->input->post();
+
+        if (!empty($_FILES)) {
+            $file = $this->fnc_uploadImg($_FILES['file_name']);
+
+            if ($_FILES["file_name"]["name"] != "") {
+                if ($file['type'] == '.pdf') {
+                    if (move_uploaded_file($_FILES["file_name"]["tmp_name"], $file['path'])) {
+                        $setData = array(
+                            'file_path' => $this->path_upload,
+                            'file_name' => $file['file_name']
+                        );
+                    }
+                } else {
+                    $alert = 'ไฟล์ที่อัพโหลดไม่ได้อยู่ในรูปแบบนามสกุลที่กำหนด';
+                    return $alert;
+                }
+            }
+        }
+
+
+        if(!empty($post)){
+            $check_data = $this->db->get($this->tbl_cookie_text)->row_array();
+
+            $setData['detail'] = $post['detail'];
+            $setData['detail_en'] = $post['detail_en'];
+            $setData['time_create'] = date('Y-m-d H:i:s');
+            $setData['show_status'] = $post['show_status'];
+            $setData['url'] = $post['url'];
+            $setData['type_menu'] = $post['type_menu'];
+            
+            // _print_r($setData);
+            if(!empty($check_data)){
+                $this->db->where('id', $check_data['id']);
+                $this->db->update($this->tbl_cookie_text, $setData);
+
+                $Counter = new Counter;
+                $Counter->logAction($setData['detail'], $check_data['id'], 0, 'cookie', '75', $this->user_id);
+            } else {
+                $this->db->insert($this->tbl_cookie_text, $setData);
+
+                $Counter = new Counter;
+                $Counter->logAction($setData['detail'], 0, 0, 'cookie', '74', $this->user_id);
+            }
+        }
+    }
+
+    #แปลงชื่อก่อนอัพโหลด
+    private function fnc_uploadImg($file_name)
+    {
+        $exp = explode('.', $file_name['name']);
+        $ext = end($exp);
+
+        $data['file_name'] = md5(date('Y-m-dh:i:s')) . '.' . $ext;
+        $data['path'] = $this->path . $data['file_name'];
+        $file_upload = strtolower($data['file_name']);
+        $data['type'] = strrchr($file_upload, '.');
+
+        return $data;
+    }
+}

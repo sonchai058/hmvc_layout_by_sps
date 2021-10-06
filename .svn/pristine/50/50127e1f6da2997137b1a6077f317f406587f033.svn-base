@@ -1,0 +1,276 @@
+<style>
+    .modal-footer {
+        justify-content: center;
+    }
+
+    .addTypeStore {
+        position: absolute;
+        right: 0;
+        margin-top: -13px;
+        color: #fff !important;
+    }
+
+    .modal-header {
+        background-color: #142127;
+    }
+
+    .modal-header .modal-title, .modal-header .close {
+        color: #fff;
+    }
+
+    .textDataResume {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #1b02ff;
+        text-align: left;
+    }
+
+    .blocResumePreview {
+        margin-left: 20px;
+        margin-top: 5px;
+    }
+
+    .blocResumePreview strong {
+        color: #142226;
+    }
+
+    .textPreviewTopic {
+        font-weight: bold;
+        color: #142226;
+        
+    }
+
+    .textPreviewData {
+        margin-left: 20px;
+        margin-top: 5px;
+    }
+
+    #DataImg {
+        max-width: 250px;
+        max-height: 250px;
+        margin-bottom: 20px;
+    }
+</style>
+<div class="main-container">
+    <div class="pd-ltr-20 xs-pd-20-10">
+        <div class="pd-20 pb-40 card-box mb-30">
+            <div class="row">
+                <div class="col-md-12">
+
+                    <div class="row">
+                        <div class="col-6">
+                            <h4 class="text-blue h4"><?= $title_sub ?></h4>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="pull-right">
+                                <nav aria-label="breadcrumb" role="navigation">
+                                    <ol class="breadcrumb pd-0">
+                                        <li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+                                        <li class="breadcrumb-item active" aria-current="page"><?= $title_page ?></li>
+                                    </ol>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="main-box clearfix">
+                                <div class="main-box-body clearfix">
+                                    <form role="form" id="post" method="post" action="<?= $action_link.'insertData/'.$data['id'] ?>" enctype="multipart/form-data">
+                                        <div class="form-group">
+                                            <label for="getDataAjax">
+                                                <strong>เชื่อมโยงข้อมูลประวัติ</strong>&nbsp;<span style="color: #f02323">*</span>
+                                            </label>
+
+                                            <select id="getDataAjax" name="id_resume" class="form-control">
+                                                <?php 
+                                                    if(!empty($data['prename'])):
+                                                ?>
+                                                    <option value="<?= $data['id_resume']?>" selected><?= $data['prename'].$data['first_name'].' '.$data['last_name']. ' (ตำแหน่ง : '.$data['position'].')'?></option>
+                                                <?php 
+                                                    endif;
+                                                ?>
+                                            </select>
+
+                                            <div style="font-weight:400; color:red; margin-top: 5px;">* <b>หมายเหตุ</b> : หากคุณต้องการ <b><u>เพิ่ม / แก้ไข / ลบ</u></b> ข้อมูลสามารถจัดการข้อมูลได้ในหน้า<b><u><a href="<?= base_url().'management/ManageResume'?>" style="color:red" target="_blank">จัดการประวัติส่วนตัว</a></u></b></div>
+                                        </div>
+                                        <div class="blockDataResume">
+                                            <div id="dataloading" class="loader text-center">
+                                                  <img src="<?= APP_HOST_ADDRESS . 'statics/images/loader.gif' ?>">
+                                            </div>
+
+                                            <div id="dataUnloading">
+                                                <div class="jumbotron radio p-3 pt-4">
+                                                    <div class="textDataResume">ข้อมูลประวัติที่ถูกเชื่อมโยง</div>
+
+                                                    <div id="blockDataImg" class="text-center">
+                                                        <img id="DataImg" src="" alt="imgResume">
+                                                    </div>
+                                                    <div id="blockDataName" class="blocResumePreview">
+                                                        <strong>ชื่อ - นามสกุล</strong> : <span id="DataName"></span>
+                                                    </div>
+
+                                                    <div id="blockDataNameEn" class="blocResumePreview">
+                                                        <strong>ชื่อ - นามสกุลภาษาอังกฤษ</strong> : <span id="DataNameEn"></span>
+                                                    </div>
+
+
+                                                    <div id="blockDataPosition" class="blocResumePreview">
+                                                        <strong>ตำแหน่ง</strong> : <span id="DataPosition"></span>
+                                                    </div>
+
+                                                    <div id="blockDataPositionEn" class="blocResumePreview">
+                                                        <strong>ตำแหน่งภาษาอังกฤษ</strong> : <span id="DataPositionEn"></span>
+                                                    </div>
+
+                                                    <div id="blockEmail" class="blocResumePreview">
+                                                        <strong>อีเมล</strong> : <span id="DataEmail"></span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- <div class="form-row">
+                                                    <div class="form-group col-6">
+                                                        <label for="prename_other">
+                                                            <strong>คำนำหน้า</strong>
+                                                        </label>
+                                                        <input type="text" class="form-control" id="prename_other" name="prename"
+                                                            placeholder="คำนำหน้า" value="<?= $data['prename_other'] ?>" maxlength="20">
+                                                    </div>
+
+                                                    <div class="form-group col-6">
+                                                        <label for="prename_en_other">
+                                                            <strong>คำนำหน้าภาษาอังกฤษ</strong>
+                                                        </label>
+                                                        <input type="text" class="form-control" id="prename_en_other" name="prename_en"
+                                                            placeholder="คำนำหน้าภาษาอังกฤษ" value="<?= $data['prename_en_other'] ?>" maxlength="20">
+                                                    </div>
+                                                </div>
+
+                                                <div class="form-row">
+                                                    <div class="form-group col-6">
+                                                        <label for="position_other">
+                                                            <strong>ตำแหน่ง</strong>
+                                                        </label>
+                                                        <input type="text" class="form-control" id="position_other" name="position"
+                                                            placeholder="ตำแหน่ง" value="<?= $data['position_other'] ?>" maxlength="250">
+                                                    </div>
+
+                                                    <div class="form-group col-6">
+                                                        <label for="position_en_other">
+                                                            <strong>ตำแหน่งภาษาอังกฤษ</strong>
+                                                        </label>
+                                                        <input type="text" class="form-control" id="position_en_other" name="position_en"
+                                                            placeholder="ตำแหน่ง" value="<?= $data['position_en_other'] ?>" maxlength="250">
+                                                    </div>
+                                                </div>
+
+                                                <div style="font-weight:400; color:red; margin-top: 5px;">* <b>หมายเหตุ</b> : หากคุณต้องการเปลี่ยนแปลงข้อมูล <b><u>คำนำหน้า / ตำแหน่ง สำหรับการแสดงผล</u></b> สามารถปรับเปลี่ยนใน <b><u>ฟอร์มด้านบน</u></b> แต่ถ้าหากไม่ต้องการไม่จำเป็นต้องระบุข้อมูล</div> -->
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label><strong>สถานะ</strong></label>&nbsp;<span style="color: #f02323">*</span>
+                                            <div class="well radio radioformError">
+                                                <input class="validate[required] radio" type="radio" name="show_status" id="status1" value="1" <?= $data['show_status'] == 1 || $data['show_status'] == null ? 'checked' : '' ?>>
+                                                <label for="status1">
+                                                    เผยแพร่
+                                                </label>
+                                                <input class="validate[required] radio" type="radio" name="show_status" id="status2" value="2" <?= $data['show_status'] == 2 ? 'checked' : '' ?>>
+                                                <label for="status2">
+                                                    ไม่เผยแพร่
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group text-center">
+                                            <button type="button" class="btn btn-danger" onclick="window.location='<?= $action_link ?>index'">
+                                                <i class="fa fa-times"></i>&nbsp;ยกเลิก
+                                            </button>
+                                            &nbsp;&nbsp;
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fa fa-save"></i>&nbsp;บันทึก
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script language="javascript" type="text/javascript">
+    function getDataResume(id) {
+        if(typeof id != 'undefined' && id != '') {
+            $('#dataUnloading').hide();
+            $('#dataloading').show();
+            $.post('<?= $action_link?>getDataResume/' + id, function(res){
+                if(res != '') {
+                    data = JSON.parse(res);
+                    $('#DataName').text(data.prename + data.first_name + ' ' + data.last_name);
+                    $('#DataPosition').text(data.position);
+                    $('#DataEmail').text(data.email);
+                    $('#DataImg').attr('src', data.img);
+
+
+                    if(data.first_name_en != '' || data.last_name_en != '') {
+                        $('#DataNameEn').text(data.prename_en + data.first_name_en + ' ' + data.last_name_en);
+                    } else {
+                        $('#blockDataNameEn').hide();
+                    }
+                    if(data.position_en != '' && data.position_en != null) {
+                        $('#DataPositionEn').text(data.position_en);
+                    } else {
+                        $('#blockDataPositionEn').hide();
+                    }
+                    $('#dataloading').hide();
+                    $('#dataUnloading').show();
+                } else {
+                    $('#dataloading').hide();
+                    $('#dataUnloading').hide();
+                }
+                
+            });
+        } else {
+            $('#dataloading').hide();
+            $('#dataUnloading').hide();
+        }
+    }
+
+    $(document).ready(function() {
+        $("#post").validationEngine();
+        $(window).dblclick(function () {
+            jQuery('#post').validationEngine('hide');
+        });
+
+        getDataResume(<?= $data['id_resume']?>);
+
+
+        $("#getDataAjax").select2({
+            placeholder: 'ค้นหาข้อมูลประวัติ จากชื่อ - นามสกุล หรือ ตำแหน่ง',
+            language: "th",
+            ajax: {
+                url: function (params) {
+                    return '<?= $action_link?>getDataAjax'
+                },
+                dataType: 'json',
+                delay: 250,
+                processResults: function (data) {
+                    return {
+                        results: data
+                    };
+                }
+            }
+        });
+
+        $('#getDataAjax').change(function(){
+            getDataResume($(this).val());
+        });
+    });
+</script>

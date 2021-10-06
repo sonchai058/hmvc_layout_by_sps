@@ -1,0 +1,304 @@
+<?php
+
+/**
+ *
+ */
+class News_model extends CI_model
+{
+    private $users_tbl = 'users';
+    private $session_data = 'cmu_web_session';
+    private $prev_tbl = 'um_app_priv';
+    private $prev_group_tbl = 'um_app_priv_group';
+    private $news_tbl = 'news';
+    private $news_doc_tbl = 'news_doc';
+    private $category_news_tbl = 'category_news';
+    private $language = 'th';
+
+    ##Pagination
+    private $per_page = 10;
+
+    function __construct()
+    {
+        parent::__construct();
+        $this->load->library('session');
+
+        if (!empty($_SESSION['LANGUAGE'])) {
+            $this->language = strtolower($_SESSION['LANGUAGE']);
+        }else{
+            $this->language = 'th';
+
+        }
+
+    }
+
+    public function getNewsDetail($news_id)
+    {
+        $this->db->where('news_id', $news_id);
+        $rs =  $this->db->get($this->news_tbl)->row_array();
+
+        if (!empty($rs)) {
+            ##หารูปแกลลอรี่จากไอดีข่าว
+            $rs['gallery'] = $this->fnc_getGallery($rs['news_id']);
+            $rs['news_image'] = $this->fnc_getImgCover($rs['news_id'], $rs['news_category']);
+            $rs['time_update'] = General::getDateFormatCMU($rs['time_update']);
+
+            if ($this->language == 'en') {
+                if (!empty($rs['news_title_en'])) {
+                    $rs['news_title'] = $rs['news_title_en'];
+                }
+
+                if (!empty($rs['news_description_en'])) {
+                    $rs['news_description'] = $rs['news_description_en'];
+                }
+            }
+
+        }
+        return $rs;
+    }
+
+    private function fnc_getGallery($news_id)
+    {
+        $this->db->where('news_id', $news_id);
+        $this->db->order_by('s_order', 'asc');
+        $this->db->order_by('time_upload', 'desc');
+        $data = $this->db->get($this->news_doc_tbl)->result_array();
+
+        if(!empty($data)) {
+            $allowImg = ['jpg', 'jpeg', 'png', 'gif'];
+            $getData = ['imgData' => [], 'fileData' => []];
+            foreach ($data as $key => $value) {
+                if(in_array($value['ext'], $allowImg)) {
+                    if (file_exists('file_upload/news/' . $value['file_name'])){
+                        $getData['imgData'][] = $value;
+                    }
+                } else {
+                    $getData['fileData'][] = $value;
+                }
+            }
+
+            return $getData;
+        } else {
+            return ['imgData' => [], 'fileData' => []];
+        }
+
+    }
+
+    public function getCategoryTitle($cate_news)
+    {
+        $this->db->select('category_name,category_name_en');
+        $this->db->where('category_id', $cate_news);
+        $rs = $this->db->get($this->category_news_tbl)->row_array();
+
+        if ($this->language == 'en') {
+            if (!empty($rs['category_name_en'])) {
+                $rs['category_name'] = $rs['category_name_en'];
+            }
+        }
+
+        return $rs['category_name'];
+    }
+
+    public function getNewsList($cate_news,$page)
+    {
+        $this->fnc_calPageOffset($page);
+        $date = date('Y-m-d H:i:s');
+        $this->db->where('show_status', 1);
+        $this->db->where('(
+            `type_date_show` = 1
+        OR ( `type_date_show` = 2 AND ( `date_show_start` <= "'.$date.'" AND `date_show_end` >= "'.$date.'") )
+        )');
+        $this->db->where('news_category', $cate_news);
+        $this->db->order_by('s_order', 'asc');
+        $this->db->order_by('time_update', 'desc');
+        $data = $this->db->get($this->news_tbl)->result_array();
+
+        $getData = array();
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                $value['time_update'] = General::getDateFormatCMU($value['time_update']);
+                $value['news_image'] = $this->fnc_getImgCover($value['news_id'], $value['news_category']);
+                if ($this->language == 'en') {
+                    if (!empty($value['news_title_en'])) {
+                        $value['news_title'] = $value['news_title_en'];
+                    }
+
+                    if (!empty($rs['news_description_en'])) {
+                        $value['news_description'] = $value['news_description_en'];
+                    }
+                }
+                $value['news_description'] = htmlspecialchars($this->fnc_subContent($value['news_description']));
+                $getData[] = $value;
+            }
+            // _print_r($getData);
+            return$getData;
+        }
+        return$getData;
+    }
+
+    private function fnc_getImgCover($news_id, $category_id)
+    {
+        $this->db->where('news_id', $news_id);
+        $this->db->where('is_cover', 1);
+        $data = $this->db->get($this->news_doc_tbl)->row_array();
+
+        if(!empty($data)) {
+            if(file_exists('file_upload/news/'.$data['file_name'])) {
+                return $data['file_name'];
+            } else {
+                if($category_id == 1) {
+                    return 'CMUL_CoverPR.jpg';
+                } else {
+                    return 'CMUL_Activity.jpg';
+                }
+            }
+        } else {
+            if($category_id == 1) {
+                return 'CMUL_CoverPR.jpg';
+            } else {
+                return 'CMUL_Activity.jpg';
+            }
+        }
+    }
+
+    ##Pagination
+    public function getCountNewsList($cate_news)
+    {
+        $this->db->where('show_status', 1);
+        $this->db->where('news_category', $cate_news);
+        $data = $this->db->get($this->news_tbl)->num_rows();
+
+        $rs = $data / $this->per_page;
+        return ceil($rs);
+       
+    }
+
+    public function getPerPage()
+    {
+        return $this->per_page;
+    }
+
+    private function fnc_calPageOffset($page)
+    {
+        $offset = ($page * $this->per_page) - $this->per_page;
+
+        $this->db->limit($this->per_page, $offset);
+    }
+
+    public function newsPagination($cur_page, $all_page)
+    {
+        $start = $cur_page;
+        $end = $all_page;
+        $paginationData = [];
+        $check_start = ($cur_page - 2);
+        $check_end = ($cur_page + 2);
+
+        if($cur_page < 3) {
+            $start = 1;
+        } elseif($all_page < ($cur_page + 3)){
+            if(($cur_page + 3) > $all_page) {
+                $start = $all_page - 4;
+                if ($start < 1) {
+                    $start = 1;
+                }
+            } else {
+                $start = 1;
+            }
+        } else {
+            $start = $check_start;
+        }
+
+        $maxStart = 0;
+
+        for ($i=$start; $i <= ($start + 2); $i++) {
+            if ($all_page >= $i) {
+                array_push($paginationData, $i);
+                $maxStart = $i;
+            } 
+        }
+
+        if(COUNT($paginationData) == 3) {
+            if($end >= $maxStart) {
+               for ($i= ($maxStart + 1); $i < ($maxStart + 3); $i++) { 
+                    if($end >= $i) {
+                        array_push($paginationData, $i);
+                    }
+                } 
+            }
+        }
+        // _print_r($paginationData);
+        return $paginationData;
+
+    }
+
+    public function getCategoryNews()
+    {
+        $data = $this->db->get($this->category_news_tbl)->result_array();
+
+        if(!empty($data)) {
+            return $data;
+        } else {
+            return [];
+        }
+    }
+
+    public function getNewsListCategory($category_id, $limit)
+    {
+        $date = date('Y-m-d H:i:s');
+        $this->db->limit($limit);
+        $this->db->order_by('time_update', 'desc');
+        $this->db->where('show_status', 1);
+        $this->db->where('news_category', $category_id);
+        $this->db->where('(
+            `type_date_show` = 1
+        OR ( `type_date_show` = 2 AND ( `date_show_start` <= "'.$date.'" AND `date_show_end` >= "'.$date.'") )
+        )');
+        $this->db->where('news_category', $category_id);
+        $data = $this->db->get($this->news_tbl)->result_array();
+
+        if(!empty($data)) {
+            $getData = [];
+            foreach ($data as $value) {
+                $getData[] = $value;
+            }
+
+            $category_name = $this->getCategoryTitle($category_id);
+
+            return ['listData' => $getData, 'category_name' => $category_name];
+        } else {
+            return ['listData' => [], 'category_name' => ''];
+        }
+    }
+
+    private function fnc_pureContent($content)
+    {
+        $tmp = strip_tags($content);
+        $tmp = str_replace('&nbsp;', ' ', $tmp);
+        $tmp = trim(preg_replace('/\s\s+/', ' ', $tmp));
+        $arr = explode(' ', $tmp);
+        $arr = array_unique($arr);
+
+        $tmp = implode(' ', $arr);
+
+        return trim($tmp);
+    }
+
+
+    private function fnc_subContent($content)
+    {
+        $tmp = $this->fnc_pureContent($content);
+
+        $length = mb_strlen($tmp, 'UTF-8');
+
+        if ($length > 400) {
+            $tmp = mb_substr($tmp, 0, 400, "utf-8");
+            $arr = explode(' ', $tmp);
+
+            array_pop($arr);
+            $tmp = implode(' ', $arr).'...';
+        }
+
+        return trim($tmp);
+    }
+}
+
+?>

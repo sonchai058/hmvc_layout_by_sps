@@ -1,0 +1,118 @@
+<div class="main-container" ng-app="myAppSetting" ng-controller="myCtrlSetting" ng-cloak>
+  <div class="pd-ltr-20 xs-pd-20-10">
+    <div class="pd-20 card-box mb-30">
+      <div class="clearfix mb-20">
+          <div class="row">
+            <div class="col-4">
+              <h4 class="text-blue h4"><?= $title_page ?></h4>
+            </div>
+
+            <div class="col-8">
+              <div class="pull-right">
+                <nav aria-label="breadcrumb" role="navigation">
+                  <ol class="breadcrumb pd-0">
+                    <li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+                    <li class="breadcrumb-item active" aria-current="page"><?= $title_page ?></li>
+                  </ol>
+                </nav>
+              </div>
+            </div>
+          </div>
+      </div>
+
+      <div class="clearfix mb-20">
+          <div class="alert alert-primary text-center" ng-show="loading && loadingBackup">
+              <div class="loader text-center">
+                  <img src="<?= APP_HOST_ADDRESS . 'statics/images/loader.gif' ?>">
+              </div>
+
+              <strong>กำลังสำรองข้อมูล</strong>
+
+          </div>
+
+          <div class="loader text-center"
+               ng-show="loading && !loadingBackup">
+              <img src="<?= APP_HOST_ADDRESS . 'statics/images/loader.gif' ?>">
+          </div>
+
+          <section class="text-center" ng-hide="loading || successStatus">
+              <div class="mb-2" ng-show="file != ''">
+                  <label class="text-primary h5">
+                      ไฟล์สำรองข้อมูลเว็บไซต์ล่าสุดวันที่&nbsp;&nbsp;:&nbsp;&nbsp;
+                      <a title="คลิกเพื่อดาวน์โหลด" class="text-primary"
+                         href="<?= $action_link . 'DownloadFileDigital/' ?>{{file}}">
+                          <i class="fa fa-download" aria-hidden="true"></i>
+                          {{file_name_date}} (คลิกเพื่อดาวน์โหลด)
+                      </a>
+                  </label>
+              </div>
+
+              <div class="clearfix"></div>
+
+              <div class="form-group ">
+                  <button type="button" class="btn btn-success" ng-click="backUpData()"><i
+                              class="fa fa-save"></i>&nbsp;สำรองข้อมูล{{file ? 'ใหม่อีกครั้ง' : ''}}
+                  </button>
+              </div>
+          </section>
+
+          <section ng-show="successStatus">
+              <div class="form-group text-center">
+                  <div class="alert alert-success">
+                      <strong>สำรองข้อมูล เรียบร้อยแล้ว</strong>
+                  </div>
+              </div>
+          </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    let api_url = '<?= $action_link?>';
+    let myAppSetting = angular.module('myAppSetting', []);
+    myAppSetting.controller('myCtrlSetting', function ($scope, $http, $timeout) {
+        $scope.loading = false;
+        $scope.loadingBackup = false;
+        $scope.successStatus = false;
+        $scope.file = '';
+        $scope.file_name_date = '';
+
+        let loadData = function () {
+            $scope.loading = true;
+            var query = {};
+            $http.post(api_url + 'loadData',
+                'data=' + encodeURIComponent(angular.toJson(query)),
+                {headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8;'}}
+            ).then(function (res) {
+                $scope.file = res.data.file;
+                $scope.file_name_date = res.data.file_name_date;
+                $scope.loading = false;
+            });
+        }
+
+        $scope.backUpData = function () {
+            $scope.loading = true;
+            $scope.loadingBackup = true;
+            $http.post(api_url + 'backUpData', {headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8;'}}
+            ).then(function (res) {
+                $scope.successStatus = true;
+                $scope.loading = false;
+                $scope.loadingBackup = false;
+                loadData();
+                $timeout(function () {
+                    $scope.successStatus = false;
+                }, 2000);
+
+            });
+        }
+
+
+        let init = function () {
+            loadData();
+        }
+
+
+        init();
+    });
+</script>

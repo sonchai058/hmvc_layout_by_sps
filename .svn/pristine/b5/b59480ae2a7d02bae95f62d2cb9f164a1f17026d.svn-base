@@ -1,0 +1,41 @@
+<?php
+
+class Calendar extends MY_Controller
+{
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+
+    public function index()
+    {
+        $data['getCalendar'] = $this->model->getCalendar();
+        $data['getCalendarGroup'] = $this->model->getCalendarGroup();
+        parent::view('calendar/index', $data);
+
+        $Counter = new Counter;
+        $Counter->counterPageInfo('calendar', 0, 0);
+    }
+
+    public function detail($id = false)
+    {
+        $data['getCalendarDateail'] = $this->model->getCalendarDetail($id);
+        // _print_r($data);
+        parent::view('calendar/detail', $data);
+
+        $Counter = new Counter;
+        $Counter->counterPageInfo('calendar', $id, 0);
+    }
+
+    public function getCalendarPerMonth()
+    {
+        // $data['getCalendarTable'] = $this->model->getCalendarTable();
+        $data = $this->model->getCalendarTable();
+
+        header('Content-Type: application/json');
+        echo json_encode($data);
+        die();
+        // _print_r($data);
+    }
+}

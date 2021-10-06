@@ -1,0 +1,282 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class ManageMenu extends MDL_Controller
+{
+
+    private $status = array(1 => 'เผยแพร่', 2 => 'ไม่เผยแพร่');
+    private $link = array(0 => 'ไม่เชื่อมโยง', 1 => 'เชื่อมโยงเนื้อหา HTML', 2 => 'เชื่อมโยง URL ภายนอก', 3 => 'เชื่อมโยงโมดูลระบบ');
+
+    public function __construct()
+    {
+        parent::__construct();
+        ## Search
+        parent::setSearchSession();
+    }
+
+    public function index($page = 1)
+    {
+        $data['title'] = 'จัดการเมนู';
+        $data['title_page'] = 'จัดการเมนู';
+
+        ##Pagination
+//        $num = $this->model->getListCount();
+//        $per_page = $this->model->getPerPage();
+//        parent::pagination($page, $num, $per_page, 4);
+        $data['getList'] = $this->model->getList($page);
+        $data['form_search_element'] = $this->model->getSElement();
+        $data['status'] = $this->status;
+        $data['link'] = $this->link;
+        ## Search
+        parent::view('manage_menu/index', $data);
+    }
+
+    public function Form($menu_id = FALSE)
+    {
+        $data['title'] = 'จัดการเมนู';
+        $data['title_sub'] = 'จัดการเมนู';
+        $data['title_page'] = $menu_id != FALSE ? 'แก้ไขเมนูหลัก' : 'เพิ่มเมนูหลัก';
+        $data['getForm'] = $this->model->getForm($menu_id);
+        $data['getUserGroup'] = $this->model->getUserGroup();
+        // _print_r($data['getUserGroup']);
+        // _print_r($data['getForm']);
+        $data['module'] = $this->model->getModule($menu_id);
+        $data['staff'] = $this->model->getStaff($menu_id);
+        // _print_r($data['staff']);
+        parent::view('manage_menu/form', $data);
+    }
+
+    public function Insert($menu_id = FALSE)
+    {
+        $this->form_validation->set_rules('menu_name', 'ชื่อเมนูซ้ำในระบบ', 'callback_Ins_checkTitle');
+
+        if ($this->form_validation->run() == FALSE) {
+            $data['title'] = 'จัดการเมนู';
+            $data['title_sub'] = 'จัดการเมนู';
+            $data['title_page'] = $menu_id != FALSE ? 'แก้ไขเมนูหลัก' : 'เพิ่มเมนูหลัก';
+            $data['getForm'] = $this->input->post();
+            $data['getForm']['menu_id'] = $menu_id;
+            $data['staff'] = $this->model->getStaff($menu_id);
+            if (empty($this->input->post('module_id'))) {
+                $data['getForm']['module_id'] = '';
+            }
+            $data['module'] = $this->model->getModule($this->input->post('menu_id'));
+            parent::view('manage_menu/form', $data);
+        } else {
+            $this->model->insert($menu_id);
+            redirect(base_url() . 'management/ManageMenu');
+        }
+    }
+
+    public function Delete($menu_id = FALSE)
+    {
+        $this->model->delete($menu_id);
+        redirect(base_url() . 'management/ManageMenu');
+    }
+
+    ## เมนูย่อย
+
+    public function MenuSub($menu_id = FALSE, $page = 1)
+    {
+        $data['title'] = 'จัดการเมนู';
+        $data['title_sub'] = 'จัดการเมนู';
+        $mainmenu_main = $this->model->getMenuName($menu_id);
+
+        $data['title_page'] = 'เมนูหลัก : ' . $mainmenu_main;
+
+        ##Pagination
+//        $num = $this->model->getSubCount($menu_id);
+//        $per_page = $this->model->getPerPage();
+//        parent::pagination($page, $num, $per_page, 5);
+        $data['getList'] = $this->model->getSub($menu_id, $page);
+        $data['form_search_element'] = $this->model->getSElementSub();
+        $data['status'] = $this->status;
+        $data['link'] = $this->link;
+        $data['menu_id'] = $menu_id;
+        // _print_r($data['getList']);
+        ## Search
+        parent::view('manage_menu/index_sub', $data);
+    }
+
+    public function FormSub($menu_id = FALSE, $sub_id = FALSE, $article_id = FALSE)
+    {
+        $data['article_id'] = '';
+        if ($article_id != false) {
+            $data['article_id'] = $article_id;
+        }
+        $mainmenu_main = $this->model->getMenuName($menu_id);
+        $data['title'] = 'จัดการเมนู';
+        $data['title_main'] = 'จัดการเมนู';
+        $data['title_sub'] = 'เมนูหลัก : ' . $mainmenu_main;
+        $data['title_page'] = $sub_id != FALSE ? 'แก้ไขเมนูรอง' : 'เพิ่มเมนูรอง';
+        $data['getForm'] = $this->model->getFormSub($menu_id, $sub_id);
+        $data['getUserGroup'] = $this->model->getUserGroup();
+        $data['menu_id'] = $menu_id;
+        $data['module'] = $this->model->getModule($sub_id);
+        $data['staff'] = $this->model->getStaff($sub_id);
+        // _print_r($data['staff']);
+        parent::view('manage_menu/form_sub', $data);
+    }
+
+    public function InsertSub($menu_id = FALSE, $sub_id = FALSE)
+    {
+        $this->form_validation->set_rules('menu_name', 'ชื่อเมนูรองซ้ำในระบบ', 'callback_Ins_checkTitleSub');
+        if ($this->form_validation->run() == FALSE) {
+            $data['getForm'] = $this->input->post();
+            if (empty($this->input->post('module_id'))) {
+                $data['getForm']['module_id'] = '';
+            }
+            $data['module'] = $this->model->getModule($sub_id);
+            $mainmenu_main = $this->model->getMenuName($this->input->post('menu_id'));
+            $data['menu_id'] = $this->input->post('parent_id');
+            $data['title'] = 'จัดการเมนู';
+            $data['title_main'] = 'จัดการเมนู';
+            $data['title_sub'] = 'เมนูย่อยของ' . $mainmenu_main;
+            $data['title_page'] = $sub_id != FALSE ? 'แก้ไขเมนูรอง' : 'เพิ่มเมนูรอง';
+            $data['staff'] = $this->model->getStaff($sub_id);
+            parent::view('manage_menu/form_sub', $data);
+        } else {
+            $this->model->insertSub($menu_id, $sub_id);
+            redirect(base_url() . 'management/ManageMenu/MenuSub/' . $menu_id);
+        }
+    }
+
+    public function DeleteSub($menu_id = FALSE, $sub_id)
+    {
+        $this->model->deleteSub($sub_id);
+        redirect(base_url() . 'management/ManageMenu/MenuSub/' . $menu_id);
+    }
+
+    public function MenuUnit($menu_id = FALSE, $sub_id = FALSE, $page = 1)
+    {
+        $data['title'] = 'จัดการเมนู';
+        $data['title_sub'] = 'จัดการเมนู';
+        $mainmenu_main = $this->model->getMenuName($menu_id);
+        $subMenu = $this->model->getMenuName($sub_id);
+
+        $data['title_page'] = 'เมนูหลัก : ' . $mainmenu_main . ' >  เมนูรอง : ' . $subMenu;
+
+        ##Pagination
+//        $num = $this->model->getUnitCount($menu_id, $sub_id);
+//        $per_page = $this->model->getPerPage();
+//        parent::pagination($page, $num, $per_page, 6);
+        $data['getList'] = $this->model->getUnit($menu_id, $sub_id, $page);
+        $data['form_search_element'] = $this->model->getSElementSub();
+        $data['status'] = $this->status;
+        $data['link'] = $this->link;
+        $data['menu_id'] = $menu_id;
+        $data['sub_id'] = $sub_id;
+        // _print_r($data);
+        ## Search
+        parent::view('manage_menu/index_unit', $data);
+    }
+
+    public function FormUnit($menu_id = FALSE, $sub_id = FALSE, $unti_id = FALSE)
+    {
+        $data['title'] = 'จัดการเมนู';
+        $data['title_main'] = 'จัดการเมนู';
+        $mainmenu_main = $this->model->getMenuName($menu_id);
+        $subMenu = $this->model->getMenuName($sub_id);
+        $data['title_sub'] = 'เมนูหลัก : ' . $mainmenu_main . ' >  เมนูรอง : ' . $subMenu;
+
+        $data['title_page'] = $unti_id != FALSE ? 'แก้ไขเมนูย่อย' : 'เพิ่มเมนูย่อย';
+        $data['getForm'] = $this->model->getFormUnit($sub_id, $unti_id);
+        $data['getUserGroup'] = $this->model->getUserGroup();
+        $data['menu_id'] = $menu_id;
+        $data['sub_id'] = $sub_id;
+        $data['unti_id'] = $unti_id;
+        $data['module'] = $this->model->getModule($unti_id);
+        $data['staff'] = $this->model->getStaff($unti_id);
+        // _print_r($data['staff']);
+        parent::view('manage_menu/form_unit', $data);
+    }
+
+    public function InsertUnit($menu_id = FALSE, $sub_id = FALSE, $unti_id = FALSE)
+    {
+        $this->form_validation->set_rules('menu_name', 'ชื่อเมนูย่อยซ้ำในระบบ', 'callback_Ins_checkTitleUnit');
+        if ($this->form_validation->run() == FALSE) {
+            $data['getForm'] = $this->input->post();
+            if (empty($this->input->post('module_id'))) {
+                $data['getForm']['module_id'] = '';
+            }
+            $data['title'] = 'จัดการเมนู';
+            $data['title_main'] = 'จัดการเมนู';
+            $mainmenu_main = $this->model->getMenuName($menu_id);
+            $subMenu = $this->model->getMenuName($sub_id);
+            $data['title_sub'] = 'เมนูหลัก : ' . $mainmenu_main . ' >  เมนูรอง : ' . $subMenu;
+            $data['title_page'] = $unti_id != FALSE ? 'แก้ไขเมนูย่อย' : 'เพิ่มเมนูย่อย';
+            $data['menu_id'] = $menu_id;
+            $data['sub_id'] = $sub_id;
+            $data['unti_id'] = $unti_id;
+            $data['module'] = $this->model->getModule($unti_id);
+            $data['staff'] = $this->model->getStaff($unti_id);
+            parent::view('manage_menu/form_unit', $data);
+        } else {
+            $this->model->insertUnit($sub_id, $unti_id);
+            redirect(base_url() . 'management/ManageMenu/MenuUnit/' . $menu_id.'/'.$sub_id);
+        }
+    }
+
+    public function DeleteUnit($menu_id = FALSE, $sub_id = FALSE, $unit_id = FALSE)
+    {
+        $this->model->DeleteUnit($unit_id);
+        redirect(base_url() . 'management/ManageMenu/MenuUnit/' . $menu_id . '/' . $sub_id);
+    }
+
+    public function updateOrder($menu_id = false, $order = false)
+    {
+
+        if ($menu_id == false || $order == false) {
+            $result = 'ไม่สามารถเรียงลำดับข้อมูลได้';
+        } else {
+            $result = $this->model->saveOrder($menu_id, $order);
+        }
+
+        echo $result;
+    }
+
+    public function Ins_checkTitle()
+    {
+        $data = $this->model->checkTitle();
+        if ($data == false) {
+            $this->form_validation->set_message('Ins_checkTitle', 'ชื่อเมนูซ้ำในระบบ');
+            return FALSE;
+        }
+    }
+
+    public function checkTitle()
+    {
+        $data = $this->model->checkTitle();
+        echo $data;
+    }
+
+    public function Ins_checkTitleSub()
+    {
+        $data = $this->model->checkTitleSub();
+        if ($data == false) {
+            $this->form_validation->set_message('Ins_checkTitleSub', 'ชื่อเมนูรองซ้ำในระบบ');
+            return FALSE;
+        }
+    }
+
+    public function Ins_checkTitleUnit()
+    {
+        $data = $this->model->checkTitleSub();
+        if ($data == false) {
+            $this->form_validation->set_message('Ins_checkTitleUnit', 'ชื่อเมนูย่อยซ้ำในระบบ');
+            return FALSE;
+        }
+    }
+
+    public function checkTitleSub()
+    {
+        $data = $this->model->checkTitleSub();
+        echo $data;
+    }
+
+}
+
+/* End of file News.php */
+/* Location: ./application/controllers/News.php */

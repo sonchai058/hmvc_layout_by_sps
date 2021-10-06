@@ -1,0 +1,281 @@
+<div class="d-flex align-items-center flex-wrap justify-content-center">
+	<div class="container" ng-app="calApp" ng-controller="calController" ng-cloak>
+		<div class="row align-items-center">
+			<div class="col-lg-12 col-md-12">
+				<div class="news-detail-box">
+					<div class="clearfix"></div>
+					<div class="row align-items-center">
+						<div class="col-lg-12 col-md-12">
+								<div id='calendar' style="margin-top: 20px"></div>
+						</div>
+
+						<div class="col-lg-12 col-md-12">
+							<div class="mt-3">
+								<strong class="text-danger"><?= _po('Annotation')?> :</strong>
+							</div>
+
+							<?php if(!empty($getCalendarGroup)): foreach ($getCalendarGroup as $key => $value):?>
+								<div class="mt-2">
+									<strong><?= $value['cg_name']?></strong> =
+									<span class="badge badge-pill" style="background-color: <?= $value['cg_color']?>; color: <?= $value['cg_color']?>;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+								</div>
+							<?php endforeach; endif;?>
+                            <div class="block-table-calendar" ng-show="db_events.length >= 1">
+                                <div class="table-responsive mt-3">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col" class="text-center" width="50"><?= _po('No.'); ?></th>
+                                                <th scope="col" class="text-center" width="300"><?= _po('List'); ?></th>
+                                                <th scope="col" class="text-center" width="100"><?= _po('Date'); ?></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="(key, value) in db_events">
+                                              <td class="text-center">{{key + 1}}</td>
+                                              <td>{{value.title}}</td>
+                                              <td class="text-center">{{value.start_date}} <?= _po('To'); ?> {{value.end_date}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $(document).on('mouseleave','.popover',function(){
+            $('.popover').popover('hide');
+        });
+    });
+
+</script>
+<script>
+    let calApp = angular.module("calApp", []);
+
+    calApp.controller('calController', function ($scope, $http, $filter, phpData) {
+        let proto = {
+            id: 0,
+            title: '',
+            start: '',
+            end: '',
+            detail: ''
+        };
+
+        $scope.cur_event = {};
+
+        $scope.db_events = [];
+
+        let calendar;
+
+        let fnc_createCalendar = function () {
+
+            let calendarEl = document.getElementById('calendar');
+
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                locale: '<?= $val_lang == 'en' ? 'en' : 'th' ?>',
+                plugins: ['interaction', 'dayGrid', 'timeGrid'],
+                header: {
+                    left: 'prev,next today',
+                    right: 'title'
+                },
+                navLinks: false,
+                selectable: true,
+                selectMirror: true,
+                eventClick: function (info) {
+                    console.log(info);
+                    let id = info.event.id;
+                    let filter = $filter('filter')($scope.db_events, {'id': id});
+                    if (filter.length > 0) {
+                        $scope.cur_event = filter[0];
+                        $scope.$apply();
+                    }
+
+                    window.open('<?= $action_link.'detail/' ?>' + id, '_blank');
+                },
+                eventMouseEnter: function (info) {
+                    let id = info.event.id;
+                    let filter = $filter('filter')($scope.db_events, {'id': id});
+                    if (filter[0].detail != '') {
+                      var content = [
+                          '<div class="detailPopoverContent">' + filter[0].detail + '</div>',
+                          '<div class="datePopoverContent">' + fnc_setDateThai(filter[0].start) + ' - ' + fnc_setDateThai(filter[0].end) + '</div>',
+                      ].join('');
+                    } else {
+                      var content = [
+                          '<div class="datePopoverContent">' + fnc_setDateThai(filter[0].start) + ' - ' + fnc_setDateThai(filter[0].end) + '</div>',
+                      ].join('');
+                    }
+
+                    $(info.el).popover({
+                        // title: filter[0].title,
+                        content: filter[0].title,
+                        placement: 'left',
+                        html: true,
+                        trigger: 'click',
+                        animation: true,
+                        container: 'body'
+                    }).popover('show');
+                },
+                eventMouseLeave: function (info) {
+                    $('.popover').not(this).popover('hide');
+                },
+
+                editable: false,
+                eventLimit: true,
+                events: {
+                    url: '<?php echo base_url(); ?>Index/getCalendarPerMonth',
+                    success: function(response) { 
+                        $scope.db_events = response;
+                        $scope.$apply();
+                        var events = [];
+                        $.each(response,function(index,value){
+                            events.push({
+                                id: value.id,
+                                title: value.title,
+                                start: fnc_makeDate(value.start),
+                                end: fnc_makeDateEnd(value.end),
+                                allDay: true,
+                                backgroundColor: value.color
+                            });
+                        });
+                        
+                        return events; 
+                    }
+                }
+            });
+
+            calendar.render();
+
+        };
+
+        let fnc_formatDate = function (d) {
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            let year = d.getFullYear();
+
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+
+            return [year, month, day].join('-');
+        };
+
+        let fnc_formatDateEnd = function (d) {
+
+            let dd = d.getDate() - 1;
+            let end_date = new Date(d.getFullYear(), d.getMonth(), dd);
+
+            let month = '' + (end_date.getMonth() + 1);
+            let day = '' + end_date.getDate();
+            let year = end_date.getFullYear();
+
+
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+
+
+            return [year, month, day].join('-');
+        };
+
+
+        let fnc_makeDateObj = function (str) {
+            let res = str.split("-");
+            return {
+                y: parseInt(res[0]),
+                m: parseInt(res[1]) - 1,
+                d: parseInt(res[2]),
+            };
+        }
+
+        let fnc_makeDate = function (str) {
+            let obj = fnc_makeDateObj(str);
+            return new Date(obj.y, obj.m, obj.d);
+        };
+
+
+        let fnc_makeDateEnd = function (str) {
+            let obj = fnc_makeDateObj(str);
+            obj.d++;
+            return new Date(obj.y, obj.m, obj.d);
+        };
+
+
+        let fnc_fetchEvents = function () {
+
+            $scope.db_events = JSON.parse(phpData.getCalendar);
+            for (let k in $scope.db_events) {
+                calendar.addEvent({
+                    id: $scope.db_events[k].id,
+                    title: $scope.db_events[k].title,
+                    start: fnc_makeDate($scope.db_events[k].start),
+                    end: fnc_makeDateEnd($scope.db_events[k].end),
+                    allDay: true,
+					backgroundColor: $scope.db_events[k].color
+                });
+            }
+
+        }
+
+        let fnc_setDateThai = function (date) {
+
+            var lang = '<?= $val_lang == 'en' ? 'en' : 'th' ?>';
+
+            //เว็บภาษาอังกฤษ
+            if (lang == 'en') {
+                return fnc_setDateEng(date);
+            }
+
+            if (date != '' && date != null) {
+                var setDateMain = date.split(' ');
+                var setDate = setDateMain[0].split('-');
+                if (typeof setDate[2] !== 'undefined') {
+                    var monthNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+                    return parseInt(setDate[2]) + ' ' + monthNames[parseInt(setDate[1]) - 1] + ' ' + (parseInt(setDate[0]) + 543) + ' ' + setDateMain[1].substring(0, 5) + 'น.';
+                } else {
+                    return date;
+                }
+            } else {
+                return date;
+            }
+        }
+
+        let fnc_setDateEng = function (date) {
+            if (date != '' && date != null) {
+                var setDateMain = date.split(' ');
+                var setDate = setDateMain[0].split('-');
+                if (typeof setDate[2] !== 'undefined') {
+                    var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    return parseInt(setDate[2]) + ' ' + monthNames[parseInt(setDate[1]) - 1] + ' ' + (parseInt(setDate[0])) + '/' + setDateMain[1].substring(0, 5);
+                } else {
+                    return date;
+                }
+            } else {
+                return date;
+            }
+        }
+
+
+        let fnc_init = function () {
+            fnc_createCalendar();
+            // fnc_fetchEvents();
+        };
+
+        fnc_init();
+
+    });
+
+    <?php
+    # กำหนดค่า default ให้กับ angularjs
+    $phpData = array(
+        'getCalendar' => json_encode($getCalendar)
+    );
+
+    ?>
+    calApp.value('phpData', <?= json_encode($phpData) ?>);
+</script>

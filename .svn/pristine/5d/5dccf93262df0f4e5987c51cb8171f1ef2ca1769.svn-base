@@ -1,0 +1,512 @@
+</main>
+<footer class="mt-auto">
+  <div class="container">
+    <div class="row pt-4 pb-3">
+      <div class="col-12">
+        <div class="footerHeadSubject">
+          <?= _po('Contact Us') ?>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="col-lg-5 col-md-5 col-sm-12 col-12">
+        <div class="footerTextColorIcon mt-2">
+          <i class="fas fa-map-marker-alt"></i>
+          <?= _po('Chiang Mai University Library')?>
+        </div>
+        <div class="footerText">
+          <?= _po('239 Huay Kaew Road, Muang District, Chiang Mai 50200')?>
+        </div>
+
+        <div class="footerTextIcon mt-3 mb-2">
+          <i class="fas fa-phone-alt"></i>
+          <?= _po('Phone')?>
+        </div>
+
+        <div class="footerText">
+          <?= _po('Circulation Desk')?>
+          <a href="tel:0-5394-4531">0-5394-4531</a>
+        </div>
+
+        <div class="footerText">
+          <?= _po('Service')?>
+          <a href="tel:0-5394-4513">0-5394-4513</a>
+        </div>
+
+        <div class="footerText">
+          <?= _po('PR')?>
+          <a href="tel:0-5394-4567">0-5394-4567</a>
+        </div>
+
+        <div class="footerText">
+          <?= _po('Office')?>
+          <a href="tel:0-5394-4506">0-5394-4506</a>
+        </div>
+      </div>
+
+      <div class="col-lg-4 col-md-4 col-sm-12 col-12">
+        <div class="footerTextIcon mt-2">
+          <?= _po('Library Hours')?>
+        </div>
+
+        <div class="footerTextColorIconMaker mt-2">
+          <?= _po('Semester')?>:
+        </div>
+
+        <div class="footerText">
+          <?= _po('Mon – Fri 8:00 am – 9:00 pm')?>
+
+        </div>
+
+        <div class="footerText">
+          <?= _po('Sat – Sun 10:00 – 6:00 pm')?>
+        </div>
+
+        <div class="footerTextColorIconMaker mt-2">
+          <?= _po('Semester Break')?>:
+        </div>
+
+        <div class="footerText">
+          <?= _po('Mon – Fri 8:30 am – 4:30 pm')?>
+        </div>
+
+        <div class="footerText">
+          <?= _po('Sat – Sun Closed')?>
+        </div>
+
+        <div class="footerTextColorIconMaker mt-2">
+          <?= _po('Public Holidays Closed')?>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-3 col-sm-12 col-8">
+        <div class="row">
+          <div class="col-lg-8 col-md-10 col-sm-12 col-12">
+            <div class="footerTextIcon text-nowrap mt-2">
+              <?= _po('Communication Channel')?>
+            </div>
+
+            <div class="row">
+              <div class="col-3 col-sm-3 col-md-4 col-lg-3 mt-2 f-18">
+                <a target="_blank" href="mailto:cmulibref@cmu.ac.th" class="footerLink">
+                  <div class="footerLinkOther email-custom">
+                      <i class="fas fa-envelope"></i>
+                  </div>
+                </a>
+              </div>
+              <div class="col-3 col-sm-3 col-md-4 col-lg-3 mt-2 f-18">
+                <a target="_blank" href="http://th-th.facebook.com/pages/Chiang-Mai-University-LibraryCMUL/162309272791" class="footerLink">
+                  <div class="footerLinkOther">
+                      <i class="fab fa-facebook-f"></i>
+                  </div>
+                </a>
+              </div>
+              <div class="col-3 col-sm-3 col-md-4 col-lg-3 mt-2 f-18">
+                <a target="_blank" href="https://lin.ee/FDbk1exQ" class="footerLink">
+                  <div class="footerLinkOther line-custom">
+                      <img src="<?= LAYOUT_PATH.'images/line_cmul.png'?>">
+                  </div>
+                </a>
+              </div>
+              <div class="col-3 col-sm-3 col-md-4 col-lg-3 mt-2 f-18">
+                <a target="_blank" href="https://www.instagram.com/cmu_library" class="footerLink">
+                  <div class="footerLinkOther">
+                      <i class="fab fa-instagram"></i>
+                  </div>
+                </a>
+              </div>
+              <div class="col-3 col-sm-3 col-md-4 col-lg-3 mt-2 mt-lg-3 f-18">
+                <a target="_blank" href="https://www.tiktok.com/@cmu_library" class="footerLink">
+                  <div class="footerLinkOther">
+                      <i class="fab fa-tiktok"></i>
+                  </div>
+                </a>
+              </div>
+
+              <div class="col-3 col-sm-3 col-md-4 col-lg-3 mt-2 mt-lg-3 f-18">
+                <a target="_blank" href="https://www.youtube.com/channel/UCPpuiOUSxXAOW89pJCBUs2Q" class="footerLink">
+                  <div class="footerLinkOther youtube-custom">
+                      <i class="fab fa-youtube"></i>
+                  </div>
+                </a>
+              </div>
+
+              <div class="col-3 col-sm-3 col-md-4 col-lg-3 mt-2 mt-lg-3 f-18">
+                <a target="_blank" href="https://twitter.com/cmulpr" class="footerLink">
+                  <div class="footerLinkOther twitter-custom">
+                      <i class="fab fa-twitter"></i>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12">
+            <div class="directLine">
+              <a href="mailto:wararak.p@cmu.ac.th">
+                <i class="fas fa-envelope"></i> 
+                <?= _po('Direct line to Director')?></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <?php if(empty($_SESSION['cmu_web_session']['id'])): ?>
+        <div class="col-lg-12 col-md-12 col-sm-12 col-12 mt-3">
+          <div class="footerTextIcon text-nowrap logfool">
+            <a href="<?= base_url().'Login' ?>" class="footerTextLink linklogfool">
+              <i class="fas fa-user"></i>
+              <?= _po('Staff Login')?>
+            </a>
+          </div>
+        </div>
+      <?php else: ?>
+        <div class="col-lg-12 col-md-12 col-sm-12 col-12 mt-3">
+            <div class="footerTextIcon text-nowrap logfool">
+              <a href="#" class="dropdown-toggle footerTextLink" data-toggle="dropdown"
+                title="<?= $_SESSION['cmu_web_session']['prename'].$_SESSION['cmu_web_session']['fname'].' '.$_SESSION['cmu_web_session']['lname']; ?>">
+                <i class="fas fa-user"></i>
+                <?= $_SESSION['cmu_web_session']['prename'].$_SESSION['cmu_web_session']['fname'].' '.$_SESSION['cmu_web_session']['lname']; ?>
+              </a>
+              <div class="dropdown-menu">
+                  <a class="dropdown-item" href="<?= base_url().'management' ?>">
+                      <i class="fas fa-external-link-alt"></i> 
+                      <?= _po('Website management')?>    
+                  </a>
+                  <a class="dropdown-item" href="<?= base_url().'Login/logout'?>">
+                      <i class="fas fa-power-off"></i>
+                      <?= _po('Logout')?>                            
+                  </a>
+              </div>
+            </div>
+        </div>
+      <?php endif; ?>
+
+      <div class="clearfix"></div>
+
+      <div class="col-lg-8 col-md-12 col-sm-12 col-12 mt-3">
+        <div class="footerHeadSubject">
+          <a class="siteMap" onclick="toggleSiteMap()">
+            Sitemap
+            &nbsp;<i class="fa fa-angle-down" aria-hidden="true"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="col-lg-4 col-md-12 col-sm-12 col-12 mt-3 text-right">
+        <a href="https://voc.cmu.ac.th/VOC1.aspx?OID=26" target="_blank" class="footerTextLink"><?= _po('Voice of Customer')?></a>
+        <span class="footerBetween">|</span>
+        <a href="#" class="footerTextLink"><?= _po('Visitor Stats')?></a>
+        <span class="footerBetween">|</span>
+        <span class="footerTextLinkNotA">
+          <i class="fa fa-eye" aria-hidden="true"></i>
+          <?= $getVisitor?>
+        </span>
+      </div>
+
+      <div class="blockSiteMap">
+        <div class="col-lg-12 col-md-12 col-12">
+          <div class="row">
+            <?php if (!empty($top_menu)): ?>
+              <?php foreach ($top_menu as $key => $value): ?>
+                <div class="col-lg-3 col-md-3 col-12">
+                  <div class="footerTextIcon mt-2">
+                    <div class="bottom-line">
+                      <?php if ($value['type_menu'] == 1 && !empty($value['description'])): ?>
+                        <a href="<?= base_url().'HtmlDetail/Detail/'.$value['menu_id'].'/top' ?>">
+                          <?= $value['menu_name'] ?>
+                        </a>
+                      <?php elseif ($value['type_menu'] == 2 && !empty($value['menu_link'])): ?>
+                        <a href="<?= $value['menu_link'] ?>" target="_blank">
+                          <?= $value['menu_name'] ?>
+                        </a>
+                      <?php else: ?>
+                        <a class="cursor-default">
+                          <?= $value['menu_name'] ?>
+                        </a>
+                      <?php endif ?>
+                    </div>
+                  </div>
+                </div>
+              <?php endforeach ?>
+            <?php endif ?>
+          </div>
+          <div class="row">
+          <?php if (!empty($main_menu)): ?>
+            <?php foreach ($main_menu as $key => $value): ?>
+              <div class="col-lg-3 col-md-3 col-12">
+              <div class="footerTextIconSitemap mt-2">
+                <div class="bottom-line">
+                  <?php if ($value['type_menu'] == 1 && !empty($value['description'])): ?>
+                    <a href="<?= base_url().'HtmlDetail/Detail/'.$value['menu_id'].'/main' ?>">
+                      <?= $value['menu_name'] ?>
+                    </a>
+                  <?php elseif ($value['type_menu'] == 2 && !empty($value['menu_link'])): ?>
+                    <a href="<?= $value['menu_link'] ?>" target="_blank">
+                      <?= $value['menu_name'] ?>
+                    </a>
+                  <?php else: ?>
+                    <span class="cursor-default">
+                      <?= $value['menu_name'] ?>
+                    </span>
+                  <?php endif ?>
+                </div>
+              </div>
+              <?php if (!empty($value['sub_menu'])): ?>
+                <?php foreach ($value['sub_menu'] as $kSub => $vSub): ?>
+                  <?php if (is_numeric($kSub)) :?>
+                    <div class="footerTextIconSubSitemap">
+                      <?php if ($vSub['type_menu'] == 1 && !empty($vSub['description'])): ?>
+                        <a class="color-white" href="<?= base_url().'HtmlDetail/Detail/'.$vSub['menu_id'].'/main' ?>"><?= $vSub['menu_name'] ?></a>
+                      <?php elseif ($vSub['type_menu'] == 2 && !empty($vSub['menu_link'])): ?>
+                        <a class="color-white" target="_blank" href="<?= $vSub['menu_link'] ?>"><?= $vSub['menu_name'] ?></a>
+                      <?php else: ?>
+                        <span class="cursor-default color-white"><?= $vSub['menu_name'] ?></span>
+                      <?php endif ?>
+                    </div>
+                    <?php if (!empty($value['sub_menu']['check_unit']) && empty($value['sub_menu']['check_staff'])): ?>
+                      <?php foreach ($vSub['unit_menu'] as $kUnit => $vUnit): ?>
+                        <div class="footerTextColorIconMakerSitemap mt-2 ml-3">
+                          <?php if ($vUnit['type_menu'] == 1 && !empty($vUnit['description'])): ?>
+                            <a class="color-white" href="<?= base_url().'HtmlDetail/Detail/'.$vUnit['menu_id'].'/main' ?>">
+                              <?= $vUnit['menu_name'] ?>
+                            </a>
+                          <?php elseif ($vUnit['type_menu'] == 2 && !empty($vUnit['menu_link'])): ?>
+                            <a class="color-white" href="<?= $vUnit['menu_link'] ?>" target="_blank">
+                              <?= $vUnit['menu_name'] ?>
+                            </a>
+                          <?php else: ?>
+                          <span class="cursor-default color-white"><?= $vUnit['menu_name'] ?></span>
+                          <?php endif ?>
+                        </div>
+                      <?php endforeach ?>
+                    <?php endif ?>
+                  <?php endif ?>
+                <?php endforeach ?>
+              <?php endif ?>
+              </div>
+            <?php endforeach ?>
+          <?php endif ?>
+          </div>
+          <div class="row">
+            <?php if (!empty($category_news)): ?>
+              <?php foreach ($category_news as $key => $value): ?>
+                <div class="col-lg-3 col-md-3 col-12">
+                  <div class="footerTextIconSitemap mt-2">
+                    <div class="bottom-line">
+                      <?php if (!empty($value['news'])): ?>
+                        <a href="<?= base_url().'News/NewsList/'.$value['category_id'] ?>">
+                          <?= $value['category_name'] ?>
+                        </a>
+                      <?php else: ?>
+                        <span class="cursor-default">
+                          <?= $value['category_name'] ?>
+                        </span>
+                      <?php endif ?>
+                    </div>
+                  </div>
+                </div>
+              <?php endforeach ?>
+            <?php endif ?>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footerBorderTop"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <div class="footerTextCopyright py-4">
+          Copyright©<?= date('Y') ?> Chiang Mai University Library. All rights reserved
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<a class="go-to-top">
+    <span class="icon-bg"></span>
+    <i class="icon-copy ti-arrow-up back-to-top-icon"></i>
+</a>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-C8FF0VNDZ5"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-C8FF0VNDZ5');
+</script>
+<script>
+    var size = '<?= $font_size?>';
+    var lang = '<?= $val_lang?>';
+    if(lang == 'th') {
+      var lang_facebook = 'th_TH';
+    } else {
+      var lang_facebook = 'en_US';
+    }
+    window.fbAsyncInit = function(){
+      FB.init({
+          appId: 2808471862768946, status: true, cookie: true, xfbml: true }); 
+      };
+      (function(d, debug){var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
+          if(d.getElementById(id)) {return;}
+          js = d.createElement('script'); js.id = id; 
+          js.async = true;js.src = "//connect.facebook.net/" + lang_facebook + "/all" + (debug ? "/debug" : "") + ".js";
+          ref.parentNode.insertBefore(js, ref);}(document, /*debug*/ false));
+      function postToFeed(title, desc, url, image){
+      var obj = {method: 'feed',link: url, picture: image, name: title,description: desc};
+      function callback(response){}
+      FB.ui(obj, callback);
+    }
+
+    function shareSocial(type, link, title, description, url_image){
+      var winWidth = 600;
+      var winHeight = 600;
+      if(type == 'facebook') {
+        postToFeed(title, description, link, url_image);
+      } else if (type == 'twitter') {
+        var url = 'https://twitter.com/intent/tweet?url='+link+'&text='+title;
+        window.open(url,'','menubar=no,toolbar=no,resizable=yes,scrollbars=yes,height='+winWidth+',width='+winHeight);
+      }
+      
+    }
+
+
+    function resizeTabSbs(timeout = 500) {
+      setTimeout(function() {
+          var tabs = $('.tabSbs');
+          var selector = $('.tabSbs').find('a').length;
+          var activeItem = tabs.find('.active');
+          var activeWidth = activeItem.innerWidth();
+          if(activeItem.length > 0) {
+            if ($(window).width() < 500) {
+              $(".selectorData").css({
+                "top": activeItem[0].offsetTop + "px",
+                "left": activeItem[0].offsetLeft + "px",
+                "width": activeItem[0].clientWidth + "px"
+              });
+            } else {
+              $(".selectorData").css({
+                "left": activeItem[0].offsetLeft + "px",
+                "width": activeItem[0].clientWidth + "px"
+              });
+            }
+          }
+        }, timeout);
+    }
+
+    function setfontChangeData() {
+      $.each($('html').find('*'), function (key, value) {
+        if($(this).css('font-size') != '' && typeof $(this).css('font-size') !== 'undefined') {
+          $(this).attr('font-size-old', $(this).css('font-size'));
+        }
+      });
+    }
+
+    function fontChangeData(size) {
+      $.each($('html').find('*'), function (key, value) {
+        if($(this).attr('font-size-old') != '' && typeof $(this).attr('font-size-old') !== 'undefined') {
+          var originalSize = $(this).attr('font-size-old').replace( /[^\d.]/g, '' );
+          var originalSizeCurrent = $(this).css('font-size').replace( /[^\d.]/g, '' );
+          var newSize = $(this).css('font-size').replace(originalSizeCurrent, (parseFloat(originalSize) + parseFloat(size)));
+          $(this).css('font-size', newSize);
+        }
+      });
+
+    }
+
+    $( window ).resize(function() {
+      resizeTabSbs();
+    });
+    
+
+    function changeFontSize(size) {
+        var root = document.documentElement;
+        root.style.setProperty('--font-size-custom', size + "px");
+
+        $.post('<?= LINK . 'Tools/setFontSize/'?>' + size, function (res) {
+
+        });
+
+        $('body').removeClass('size0');
+        $('body').removeClass('size2');
+        $('body').removeClass('size4');
+        $('body').addClass('size' + size);
+
+        $('.blockFontSize a').removeClass('activeLanguage');
+        if (size == 0) {
+            $('.blockFontSize a:nth-child(1)').addClass('activeLanguage');
+            $('.blockFontSize a').css('line-height', '22px');
+        } else if (size == 2) {
+            $('.blockFontSize a:nth-child(2)').addClass('activeLanguage');
+            $('.blockFontSize a').css('line-height', '25px');
+        } else {
+            $('.blockFontSize a:nth-child(3)').addClass('activeLanguage');
+            $('.blockFontSize a').css('line-height', '28px');
+        }
+        console.log(size);
+        resizeTabSbs();
+        fontChangeData(size);
+    }
+
+    function InsertCounterPageType(type, id) {
+      $.post('<?= LINK . 'Index/insertCounterPageType/'?>' + type + '/' + id, function (res) {
+
+      });
+    }
+
+    function toggleSiteMap() {
+        if ($('.blockSiteMap').css('display') == 'none') {
+            $('.blockSiteMap').slideDown(700);
+            $('.siteMap  > i').removeClass('fa-angle-down');
+            $('.siteMap > i').addClass('fa-angle-up');
+        } else {
+            $('.blockSiteMap').slideUp(400);
+            $('.siteMap > i').removeClass('fa-angle-up');
+            $('.siteMap > i').addClass('fa-angle-down');
+        }
+    }
+
+    $(window).scroll(function () {
+        if ($(this).scrollTop() > 100) {
+            $('.go-to-top').fadeIn();
+            $('.bgBarHeader').css('filter', 'drop-shadow(0px 4px 10px #E5E5E5)');
+        } else {
+            $('.go-to-top').fadeOut();
+            $('.bgBarHeader').css('filter', 'unset');
+        }
+    })
+
+    $(document).ready(function () {
+        setfontChangeData();
+        changeFontSize(size);
+        $('.go-to-top').click(
+            function (e) {
+                $('html, body').animate({scrollTop: '0px'}, 500);
+            }
+        );
+    });
+</script>
+<script type="text/javascript">
+    <?php if(!empty($cookie_text)): ?>
+      $.cookieMessage({
+          'mainMessage': '<?= $cookie_text['detail'] ?>',
+          'acceptButton': '<?= _po('Got It')?>',
+          'backgroundColor':'#666',
+          'fontSize':'16px',
+          'fontColor':'white',
+          'btnBackgroundColor':'#7373B5',
+          'btnFontSize':'14px',
+          'btnFontColor':'white',
+          'linkFontColor':'#ffff00',
+          'expirationDays': 7,
+          'cookieName':'cookieMessage',
+      });
+    <?php endif; ?>
+</script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<?php
+
+/**
+ *
+ */
+class DataResume_model extends CI_model
+{
+    private $tbl = 'manage_resume';
+    private $val_lang = 'th';
+    private $per_page = 10;
+
+
+    function __construct()
+    {
+        parent::__construct();
+        $this->load->library('session');
+        $this->user_id = $this->session->cmu_web_session['id'];
+        $this->path = './file_upload/manage_resume/';
+
+        if (!empty($_SESSION['LANGUAGE'])) {
+            $this->val_lang = strtolower($_SESSION['LANGUAGE']);
+        }else{
+            $this->val_lang = 'th';
+
+        }
+        
+    }
+
+    //##Pagination
+
+    public function getPerPage()
+    {
+        return $this->per_page;
+    }
+
+    private function fnc_calPageOffset($page)
+    {
+        $offset = ($page * $this->per_page) - $this->per_page;
+
+        $this->db->limit($this->per_page, $offset);
+    }
+
+    public function getResume($id)
+    {
+
+        $this->db->select('*, 
+            IF(prename'.($this->val_lang == 'th' ? '' : '_en').' <> "" OR prename'.($this->val_lang == 'th' ? '' : '_en').' <> NULL, prename'.($this->val_lang == 'th' ? '' : '_en').', prename) as prename,
+            IF(first_name'.($this->val_lang == 'th' ? '' : '_en').' <> "" OR first_name'.($this->val_lang == 'th' ? '' : '_en').' <> NULL, first_name'.($this->val_lang == 'th' ? '' : '_en').', first_name) as first_name,
+            IF(last_name'.($this->val_lang == 'th' ? '' : '_en').' <> "" OR last_name'.($this->val_lang == 'th' ? '' : '_en').' <> NULL, last_name'.($this->val_lang == 'th' ? '' : '_en').', last_name) as last_name,
+            IF(position'.($this->val_lang == 'th' ? '' : '_en').' <> "" OR position'.($this->val_lang == 'th' ? '' : '_en').' <> NULL, position'.($this->val_lang == 'th' ? '' : '_en').', position) as position,
+            IF(affiliated'.($this->val_lang == 'th' ? '' : '_en').' <> "" OR affiliated'.($this->val_lang == 'th' ? '' : '_en').' <> NULL, affiliated'.($this->val_lang == 'th' ? '' : '_en').', affiliated) as affiliated,
+            IF(education'.($this->val_lang == 'th' ? '' : '_en').' <> "" OR education'.($this->val_lang == 'th' ? '' : '_en').' <> NULL, education'.($this->val_lang == 'th' ? '' : '_en').', education) as education,
+            IF(experience'.($this->val_lang == 'th' ? '' : '_en').' <> "" OR experience'.($this->val_lang == 'th' ? '' : '_en').' <> NULL, experience'.($this->val_lang == 'th' ? '' : '_en').', experience) as experience,
+            IF(academic'.($this->val_lang == 'th' ? '' : '_en').' <> "" OR academic'.($this->val_lang == 'th' ? '' : '_en').' <> NULL, academic'.($this->val_lang == 'th' ? '' : '_en').', academic) as academic,
+            IF(award'.($this->val_lang == 'th' ? '' : '_en').' <> "" OR award'.($this->val_lang == 'th' ? '' : '_en').' <> NULL, award'.($this->val_lang == 'th' ? '' : '_en').', award) as award,
+            '
+        , false);
+        $this->db->where('id', $id);
+        $data = $this->db->get($this->tbl)->row_array();
+
+        if(!empty($data)) {
+            if (!empty($data['file_name']) && file_exists($this->path . $data['file_name'])) {
+                $data['img'] = base_url() . $data['file_path'] . $data['file_name'];
+            } else {
+                $data['img'] = base_url() . 'statics/images/DEFAULT_PROFILE.png';
+            }
+            return $data;
+        } else {
+            return [];
+        }
+    }
+}
+
+?>

@@ -1,0 +1,141 @@
+<style>
+    .modal-footer {
+        justify-content: center;
+    }
+
+    .addTypeStore {
+        position: absolute;
+        right: 0;
+        margin-top: -13px;
+        color: #fff !important;
+    }
+
+    .modal-header {
+        background-color: #142127;
+    }
+
+    .modal-header .modal-title, .modal-header .close {
+        color: #fff;
+    }
+
+    .textDataResume {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #1b02ff;
+        text-align: left;
+    }
+
+    .blocResumePreview {
+        margin-left: 20px;
+        margin-top: 5px;
+    }
+
+    .blocResumePreview strong {
+        color: #142226;
+    }
+
+    .textPreviewTopic {
+        font-weight: bold;
+        color: #142226;
+        
+    }
+
+    .textPreviewData {
+        margin-left: 20px;
+        margin-top: 5px;
+    }
+</style>
+<div class="main-container">
+    <div class="pd-ltr-20 xs-pd-20-10">
+        <div class="pd-20 pb-40 card-box mb-30">
+            <div class="row">
+                <div class="col-md-12">
+
+                    <div class="row">
+                        <div class="col-6">
+                            <h4 class="text-blue h4"><?= $title_sub ?></h4>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="pull-right">
+                                <nav aria-label="breadcrumb" role="navigation">
+                                    <ol class="breadcrumb pd-0">
+                                        <li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+                                        <li class="breadcrumb-item"><a href="<?= LINK.'ManageExpert' ?>"><?= $title?></a></li>
+                                        <li class="breadcrumb-item active" aria-current="page"><?= $title_page ?></li>
+                                    </ol>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="main-box clearfix">
+                                <div class="main-box-body clearfix">
+                                    <form role="form" id="post" method="post" action="<?= $action_link.'insertExpert/'.$expert_id.'/'.$data['id'] ?>" enctype="multipart/form-data">
+                                        <div class="form-group">
+                                            <label for="topic"><strong>หัวข้อ</strong>
+                                                &nbsp;<span style="color: #f02323">*</span></label>
+                                            <input type="text" class="form-control validate[required]" id="topic" name="topic"
+                                                   placeholder="หัวข้อ" value="<?= $data['topic'] ?>" maxlength="250">
+                                        </div>
+                                        <!-- <div class="form-group">
+                                            <label for="topic"><strong>หัวข้อภาษาอังกฤษ</strong></label>
+                                            <input type="text" class="form-control" id="topic_en" name="topic_en"
+                                                   placeholder="หัวข้อภาษาอังกฤษ" value="<?= $data['topic_en'] ?>" maxlength="250">
+                                        </div> -->
+                                        <div class="form-group">
+                                            <label for="url"><strong>ที่อยู่ URL</strong>
+                                                &nbsp;<span style="color: #f02323">*</span>
+                                            </label>
+                                            <input type="text" class="form-control validate[required, custom[url]]" id="url" name="url"
+                                                   placeholder="https://example.com" value="<?= $data['url'] ?>" maxlength="250">
+
+                                            <p style="padding-top: 10px;"><span class="red">*</span>Ex. <span class="red">https://</span>www.exemple.com</p>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label><strong>สถานะ</strong></label>&nbsp;<span style="color: #f02323">*</span>
+                                            <div class="well radio radioformError">
+                                                <input class="validate[required] radio" type="radio" name="show_status" id="status1" value="1" <?= $data['show_status'] == 1 || $data['show_status'] == null ? 'checked' : '' ?>>
+                                                <label for="status1">
+                                                    เผยแพร่
+                                                </label>
+                                                <input class="validate[required] radio" type="radio" name="show_status" id="status2" value="2" <?= $data['show_status'] == 2 ? 'checked' : '' ?>>
+                                                <label for="status2">
+                                                    ไม่เผยแพร่
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group text-center">
+                                            <button type="button" class="btn btn-danger" onclick="window.location='<?= $action_link ?>TopicExpert/<?= $expert_id?>'">
+                                                <i class="fa fa-times"></i>&nbsp;ยกเลิก
+                                            </button>
+                                            &nbsp;&nbsp;
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fa fa-save"></i>&nbsp;บันทึก
+                                            </button>
+
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $("#post").validationEngine();
+        $(window).dblclick(function () {
+            jQuery('#post').validationEngine('hide');
+        });
+    });
+</script>

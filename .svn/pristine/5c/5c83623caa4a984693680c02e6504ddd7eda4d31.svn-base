@@ -1,0 +1,102 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class ManageUserGroup extends MDL_Controller
+{
+  public function __construct()
+  {
+      parent::__construct();
+      $this->load->model('Permission_model');
+      ## Search
+      parent::setSearchSession();
+  }
+
+  private function fnc_updatePermission($grp_id)
+  {
+      $method = $this->input->server('REQUEST_METHOD');
+      if($method == 'POST') {
+          $app_id = $this->input->post('app_id');
+          $app_id = !empty($app_id) ? $app_id : [];
+          $d_app_id = $this->input->post('d_app_id');
+          $d_app_id = !empty($d_app_id) ? $d_app_id : [];
+
+          $this->model->updatePermission($app_id, $grp_id);
+          redirect(base_url().'management/ManageUserGroup');
+      }
+  }
+
+  public function index($page = 1)
+  {
+      $data['getGroup'] = $this->model->getGroup($page);
+
+      $num = $this->model->getCount();
+      $per_page = $this->model->getPerPage();
+      parent::pagination($page, $num, $per_page, 4);
+      $data['form_search_element'] = $this->model->getSElement();
+      parent::view('manage_user_group/index', $data);
+  }
+
+  public function groupForm($grp_id = false)
+  {
+      $data['title_page'] = $grp_id != false ? 'แก้ไขกลุ่ม' : 'เพิ่มกลุ่ม';
+      $data['getForm'] = $this->model->getGroupForm($grp_id);
+
+      parent::view('manage_user_group/form', $data);
+  }
+
+  public function permission($grp_id = false)
+  {
+      if($grp_id > 0) {
+
+          $this->fnc_updatePermission($grp_id);
+
+          $data['grp_id'] = $grp_id;
+          $data['name'] = $this->model->getGroupName($grp_id);
+          $data['prev'] = $this->model->getPermission($grp_id);
+          $data['app'] = $this->Permission_model->getApp();
+          parent::view('manage_user_group/permission', $data);
+      }
+  }
+
+  public function insertGroup($grp_id = false)
+  {
+
+      $this->form_validation->set_rules('grp_name', 'ชื่อกลุ่มซ้ำในระบบ', 'required|callback_checkUser');
+      if($this->form_validation->run() == false) {
+          $data['getForm'] = $this->input->post();
+          $data['title_page'] = $this->input->post('grp_id') != '' ? 'แก้ไขกลุ่ม' : 'เพิ่มกลุ่ม';
+          parent::view('manage_user_group/form', $data);
+      } else {
+          $post = $this->input->post();
+          if($grp_id > 0) {
+              $this->model->editGroup($post, $grp_id);
+          } else {
+              $this->model->insertGroup($post);
+          }
+
+          redirect(base_url().'management/ManageUserGroup');
+      }
+  }
+
+  public function deleteGroup($grp_id = false)
+  {
+      $this->model->deleteGroup($grp_id);
+      redirect(base_url().'management/ManageUserGroup');
+  }
+
+  public function checkUser()
+  {
+      $data = $this->model->checkUser();
+      if($data == false) {
+          $this->form_validation->set_message('checkUser', 'ชื่อกลุ่มซ้ำในระบบ');
+      }
+
+      return $data;
+  }
+
+}
+
+/* End of file News.php */
+/* Location: ./application/controllers/News.php */

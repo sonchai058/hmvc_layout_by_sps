@@ -1,0 +1,276 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+// include("../application/libraries/ElasticIndex.php");
+
+class ManageUser_model extends CI_Model
+{
+
+    private $user_tbl = 'users';
+    private $group_tbl = 'user_group';
+    private $prev_tbl = 'um_app_priv';
+
+    # Pagination
+    private $per_page = 10;
+
+    # Search
+    private $s_element = ['utext' => false, 'grp_id' => 'all'];
+
+
+    public function __construct()
+    {
+        parent::__construct();
+        // $this->Elastic = new ElasticIndex();
+        $this->user_id = $this->session->cmu_web_session['id'];
+    }
+
+    private function fnc_calPageOffset($pageUser)
+    {
+        $offset = ($pageUser * $this->per_page) - $this->per_page;
+        $this->db->limit($this->per_page, $offset);
+    }
+
+
+    private function fnc_setElementSearchFromSession()
+    {
+        $form_search_element = $this->session->userdata('form_search_element');
+
+        if ($form_search_element == null) {
+            return;
+        }
+        foreach ($this->s_element as $key => $value) {
+            if (isset($form_search_element['element'][$key]))
+                $this->s_element[$key] = $form_search_element['element'][$key];
+        }
+
+        $utext = trim($this->db->escape_str($this->s_element['utext']));
+        $grp_id = $this->s_element['grp_id'];
+
+        if ($utext != '') {
+            $this->db->like("concat(prename,fname,' ',lname)", $utext);
+        }
+
+        if($grp_id != 'all') {
+            $this->db->where('grp_id', $grp_id);
+        }
+    }
+
+
+    private function fnc_getGroupName($grp_id)
+    {
+        $this->db->select('grp_name');
+        $this->db->where('grp_id', $grp_id);
+        $rs = $this->db->get($this->group_tbl)->row_array();
+
+        return is_array($rs) && count($rs) > 0 ? reset($rs) : '-';
+
+    }
+
+
+    public function getSElement()
+    {
+        return $this->s_element;
+    }
+
+
+    public function getPerPage()
+    {
+        return $this->per_page;
+    }
+
+
+    public function getGroup()
+    {
+        $rs = $this->db->get($this->group_tbl)->result_array();
+        return $rs;
+    }
+
+
+    public function getGroupID($id)
+    {
+        $user = $this->getForm($id);
+        return $user['grp_id'];
+    }
+
+
+    public function getUserFullName($id)
+    {
+        $this->db->select('prename,fname,lname');
+        $this->db->where('id', $id);
+        $rs = $this->db->get($this->user_tbl)->row_array();
+
+        return is_array($rs) && count($rs) == 3 ? $rs['prename'] . $rs['fname'] . ' ' . $rs['lname'] : '';
+    }
+
+
+    public function getUser($page)
+    {
+        $this->fnc_calPageOffset($page);
+        $this->fnc_setElementSearchFromSession();
+
+        $this->db->order_by('id DESC');
+        $data = $this->db->get($this->user_tbl)->result_array();
+        foreach ($data as $key => $value) {
+            $data[$key]['grp_name'] = $this->fnc_getGroupName($value['grp_id']);
+        }
+
+        return $data;
+    }
+
+
+    public function getUserCount()
+    {
+        $this->fnc_setElementSearchFromSession();
+        $num = $this->db->get($this->user_tbl)->num_rows();
+
+        return $num;
+    }
+
+
+    public function getForm($id)
+    {
+
+        $data = [
+            'id' => null,
+            'username' => null,
+            'password' => null,
+            'prename' => null,
+            'fname' => null,
+            'lname' => null,
+            'email' => null,
+            'affiliation' => null,
+            'grp_id' => null,
+            'status' => 1,
+        ];
+
+        if ($id > 0) {
+            $this->db->where('id', $id);
+            $rs = $this->db->get($this->user_tbl)->row_array();
+            $data = is_array($rs) && count($rs) > 0 ? $rs : $data;
+        }
+
+        return $data;
+    }
+
+    public function getPermission($id)
+    {
+        $this->db->where('usys_id', $id);
+        $rs = $this->db->get($this->prev_tbl)->result_array();
+
+        $prev = is_array($rs) && count($rs) > 0 ? array_column($rs, 'app_id') : [];
+        return $prev;
+    }
+
+    public function insert($data)
+    {
+        $data['time_create'] = date('Y-m-d H:i:s');
+        $this->db->insert($this->user_tbl, $data);
+        $id = $this->db->insert_id();
+
+        $Counter = new Counter;
+        $Counter->logAction($data['prename'].$data['fname'].' '.$data['lname'], $id, 0, 'users', '46', $this->user_id);
+    }
+
+
+    public function edit($data, $id)
+    {
+        $dataByID = $this->getForm($id);
+        if(!empty($dataByID)) {
+            $Counter = new Counter;
+            $Counter->logAction($dataByID['prename'] . $dataByID['fname'] . ' ' . $dataByID['lname'], $id, 0, 'users', '47', $this->user_id);
+        }
+
+        $this->db->where('id', $id);
+        $this->db->update($this->user_tbl, $data);
+    }
+
+
+    public function delete($id)
+    {
+        $dataByID = $this->getForm($id);
+        if(!empty($dataByID)) {
+            $Counter = new Counter;
+            $Counter->logAction($dataByID['prename'] . $dataByID['fname'] . ' ' . $dataByID['lname'], $id, 0, 'users', '48', $this->user_id);
+        }
+
+        $this->db->delete($this->user_tbl, array('id' => $id));
+
+        $this->db->where('usys_id', $id);
+        $this->db->delete($this->prev_tbl);
+    }
+
+
+    public function updatePermission($apps, $id)
+    {
+        $dataByID = $this->getForm($id);
+        if(!empty($dataByID)) {
+            $Counter = new Counter;
+            $Counter->logAction($dataByID['prename'] . $dataByID['fname'] . ' ' . $dataByID['lname'], $id, 0, 'users', '49', $this->user_id);
+        }
+
+        # ลบสิทธิ์
+        $this->db->where('usys_id', $id);
+        $this->db->delete($this->prev_tbl);
+
+        # เพิ่มสิทธิ์ใหม่
+        foreach ($apps as $app_id) {
+
+            $this->db->insert(
+                $this->prev_tbl,
+                ['usys_id' => $id, 'app_id' => $app_id]
+            );
+
+        }
+
+    }
+
+    public function getGroupFilter()
+    {
+        $this->db->select('grp_id, grp_name');
+        $data = $this->db->get($this->group_tbl)->result_array();
+
+        if (!empty($data)) {
+            $getData = array();
+            foreach ($data as $key => $value) {
+                $getData[$value['grp_id']] = $value['grp_name'];
+            }
+
+            return $getData;
+        } else {
+            return [];
+        }
+    }
+
+    public function checkUsername($id, $username)
+    {
+        $this->db->where('id <>', $id);
+        $this->db->where('username', $username);
+        $data = $this->db->get($this->user_tbl)->num_rows();
+
+        return $data > 0 ? false : true;
+    }
+
+    public function checkEmail($id, $email)
+    {
+        $this->db->where('id <>', $id);
+        $this->db->where('email', $email);
+        $this->db->where('email <> ', '');
+
+        $data = $this->db->get($this->user_tbl)->num_rows();
+
+        return $data > 0 ? false : true;
+    }
+
+    public function checkIdCard($id, $idcard)
+    {
+        $this->db->where('id <>', $id);
+        $this->db->where('idcard', $idcard);
+        $this->db->where('idcard <> ', '');
+        $data = $this->db->get($this->user_tbl)->num_rows();
+
+        return $data > 0 ? false : true;
+    }
+
+}

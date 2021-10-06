@@ -1,0 +1,41 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Sarawut
+ * Date: 27/6/2018 AD
+ * Time: 10:36
+ */
+
+class HtmlDetail extends MY_Controller
+{
+
+    function __construct()
+    {
+        parent::__construct();
+        $this->load->library('session');
+    }
+
+    public function index($news_id = false)
+    {
+        parent::view('html_detail');
+        // parent::view('news_list');
+    }
+
+    public function Detail($menu_id = false, $type = 'main')
+    {
+        if ($type == 'main') {
+            $data['html_detail'] = $this->model->getHtmlDetail($menu_id);
+        }else{
+            $data['html_detail'] = $this->model->getHtmlDetailTop($menu_id);
+        }
+
+        parent::view('html_detail', $data);
+        if ($type == 'main') {
+            $Counter = new Counter;
+            $Counter->counterPageInfo('html_detail', $menu_id, 0);
+        } else {
+            $Counter = new Counter;
+            $Counter->counterPageInfo('html_detail_top', $menu_id, 0);
+        }
+    }
+}

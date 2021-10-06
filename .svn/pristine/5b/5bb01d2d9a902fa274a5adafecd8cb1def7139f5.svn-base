@@ -1,0 +1,195 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class ManageUser extends MDL_Controller
+{
+
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->load->model('Permission_model');
+        $this->load->model('ManageUserGroup_model');
+        ## Search
+        parent::setSearchSession();
+    }
+
+
+    private function fnc_updatePermission($id)
+    {
+        $method = $this->input->server('REQUEST_METHOD');
+        if ($method == 'POST') {
+            $app_id = $this->input->post('app_id');
+            $app_id = !empty($app_id) ? $app_id : [];
+            $d_app_id = $this->input->post('d_app_id');
+            $d_app_id = !empty($d_app_id) ? $d_app_id : [];
+
+            $this->model->updatePermission($app_id, $id);
+            redirect(base_url() . 'management/ManageUser');
+        }
+    }
+
+    private function fnc_updatePermissionCategory($id)
+    {
+        $method = $this->input->server('REQUEST_METHOD');
+        if ($method == 'POST') {
+            $app_id = $this->input->post('app_id');
+            $app_id = !empty($app_id) ? $app_id : [];
+//            $this->model->updatePermissionCategory($app_id, $id);
+            redirect(base_url() . 'management/ManageUser');
+        }
+    }
+
+
+    private function fnc_insert($id)
+    {
+        $data = array(
+            'username' => $this->input->post('username'),
+            'password' => $this->input->post('password'),
+            'prename' => $this->input->post('prename'),
+            'fname' => $this->input->post('fname'),
+            'lname' => $this->input->post('lname'),
+            'email' => $this->input->post('email'),
+            'affiliation' => $this->input->post('affiliation'),
+            'grp_id' => $this->input->post('grp_id'),
+            'status' => $this->input->post('status'),
+        );
+
+        if ($id > 0) {
+            $this->model->edit($data, $id);
+        } else {
+            $this->model->insert($data);
+        }
+
+    }
+
+
+    public function index($page = 1)
+    {
+        # Pagination
+        $num = $this->model->getUserCount();
+        $per_page = $this->model->getPerPage();
+        parent::pagination($page, $num, $per_page, 4);
+
+        $data['getUser'] = $this->model->getUser($page);
+        $data['getGroupFilter'] = $this->model->getGroupFilter();
+        $data['form_search_element'] = $this->model->getSElement();
+
+        parent::view('manage_user/index', $data);
+    }
+
+
+    public function form($id = false, $backProfile = false)
+    {
+        $data['id'] = $id;
+        $data['title_page'] = $id != false ? 'แก้ไขผู้ใช้' : 'เพิ่มผู้ใช้';
+        $data['getForm'] = $this->model->getForm($id);
+        $data['group'] = $this->model->getGroup();
+
+        $this->form_validation->set_rules('username', 'ชื่อผู้ใช้ซ้ำ', 'required|callback_checkUsername');
+        $this->form_validation->set_rules('email', 'อีเมลซ้ำในระบบ', 'callback_checkEmail');
+        $this->form_validation->set_rules('idcard', 'รหัสบัตรประชาชนซ้ำในระบบ', 'callback_checkIdCard');
+
+        if ($this->form_validation->run() != false) {
+            $this->fnc_insert($id);
+
+            if($backProfile) {
+              if(!empty($_SESSION[$this->session_data])) {
+                foreach ($_SESSION[$this->session_data] as $key => $value) {
+                    if(!empty($this->input->post($key))) {
+                      $_SESSION[$this->session_data][$key] = $this->input->post($key);
+                    }
+                }
+              }
+
+              redirect(base_url() . 'management/Index');
+            } else {
+              redirect(base_url() . 'management/ManageUser');
+            }
+        } else {
+
+            $method = $this->input->server('REQUEST_METHOD');
+            if ($method == 'POST') {
+                $data['getForm'] = $this->input->post();
+            }
+
+        }
+
+        $data['backProfile'] = $backProfile;
+
+        parent::view('manage_user/form', $data);
+    }
+
+
+    public function permission($id = false)
+    {
+        if ($id > 0) {
+
+            $this->fnc_updatePermission($id);
+
+            $data['id'] = $id;
+            $data['name'] = $this->model->getUserFullName($id);
+            $data['app'] = $this->Permission_model->getApp();
+
+            $grp_id = $this->model->getGroupID($id);
+            $data['prev_group'] = $this->ManageUserGroup_model->getPermission($grp_id);
+            $data['prev'] = $this->model->getPermission($id);
+
+            parent::view('manage_user/permission', $data);
+        }
+    }
+
+    public function delete($id = false)
+    {
+        if ($id > 0) {
+            $this->model->delete($id);
+            redirect(base_url() . 'management/ManageUser');
+        }
+    }
+
+
+    public function checkUser()
+    {
+        $this->model->checkUser();
+    }
+
+
+    public function checkUsername()
+    {
+        $id = $this->input->post('id');
+        $username = $this->input->post('username');
+        $data = $this->model->checkUsername($id, $username);
+
+        if ($data == false) {
+            $this->form_validation->set_message('checkUsername', 'ชื่อผู้ใช้ซ้ำในระบบ');
+        }
+        return $data;
+    }
+
+    public function checkEmail()
+    {
+        $id = $this->input->post('id');
+        $email = $this->input->post('email');
+        $data = $this->model->checkEmail($id, $email);
+
+        if ($data == false) {
+            $this->form_validation->set_message('checkEmail', 'อีเมลซ้ำในระบบ');
+        }
+        return $data;
+    }
+
+    public function checkIdCard()
+    {
+        $id = $this->input->post('id');
+        $idcard = $this->input->post('idcard');
+        $data = $this->model->checkIdCard($id, $idcard);
+
+        if ($data == false) {
+            $this->form_validation->set_message('checkIdCard', 'รหัสบัตรประชาชนซ้ำในระบบ');
+        }
+        return $data;
+    }
+
+}

@@ -1,0 +1,160 @@
+<div class="main-container">
+  <div class="pd-ltr-20 xs-pd-20-10">
+    <div class="pd-20 card-box mb-30">
+      <div class="clearfix mb-20">
+          <div class="row">
+            <div class="col-4">
+              <h4 class="text-blue h4">กำหนดสิทธิ</h4>
+            </div>
+
+            <div class="col-8">
+              <div class="pull-right">
+                <nav aria-label="breadcrumb" role="navigation">
+                  <ol class="breadcrumb pd-0">
+                    <li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+                    <li class="breadcrumb-item">จัดการเจ้าหน้าที่</li>
+                    <li class="breadcrumb-item"><a href="<?= $action_link ?>">จัดการข้อมูลเจ้าหน้าที่</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">กำหนดสิทธิ</li>
+                  </ol>
+                </nav>
+              </div>
+            </div>
+          </div>
+      </div>
+
+      <div class="clearfix mb-20">
+        <h5 class="text-primary">กำหนดสิทธิระดับผู้ใช้ : <?= $name ?></h5>
+        <form action="<?= $action_link . 'permission/' . $id ?>" method="post">
+            <?php foreach ($app as $group): if(!empty($group['menu'])):?>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-hover">
+                    <thead>
+                    <tr class="caption">
+                        <th colspan="3"><?= $group['grp_name'] ?></th>
+                    </tr>
+                    <tr class="field">
+                        <th class="text-center w-10">
+                            <span>ลำดับ</span>
+                        </th>
+                        <th class="text-center w-80">
+                            <span>สิทธิ</span>
+                        </th>
+                        <th class="text-center w-10">
+                            <input class="check_all" type="checkbox"/>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+
+                    <?php $i = 0;
+                    foreach ($group['menu'] as $menu): ?>
+
+                        <?php if($menu['parent_id'] == 0 && $menu['class'] == ''): ?>
+                            <tr class="menu-group">
+                                <td colspan="3"><?= $menu['app_name'] ?></td>
+                            </tr>
+                        <?php else: ?>
+                            <tr>
+                                <td class="text-center"><?= ++$i ?></td>
+                                <td><?= $menu['app_name'] ?></td>
+                                <td class="text-center">
+                                  <?php if (in_array($menu['app_id'], $prev_group)): ?>
+                                      <i class="fa fa-check"></i>
+                                  <?php else: ?>
+                                      <input name="app_id[]"
+                                             <?= in_array($menu['app_id'], $prev) ? ' checked ' : '' ?>
+                                             value="<?= $menu['app_id'] ?>"
+                                             class="app"
+                                             type="checkbox"/>
+                                  <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+
+                        <?php foreach ($menu['submenu'] as $submenu): $i++;?>
+                            <tr>
+                                <td class="text-center"><?= $i ?></td>
+                                <td><?= $submenu['app_name'] ?></td>
+                                <td class="text-center">
+                                    <?php if (in_array($submenu['app_id'], $prev_group)): ?>
+                                        <i class="fa fa-check"></i>
+                                    <?php else: ?>
+                                        <input name="app_id[]"
+                                               <?= in_array($submenu['app_id'], $prev) ? ' checked ' : '' ?>
+                                               value="<?= $submenu['app_id'] ?>"
+                                               class="app"
+                                               type="checkbox"/>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+                </div>
+                <br/>
+            <?php endif; endforeach; ?>
+
+            <div class="form-group text-center">
+
+                <a href="<?= $action_link ?>">
+                    <button type="button" class="btn btn-danger">
+                        <i class="fa fa-times"></i>&nbsp;ยกเลิก
+                    </button>
+                </a>
+                &nbsp;&nbsp;
+                <button type="submit" class="btn btn-success">
+                    <i class="fa fa-save"></i>&nbsp;บันทึก
+                </button>
+
+            </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+
+    .menu-group td {
+        background-color: #DFFEE3;
+        color: #333;
+        font-weight: bold !important;
+    }
+
+    .menu-group td:hover {
+        background-color: #DFFEE3 !important;
+    }
+
+    .caption th {
+        background-color: #478678;
+    }
+
+    .field th {
+        background-color: #1ABC9C;
+    }
+
+    .caption th, .field th {
+        color: #FFF;
+        font-weight: bold;
+    }
+
+    table {
+        margin: 20px 0;
+    }
+
+    table, th, td {
+        border: #20662e solid 1px !important;
+    }
+
+
+</style>
+
+<script>
+    $(function () {
+        $('.check_all').on('click', function () {
+            var bool = $(this).is(':checked');
+            $(this).closest('table').find('.app').prop('checked', bool);
+        });
+    });
+</script>

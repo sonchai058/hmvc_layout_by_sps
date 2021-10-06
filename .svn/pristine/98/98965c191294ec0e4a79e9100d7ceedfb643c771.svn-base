@@ -1,0 +1,136 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class BackUp extends MDL_Controller
+{
+    private $path_root;
+    private $path_download;
+
+    public function __construct()
+    {
+        parent::__construct();
+        ## Search
+        set_time_limit(0);
+        $this->user_id = $this->session->cmu_web_session['id'];
+        $this->path_root = './';
+        $this->path_download = '../source_code/';
+
+        if (!file_exists($this->path_download)) {
+          mkdir(realpath($this->path_download), 0775, true);
+          chmod(realpath($this->path_download), 0775);
+          chown(realpath($this->path_download), 'www-data');
+        }
+
+        if (!file_exists(realpath($this->path_root).'/db/')) {
+          mkdir(realpath($this->path_root).'/db/', 0775, true);
+          chmod(realpath($this->path_root).'/db/', 0775);
+          chown(realpath($this->path_root).'/db/', 'www-data');
+        }
+
+    }
+
+    #หน้าหลัก
+
+    public function index($page = 1)
+    {
+        $data['title'] = 'สำรองข้อมูลเว็บไซต์';
+        $data['title_page'] = 'สำรองข้อมูลเว็บไซต์';
+
+        parent::view('back_up/index', $data);
+    }
+
+    public function backUpData()
+    {
+        set_time_limit(0);
+        $files_db = glob($this->path_download.'*');
+        usort($files_db, create_function('$a,$b', 'return filemtime($b) - filemtime($a);'));
+        foreach ($files_db as $key => $file_db) {
+            if (is_file($file_db) && $key > 3) {
+                @chown($file_db,666);
+                @unlink($file_db);
+            }
+        }
+
+        @unlink($this->path_root.'db/db.sql');
+
+        exec('mysqldump --opt --host="'.APP_DB_HOST.'" --user="'.APP_DB_USERNAME.'" --password="'.APP_DB_PASSWORD.'" --default-character-set=utf8 '.APP_DB_NAME.' > '.realpath($this->path_root).'/db/db.sql');
+
+        $file_name = 'source_code_' . date("YmdHi") . '.zip';
+        $rootPath = realpath($this->path_root);
+        $zip = new ZipArchive();
+        $zip->open($this->path_download.$file_name, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+
+        $files = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($rootPath),
+            RecursiveIteratorIterator::LEAVES_ONLY
+        );
+
+        foreach ($files as $name => $file)
+        {
+            if (!$file->isDir())
+            {
+                $filePath = $file->getRealPath();
+                $relativePath = substr($filePath, strlen($rootPath) + 1);
+
+                $zip->addFile($filePath, $relativePath);
+            }
+        }
+
+        $zip->close();
+
+
+        $Counter = new Counter;
+        $Counter->logAction('สำรองข้อมูลระบบ', 0, 0, 'backup', '55', $this->user_id);
+        echo $file_name;
+        die();
+    }
+
+    public function loadData()
+    {
+        set_time_limit(0);
+        $file = glob($this->path_download.'*');
+        usort($file, create_function('$a,$b', 'return filemtime($b) - filemtime($a);'));
+
+        if(!empty($file)) {
+            $file = explode('\\', $file[0]);
+            $file = end($file);
+            $file_name = explode('_', $file);
+            $file_name = end($file_name);
+            $file_name_date = substr($file_name,0,4).'-'.substr($file_name,4,2).'-'.substr($file_name,6,2);
+            $file = substr($file_name,0,4).substr($file_name,4,2).substr($file_name,6,2).substr($file_name,8,2).substr($file_name,10,2);
+            $data['file_name_date'] = general::dayThai2($file_name_date).' '.substr($file_name,8,2).'.'.substr($file_name,10,2).' น.';
+
+        } else {
+            $file = '';
+        }
+
+        $data['file'] = $file;
+
+        echo json_encode($data); die();
+    }
+
+
+    public function DownloadFileDigital($file_name)
+    {
+        set_time_limit(0);
+        $Counter = new Counter;
+        $Counter->logAction('ดาวน์โหลดไฟล์สำรองข้อมูลระบบ', 0, 0, 'backup', '56', $this->user_id);
+        $file = $this->path_download . 'source_code_' . $file_name. '.zip';
+        header('Content-Description: File Transfer');
+        header('Cache-Control: public');
+        header('Content-Type: '.mime_content_type($file));
+        header("Content-Transfer-Encoding: binary");
+        header('Content-Disposition: attachment; filename='. basename('source_code_' . $file_name. '.zip'));
+        header('Content-Length: '.filesize($file));
+        ob_clean();
+        flush();
+        readfile($file);
+        die();
+    }
+
+}
+
+/* End of file News.php */
+/* Location: ./application/controllers/News.php */

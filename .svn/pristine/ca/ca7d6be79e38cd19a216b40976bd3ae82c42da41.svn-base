@@ -1,0 +1,1012 @@
+<style>
+    #calendar {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .input-group {
+        margin-bottom: 5px !important;
+    }
+
+    .select2-results span[onlyslave="True"] { 
+      color: red;
+    }
+
+    .select2.select2-container.select2-container--default{
+      width: 100% !important;
+    }
+</style>
+<div class="main-container">
+    <div class="pd-ltr-20 xs-pd-20-10">
+        <div class="pd-20 pb-40 card-box mb-30">
+            <div class="row" ng-app="calApp" ng-controller="calController" ng-cloak>
+                <div class="col-md-12">
+
+                    <div class="row">
+                        <div class="col-6">
+                          <h4 class="text-blue h4"><?= $title ?></h4>
+                        </div>
+
+                        <div class="col-6">
+                          <div class="pull-right">
+                            <nav aria-label="breadcrumb" role="navigation">
+                              <ol class="breadcrumb pd-0">
+                                <li class="breadcrumb-item"><a href="<?= LINK.'Index' ?>">หน้าแรก</a></li>
+                                <li class="breadcrumb-item active" aria-current="page"><?= $title_page ?></li>
+                              </ol>
+                            </nav>
+                          </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="main-box clearfix">
+                                <div class="main-box-body clearfix" style="margin-top: 20px">
+                                    <div id='calendar'></div>
+
+                                    <div id="createEventModal" class="modal fade">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header" style="background-color: #1abc9c; color: #fff;">
+                                                    <h4 style="font-weight: bold; color: #fff;" ng-hide="cur_event.id > 0">เพิ่มกิจกรรมปฏิทิน</h4>
+                                                    <h4 style="font-weight: bold; color: #fff;" ng-show="cur_event.id > 0">แก้ไขกิจกรรมปฏิทิน</h4>
+                                                    <button type="button" class="close" data-dismiss="modal"><span
+                                                                aria-hidden="true" style="color: #fff;">&times;</span> <span class="sr-only">close</span>
+                                                    </button>
+                                                </div>
+                                                <div id="modalBody" class="modal-body">
+                                                    <form class="form-horizontal" role="form">
+                                                        <div class="form-group">
+                                                            <label for="eventCalendarGroup"
+                                                                   class="col-md-12 col-sm-2 control-label">หมวดหมู่ <span class="red">*</span></label>
+                                                            <div class="col-md-12 col-sm-10">
+                                                                <select id="eventCalendarGroup" ng-model="cur_event.calendar_group" class="form-control w-100">
+                                                                        <option value="">กรุณาเลือกหมวดหมู่</option>
+                                                                        <option ng-repeat="(key, value) in calendar_group" value="{{value.cg_id}}|{{value.cg_color}}" color="{{value.cg_color}}" title="{{value.cg_name}}">
+                                                                          {{value.cg_name}}
+                                                                        </option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="eventName"
+                                                                   class="col-md-12 col-sm-2 control-label">ชื่อกิจกรรม <span class="red">*</span></label>
+                                                            <div class="col-md-12 col-sm-10">
+                                                                <input class="form-control" type="text" placeholder="ชื่อกิจกรรม"
+                                                                       ng-model="cur_event.title" id="eventName">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="eventNameEn"
+                                                                   class="col-md-12 col-sm-2 control-label">ชื่อกิจกรรมภาษาอังกฤษ</label>
+                                                            <div class="col-md-12 col-sm-10">
+                                                                <input class="form-control" type="text" placeholder="ชื่อกิจกรรมภาษาอังกฤษ"
+                                                                       ng-model="cur_event.title_en" id="eventNameEn">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group form-inline">
+                                                            <label for="eventStartDate"
+                                                                   class="col-md-3 col-sm-3 control-label text-right">วันที่เริ่มกิจกรรม</label>
+                                                            <div class="col-md-3 col-sm-3 pl-0">
+                                                                    <input type="text" id="eventStartDate" class="form-control text-center w-100"
+                                                                           placeholder="วันที่เริ่มกิจกรรม"
+                                                                           data-provide="datepicker"
+                                                                           data-date-language="th-th"
+                                                                           ng-model="cur_event.start" readonly
+                                                                           style="cursor: pointer;">
+                                                            </div>
+
+                                                            <label for="eventEndDate"
+                                                                   class="col-md-3 col-sm-3 control-label text-right">วันที่สิ้นสุดกิจกรรม</label>
+                                                            <div class="col-md-3 col-sm-3 pl-0">
+                                                                    <input type="text" id="eventEndDate" class="form-control text-center w-100"
+                                                                           placeholder="วันที่สิ้นสุดกิจกรรม"
+                                                                           data-provide="datepicker"
+                                                                           data-date-language="th-th"
+                                                                           ng-model="cur_event.end" readonly
+                                                                           style="cursor: pointer;">
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="form-group form-inline">
+                                                            <label for="eventTimeStartDate"
+                                                                   class="col-md-3 col-sm-3 control-label text-right">เวลาเริ่มกิจกรรม</label>
+                                                            <div class="col-md-3 col-sm-3 pl-0">
+                                                                <div class="input-group">
+                                                                    <input type="text" id="eventTimeStartDate" class="form-control text-center"
+                                                                           placeholder="เวลาเริ่ม"
+                                                                           ng-model="cur_event.time_start" readonly
+                                                                           style="cursor: pointer;">
+                                                                    <div class="input-group-prepend">
+                                                                        <label class="input-group-text" for="eventTimeStartDate">
+                                                                          <i class="fa fa-clock-o" aria-hidden="true"></i>
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <label for="eventTimeEndDate"
+                                                                   class="col-md-3 col-sm-3 control-label text-right">เวลาสิ้นสุดกิจกรรม</label>
+                                                            <div class="col-md-3 col-sm-3 pl-0">
+                                                                <div class="input-group">
+                                                                    <input type="text" id="eventTimeEndDate" class="form-control text-center"
+                                                                           placeholder="เวลาสิ้นสุด"
+                                                                           ng-model="cur_event.time_end" readonly
+                                                                           style="cursor: pointer;">
+                                                                    <div class="input-group-prepend">
+                                                                        <label class="input-group-text" for="eventTimeEndDate">
+                                                                          <i class="fa fa-clock-o" aria-hidden="true"></i>
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label for="eventDescription"
+                                                                   class="col-md-12 col-sm-2 control-label">รายละเอียดกิจกรรม</label>
+                                                            <div class="col-md-12 col-sm-10">
+
+                                                        <textarea class="form-control" type="text" rows="4"
+                                                                  ng-model="cur_event.detail"
+                                                                  placeholder="รายละเอียดกิจกรรม" id="eventDescription" ui-tinymce="tinymceOptions"></textarea>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label for="eventDescription"
+                                                                   class="col-md-12 col-sm-2 control-label">รายละเอียดิจกรรมภาษาอังกฤษ</label>
+                                                            <div class="col-md-12 col-sm-10">
+
+                                                        <textarea class="form-control" type="text" rows="4"
+                                                                  ng-model="cur_event.detail_en"
+                                                                  placeholder="รายละเอียดิจกรรมภาษาอังกฤษ" id="eventDescriptionEn"  ui-tinymce="tinymceOptions"></textarea>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- <div class="form-group">
+                                                            <label for="eventDescription"
+                                                                   class="col-md-12 col-sm-2 control-label">เชื่อมโยงข่าว</label>
+                                                            <div class="col-md-12 col-sm-10">
+                                                                <select id="linkNews"  ng-model="cur_event.news" class="form-control"
+                                                                        multiple="multiple">
+                                                                        <option ng-repeat="value in cur_event.news_data" value="{{value.id}}" selected>{{value.text}}</option>
+                                                                </select>
+                                                            </div>
+                                                        </div> -->
+
+            <!--                                            <div class="form-group">-->
+            <!--                                                <label for="eventDescription"-->
+            <!--                                                       class="col-sm-2 control-label">เชื่อมโยง<br>แกลลอรี่</label>-->
+            <!--                                                <div class="col-sm-10 mrT10">-->
+            <!--                                                    <select id="linkGallery" ng-model="cur_event.gallery" class="form-control"-->
+            <!--                                                            multiple="multiple" ng-options="value.text for value in cur_event.gallery track by value.id">-->
+            <!--                                                    </select>-->
+            <!--                                                </div>-->
+            <!--                                            </div>-->
+                                                    </form>
+                                                </div>
+                                                <div class="modal-footer" style="text-align: center !important;">
+                                                    <button class="btn btn-danger" ng-show="cur_event.id == 0" data-dismiss="modal"
+                                                            aria-hidden="true">
+                                                        <i class="fa fa-times"></i> ยกเลิก
+                                                    </button>
+                                                    &nbsp;
+                                                    <button class="btn btn-success" ng-show="cur_event.id == 0"
+                                                            ng-click="addEvent()"
+                                                            type="button">
+                                                        <i class="fa fa-save"></i>
+                                                        บันทึกกิจกรรม
+                                                    </button>
+                                                    &nbsp;
+                                                    <button class="btn btn-danger" ng-show="cur_event.id > 0"
+                                                            ng-click="removeEvent()"
+                                                            type="button"><i class="fa fa-trash-o"></i> ลบ
+                                                    </button>
+                                                    &nbsp;
+                                                    <button class="btn btn-warning" ng-show="cur_event.id > 0"
+                                                            ng-click="editEvent()"
+                                                            type="button"><i class="fa fa-edit"></i> แก้ไข
+                                                    </button>
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!--                        <div id="event" style="padding: 20px; background-color: #fff;">-->
+                                    <!--                            <div class="form-group">-->
+                                    <!--                                <label><strong>ปฏิทิน</strong></label>&nbsp;-->
+                                    <!--                                <input type="text" class="form-control" ng-model="cur_event.title"/>-->
+                                    <!--                            </div>-->
+                                    <!---->
+                                    <!--                            <div class="form-group">-->
+                                    <!--                                <label><strong>รายละเอียด</strong></label>&nbsp;-->
+                                    <!--                                <textarea ng-model="cur_event.detail" class="form-control"></textarea>-->
+                                    <!--                            </div>-->
+                                    <!---->
+                                    <!---->
+                                    <!--                            <div class="form-group text-center">-->
+                                    <!--                                <button class="btn btn-success" ng-show="cur_event.id == 0" ng-click="addEvent()"-->
+                                    <!--                                        type="button"><i class="fa fa-plus"></i> เพิ่ม-->
+                                    <!--                                </button>-->
+                                    <!--                                <button class="btn btn-warning" ng-show="cur_event.id > 0" ng-click="editEvent()"-->
+                                    <!--                                        type="button"><i class="fa fa-edit"></i> แก้ไข-->
+                                    <!--                                </button>-->
+                                    <!--                                <button class="btn btn-danger" ng-show="cur_event.id > 0" ng-click="removeEvent()"-->
+                                    <!--                                        type="button"><i class="fa fa-trash-o"></i> ลบ-->
+                                    <!--                                </button>-->
+                                    <!---->
+                                    <!---->
+                                    <!--                            </div>-->
+                                    <!---->
+                                    <!--                        </div>-->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function setDate(d) {
+
+        let month = '' + (d.getMonth() + 1);
+        let day = '' + d.getDate();
+        let year = d.getFullYear();
+        year = year + 543;
+        if (month.length < 2) month = '0' + month;
+        if (day.length < 2) day = '0' + day;
+
+        return [day, month, year].join('-');
+    };
+
+    // function formatState (state) {
+    //   if(!state.element) return state.text;
+    //   var os = $(state.element).attr('color');
+    //   var $state = $('<span style="background-color:' + os + ';></span>' + state.text);
+
+    //   return $state;
+    //   // return $('<span style="background-color:' + os + ';></span>');
+    // }
+
+    function formatState (state) {
+      // console.log(state);
+      if (!state.id) {
+        return state.text;
+      }
+      var os = $(state.element).attr('color');
+      // console.log(os);
+      var $state = $(
+        '<span style="background-color:'+ os +';color:'+ os +';border-radius:10rem;">SBS</span><span>&nbsp; '+ state.title +'</span>'
+      );
+      return $state;
+    };
+
+    $(document).ready(function () {
+
+      $('#eventCalendarGroup').select2({
+        templateResult: formatState
+      });
+
+      // var today = new Date();
+      // today.setDate(today.getDate() + 1);
+      //
+      // $.datetimepicker.setLocale('th');
+      // $('#eventStartDate').datetimepicker({
+      //     timepicker: false,
+      //     yearOffset: 543,
+      //     format: 'd-m-Y',
+      //     scrollInput: false,
+      //     scrollMonth: false,
+      //     formatDate: 'd-m-Y',
+      //     onSelectDate: function (ct) {
+      //         $('#eventEndDate').datetimepicker('setOptions', {
+      //             minDate: $('#eventStartDate').val() ? setDate($('#eventStartDate').val()) : false
+      //         });
+      //
+      //         daySelected = new Date(ct);
+      //         daySelected.setDate(daySelected.getDate() + 6);
+      //
+      //         $('#eventEndDate').datetimepicker('setOptions', {
+      //             maxDate: $('#eventStartDate').val() ? setDate(daySelected.getDate() + '-' + (daySelected.getMonth() + 1) + '-' + daySelected.getFullYear()) : false
+      //         });
+      //     }
+      // });
+      //
+      // $('#eventEndDate').datetimepicker({
+      //     timepicker: false,
+      //     yearOffset: 543,
+      //     format: 'd-m-Y',
+      //     scrollInput: false,
+      //     scrollMonth: false,
+      //     formatDate: 'd-m-Y',
+      //     onSelectDate: function (ct) {
+      //         $('#eventStartDate').datetimepicker('setOptions', {
+      //             maxDate: $('#eventEndDate').val() ? setDate($('#eventEndDate').val()) : false
+      //         });
+      //
+      //         daySelected = new Date(ct);
+      //         daySelected.setDate(daySelected.getDate() - 6);
+      //         $('#eventStartDate').datetimepicker('setOptions', {
+      //             minDate: $('#eventEndDate').val() ? setDate(daySelected.getDate() + '-' + (daySelected.getMonth() + 1) + '-' + daySelected.getFullYear()) : false
+      //         });
+      //
+      //     }
+      // });
+
+
+        $('#eventStartDate').datepicker({
+            format: 'dd-mm-yyyy',
+            useCurrent: false,
+        });
+
+        $('#eventEndDate').datepicker({
+            format: 'dd-mm-yyyy',
+            useCurrent: false,
+        });
+
+        $('#eventStartDate').on('changeDate', function (selected) {
+            var minDate = new Date(selected.date);
+            if (minDate != 'Invalid Date') {
+                $('#eventEndDate').datepicker('setStartDate', minDate);
+            }
+        });
+
+        $('#eventEndDate').on('changeDate', function (selected) {
+            var maxDate = new Date(selected.date);
+            if (maxDate != 'Invalid Date') {
+                $('#eventStartDate').datepicker('setEndDate', maxDate);
+            }
+        });
+
+        $('#eventTimeStartDate, #eventTimeEndDate').datetimepicker({
+          datepicker:false,
+          format:'H:i'
+        });
+
+        // $('#eventTimeStartDate, #eventTimeEndDate').timepicker({
+        //     showMeridian: false
+        // });
+
+    });
+</script>
+<script>
+    /**
+   * Binds a TinyMCE widget to <textarea> elements.
+   */
+    angular.module('ui.tinymce', [])
+        .value('uiTinymceConfig', {})
+        .directive('uiTinymce', ['uiTinymceConfig', function (uiTinymceConfig) {
+        uiTinymceConfig = uiTinymceConfig || {};
+        var generatedIds = 0;
+        return {
+            require: 'ngModel',
+            link: function (scope, elm, attrs, ngModel) {
+                var expression, options, tinyInstance,
+                updateView = function () {
+                    ngModel.$setViewValue(elm.val());
+                    if (!scope.$$phase) {
+                        scope.$apply();
+                    }
+                };
+                // generate an ID if not present
+                if (!attrs.id) {
+                    attrs.$set('id', 'uiTinymce' + generatedIds++);
+                }
+
+                if (attrs.uiTinymce) {
+                    expression = scope.$eval(attrs.uiTinymce);
+                } else {
+                    expression = {};
+                }
+                options = {
+                    // Update model when calling setContent (such as from the source editor popup)
+                    setup: function (ed) {
+                        var args;
+                        ed.on('init', function (args) {
+                            ngModel.$render();
+                        });
+                        // Update model on button click
+                        ed.on('ExecCommand', function (e) {
+                            ed.save();
+                            updateView();
+                        });
+                        // Update model on keypress
+                        ed.on('KeyUp', function (e) {
+                            ed.save();
+                            updateView();
+                        });
+                        // Update model on change, i.e. copy/pasted text, plugins altering content
+                        ed.on('SetContent', function (e) {
+                            if (!e.initial) {
+                                ed.save();
+                                updateView();
+                            }
+                        });
+                        if (expression.setup) {
+                            scope.$eval(expression.setup);
+                            delete expression.setup;
+                        }
+                    },
+                    mode: 'exact',
+                    elements: attrs.id
+                };
+                // extend options with initial uiTinymceConfig and options from directive attribute value
+                angular.extend(options, uiTinymceConfig, expression);
+                setTimeout(function () {
+                    tinymce.init(options);
+                });
+
+
+                ngModel.$render = function () {
+                    if (!tinyInstance) {
+                        tinyInstance = tinymce.get(attrs.id);
+                    }
+                    if (tinyInstance) {
+                        tinyInstance.setContent(ngModel.$viewValue || '');
+                    }
+                };
+            }
+        };
+    }]);
+
+    let calApp = angular.module("calApp", ['ui.tinymce']);
+
+    calApp.controller('calController', function ($scope, $http, $filter, phpData) {
+
+
+        let action_link = phpData.action_link;
+        let proto = {
+            id: 0,
+            title: '',
+            start: '',
+            end: '',
+            time_start:'',
+            time_end:'',
+            detail: '',
+            color: '',
+            detail_en: '',
+        };
+
+        $scope.cur_event = {};
+
+        $scope.db_events = [];
+
+        $scope.calendar_group_id = '';
+        $scope.calendar_group = [];
+
+        $scope.tinymceOptions = {
+              width: '100%',
+              height: 350,
+              relative_urls: false,
+              plugins: 'print preview paste importcss searchreplace autolink autosave save visualblocks visualchars fullscreen image link media table hr pagebreak nonbreaking toc advlist lists imagetools textpattern noneditable quickbars filemanager responsivefilemanager code',
+              toolbar: 'undo redo |  bold italic underline strikethrough |  alignleft aligncenter alignright alignjustify numlist bullist |  forecolor backcolor outdent indent |  removeformat link responsivefilemanager image imagetools media preview print code fullscreen ',
+              // fontsize_formats: "1pt 2pt 3pt 4pt 5pt 6pt 7pt 8pt 9pt 10pt 11pt 12pt 14pt 16pt 17pt 18pt 19pt 20pt 22pt 24pt 28pt 32pt 36pt 40pt 44pt 48pt 52pt 56pt 60pt 64pt 68pt 72pt 96pt",
+              // font_formats: 'Andale Mono=andale mono,times;Arial=arial,helvetica,sans-serif;Arial Black=arial black,avant garde;Book Antiqua=book antiqua,palatino;Comic Sans MS=comic sans ms,sans-serif;Courier New=courier new,courier;Georgia=georgia,palatino;Helvetica=helvetica;Impact=impact,chicago;Symbol=symbol;Tahoma=tahoma,arial,helvetica,sans-serif;Terminal=terminal,monaco;Times New Roman=times new roman,times;Trebuchet MS=trebuchet ms,geneva;Verdana=verdana,geneva;Webdings=webdings;Wingdings=wingdings,zapf dingbats',
+              image_advtab: true,
+              importcss_append: true,
+              image_caption: true,
+              filemanager_title: "อัพโหลดไฟล์",
+              custom_colors: false,
+              external_filemanager_path: "<?= STATIC_PATH . 'scripts/tinymce/filemanager/'?>",
+              external_plugins: {
+                  "responsivefilemanager": "<?= STATIC_PATH . 'scripts/tinymce/plugins/responsivefilemanager/plugin.min.js'?>",
+                  "filemanager": "<?= STATIC_PATH . 'scripts/tinymce/filemanager/plugin.min.js'?>"
+              },
+              audio_template_callback: function (data) {
+                  return '<audio controls>' + '\n<source src="' + data.source + '"' + (data.sourcemime ? ' type="' + data.sourcemime + '"' : '') + ' />\n' + '</audio>';
+              },
+              video_template_callback: function (data) {
+                  return '<video width="' + data.width + '" height="' + data.height + '"' + (data.poster ? ' poster="' + data.poster + '"' : '') + ' controls="controls">\n' + '<source src="' + data.source + '"' + (data.sourcemime ? ' type="' + data.sourcemime + '"' : '') + ' />\n' + (data.source2 ? '<source src="' + data.source2 + '"' + (data.source2mime ? ' type="' + data.sourcemime + '"' : '') + ' />\n' : '') + '</video>';
+              },
+              quickbars_insert_toolbar: 'responsivefilemanager image quicktable',
+              quickbars_selection_toolbar: 'fontsizeselect | bold italic underline strikethrough | responsivefilemanager image quicktable',
+              noneditable_noneditable_class: "mceNonEditable",
+              toolbar_mode: 'sliding',
+              contextmenu: "link responsivefilemanager image table",
+              forced_root_block: false,
+              object_resizing : ":not(table)",
+              allow_script_urls:true,
+              remove_script_host: false,
+              valid_elements : '*[*]',
+              inline_styles : true,
+              table_sizing_mode: 'fixed',
+              table_default_styles: {
+                  width: '100%'
+              },
+              paste_remove_styles_if_webkit : false,
+              paste_preprocess : function(pl, o)
+              {
+                  o.content = o.content.replace("text-decoration-style: initial; text-decoration-color: initial; width: 868px;", "text-decoration-style: initial; text-decoration-color: initial; width: 100%;");;
+                  o.wordContent = true;
+              },
+              plugin_preview_width: 200,
+              content_css: "<?= LAYOUT_PATH . 'styles/mainStyle.css'?>",
+        };
+
+        let calendar;
+
+        let fnc_createCalendar = function () {
+
+            let calendarEl = document.getElementById('calendar');
+
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                locale: 'th',
+                plugins: ['interaction', 'dayGrid', 'timeGrid'],
+                header: {
+                    left: 'prev,next today',
+                    right: 'title'
+                },
+                navLinks: false,
+                selectable: true,
+                selectMirror: true,
+                select: function (arg) {
+                    $scope.cur_event = angular.copy(proto);
+                    $scope.cur_event.start = fnc_formatDate(arg.start);
+                    $scope.cur_event.end = fnc_formatDateEnd(arg.end);
+                    $scope.$apply();
+                    let dd = arg.end.getDate() - 1;
+                    let end_date = new Date(arg.end.getFullYear(), arg.end.getMonth(), dd);
+                    $('#eventStartDate').datepicker('setEndDate', end_date);
+                    $('#eventEndDate').datepicker('setStartDate', arg.start);
+                    $('#eventStartDate').datepicker('setDate', arg.start);
+                    $('#eventEndDate').datepicker('setDate', end_date);
+                    $('#eventStartDate').datepicker('update');
+                    $('#eventEndDate').datepicker('update');
+                    $('#eventTimeStartDate, #eventTimeEndDate').val('00:00')
+                    $('#eventCalendarGroup').trigger('change');
+                    $('#createEventModal').modal('show');
+                },
+                eventClick: function (info) {
+                    let id = info.event.id;
+                    let filter = $filter('filter')($scope.db_events, {'id': id});
+
+                    if (filter.length > 0) {
+
+                        filter[0].start = fnc_formatDateEn(info.event.start);
+                        filter[0].end = fnc_formatDateEndEn(info.event.end);
+                        filter[0].calendar_group = filter[0].calendar_group;
+                        $scope.cur_event = filter[0];
+                        $scope.$apply();
+                        $('#eventStartDate').datepicker('setEndDate', fnc_makeDate(fnc_setFormatDB($('#eventEndDate').val())));
+                        $('#eventEndDate').datepicker('setStartDate', fnc_makeDate(fnc_setFormatDB($('#eventStartDate').val())));
+                        $('#eventStartDate').datepicker('setDate', fnc_makeDate(fnc_setFormatDB($('#eventStartDate').val())));
+                        $('#eventEndDate').datepicker('setDate', fnc_makeDate(fnc_setFormatDB($('#eventEndDate').val())));
+                        $('#eventStartDate').datepicker('update');
+                        $('#eventEndDate').datepicker('update');
+                        // $('#eventTimeStartDate, #eventTimeEndDate').timepicker({
+                        //     showMeridian: false
+                        // });
+                        $('#eventCalendarGroup').trigger('change');
+                        $('#createEventModal').modal('show');
+                    }
+
+                },
+                eventDrop: function (info) {
+                    let id = info.event.id;
+
+                    let filter = $filter('filter')($scope.db_events, {'id': id});
+                    if (filter.length > 0) {
+                        let send_data = filter[0];
+
+                        send_data.start = fnc_formatDate(info.event.start);
+                        send_data.end = fnc_formatDateEnd(info.event.end);
+                        $scope.$apply();
+
+                        // ยิง ajax ส่ง send_data  ไป update บน server
+                        var saveData = {
+                            'title': info.event.title,
+                            'title_en': send_data.title_en,
+                            'start': fnc_setFormatDB(send_data.start) + ' ' + fnc_setFormatTime(send_data.time_start),
+                            'end': fnc_setFormatDB(send_data.end) + ' ' + fnc_setFormatTime(send_data.time_end),
+                            'detail': send_data.detail,
+                            'detail_en': send_data.detail_en,
+                            'color': send_data.calendar_group,
+                        };
+
+                        $http.post(action_link + 'saveData/' + info.event.id,
+                            'send_data=' + JSON.stringify(saveData), {
+                                headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8;'},
+                            }
+                        ).then(function (res) {
+                            let event = calendar.getEventById(info.event.id);
+                            event.setProp('title', info.event.title);
+                        }, function () {
+                            alert('การเชื่อมต่อผิดพลาด กรุณาอัพโหลดใหม่อีกครั้ง');
+                        });
+                    }
+
+
+                },
+
+                eventResize: function (info) {
+                    let id = info.event.id;
+                    let filter = $filter('filter')($scope.db_events, {'id': id});
+                    if (filter.length > 0) {
+                        let send_data = filter[0];
+
+                        send_data.start = fnc_formatDate(info.event.start);
+                        send_data.end = fnc_formatDateEnd(info.event.end);
+                        $scope.$apply();
+                        // ยิง ajax ส่ง send_data  ไป update บน server
+                        var saveData = {
+                            'title': info.event.title,
+                            'title_en': send_data.title_en,
+                            'start': fnc_setFormatDB(send_data.start) + ' ' + fnc_setFormatTime(send_data.time_start),
+                            'end': fnc_setFormatDB(send_data.end) + ' ' + fnc_setFormatTime(send_data.time_end),
+                            'detail': send_data.detail,
+                            'detail_en': send_data.detail_en,
+                            'color': send_data.calendar_group,
+                        };
+
+                        $http.post(action_link + 'saveData/' + info.event.id,
+                            'send_data=' + JSON.stringify(saveData), {
+                                headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8;'},
+                            }
+                        ).then(function (res) {
+                            let event = calendar.getEventById(info.event.id);
+                            event.setProp('title', info.event.title);
+                        }, function () {
+                            alert('การเชื่อมต่อผิดพลาด กรุณาอัพโหลดใหม่อีกครั้ง');
+                        });
+                    }
+
+
+                },
+
+                editable: true,
+                eventLimit: true
+            });
+
+            calendar.render();
+
+        };
+
+        $scope.addEvent = function () {
+
+          if($scope.cur_event.calendar_group !== null && $scope.cur_event.calendar_group != '') {
+            // $.fancybox.close();
+            if ($scope.cur_event.title != '') {
+                // ยิง ajax บันทึกใน server และรับค่า id กลับมา
+                // แล้วเอา id กลับไปใส่ใน $scope.cur_event
+                var send_data = {
+                    'title': $scope.cur_event.title,
+                    'title_en': $scope.cur_event.title_en,
+                    'start': fnc_setFormatDB($scope.cur_event.start) + ' ' + fnc_setFormatTime($scope.cur_event.time_start),
+                    'end': fnc_setFormatDB($scope.cur_event.end) + ' ' + fnc_setFormatTime($scope.cur_event.time_end),
+                    'detail': $scope.cur_event.detail,
+                    'detail_en': $scope.cur_event.detail_en,
+                    'color': $scope.cur_event.calendar_group,
+                };
+                $http.post(action_link + 'saveData',
+                    'send_data=' + JSON.stringify(send_data), {
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8;'},
+                    }
+                ).then(function (res) {
+                    $scope.cur_event.id = res.data;
+                    $scope.db_events.push($scope.cur_event);
+                    $scope.cur_event.color = $scope.cur_event.calendar_group.split("|");
+                    calendar.addEvent({
+                        id: $scope.cur_event.id,
+                        title: $scope.cur_event.title,
+                        start: fnc_makeDate(fnc_setFormatDB($scope.cur_event.start)),
+                        end: fnc_makeDateEnd(fnc_setFormatDB($scope.cur_event.end)),
+                        detail: $scope.cur_event.detail,
+                        // news: $scope.cur_event.news,
+                        allDay: true,
+                        backgroundColor: $scope.cur_event.color[1]
+                    });
+
+                    $('#createEventModal').modal('hide');
+                }, function () {
+                    alert('การเชื่อมต่อผิดพลาด กรุณาอัพโหลดใหม่อีกครั้ง');
+                });
+              }else{
+                alert('กรุณาระบุชื่อกิจกรรม');
+              }
+            } else {
+                alert('กรุณาเลือกหมวดหมู่กิจกรรม');
+
+            }
+
+        };
+
+        $scope.editEvent = function () {
+            console.log($scope.cur_event);
+            // $.fancybox.close();
+            if ($scope.cur_event.title != '') {
+                // ยิง ajax ส่ง cur_event ไป update บน server
+                // console.log($scope.cur_event);
+                var send_data = {
+                    'title': $scope.cur_event.title,
+                    'title_en': $scope.cur_event.title_en,
+                    'start': fnc_setFormatDB($scope.cur_event.start) + ' ' + fnc_setFormatTime($scope.cur_event.time_start),
+                    'end': fnc_setFormatDB($scope.cur_event.end) + ' ' + fnc_setFormatTime($scope.cur_event.time_end),
+                    'detail': $scope.cur_event.detail,
+                    'detail_en': $scope.cur_event.detail_en,
+                    'color': $scope.cur_event.calendar_group,
+                };
+
+                $http.post(action_link + 'saveData/' + $scope.cur_event.id,
+                    'send_data=' + JSON.stringify(send_data), {
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8;'},
+                    }
+                ).then(function (res) {
+                    $scope.cur_event.color = $scope.cur_event.calendar_group.split("|");
+                    let event = calendar.getEventById($scope.cur_event.id);
+                    event.setProp('title', $scope.cur_event.title);
+                    event.setProp('backgroundColor', $scope.cur_event.color[1]);
+                    event.setStart(fnc_makeDate(fnc_setFormatDB($scope.cur_event.start)));
+                    event.setEnd(fnc_makeDateEnd(fnc_setFormatDB($scope.cur_event.end)));
+                    $('#createEventModal').modal('hide');
+                }, function () {
+                    alert('การเชื่อมต่อผิดพลาด กรุณาอัพโหลดใหม่อีกครั้ง');
+                });
+            } else {
+                alert('กรุณาระบุชื่อกิจกรรม');
+            }
+        }
+
+        $scope.removeEvent = function () {
+
+            if (confirm('ยืนยันการลบข้อมูล')) {
+                // $.fancybox.close();
+
+                $('#createEventModal').modal('hide');
+
+                // ยิง ajax ไปลบข้อมูลบน server ตาม id
+
+                var send_data = {
+                    'title': $scope.cur_event.title,
+                    'title_en': $scope.cur_event.title_en,
+                    'start': fnc_setFormatDB($scope.cur_event.start) + ' ' + fnc_setFormatTime($scope.cur_event.time_start),
+                    'end': fnc_setFormatDB($scope.cur_event.end) + ' ' + fnc_setFormatTime($scope.cur_event.time_end),
+                    'detail': $scope.cur_event.detail,
+                    'detail_en': $scope.cur_event.detail_en,
+                    'color': $scope.cur_event.calendar_group,
+                };
+
+                $http.post(action_link + 'deleteData/' + $scope.cur_event.id,
+                    'send_data=' + JSON.stringify(send_data), {
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8;'},
+                    }
+                ).then(function (res) {
+                    let event = calendar.getEventById($scope.cur_event.id);
+                    event.remove();
+
+                    let filter = $filter('filter')($scope.db_events, function (ele) {
+                        return ele.id !== $scope.cur_event.id;
+                    });
+
+                    $scope.db_events = filter;
+                }, function () {
+                    alert('การเชื่อมต่อผิดพลาด กรุณาอัพโหลดใหม่อีกครั้ง');
+                });
+
+
+            }
+        }
+
+        let fnc_setFormatPreView = function (d) {
+
+            if (typeof d != 'undefined') {
+                var setDate = d.split('-');
+                d = new Date(setDate[0], (setDate[1] - 1), setDate[2]);
+                let month = '' + (d.getMonth() + 1);
+                let day = '' + d.getDate();
+                let year = d.getFullYear();
+
+                if (year < 2200) {
+                    year = year + 543;
+                }
+
+                if (month.length < 2) month = '0' + month;
+                if (day.length < 2) day = '0' + day;
+
+                return [day, month, year].join('-');
+            } else {
+                return '';
+            }
+        };
+
+        let fnc_setFormatDB = function (d) {
+
+            if (typeof d != 'undefined') {
+                var setDate = d.split('-');
+                d = new Date(setDate[2], (setDate[1] - 1), setDate[0]);
+                let month = '' + (d.getMonth() + 1);
+                let day = '' + d.getDate();
+                let year = d.getFullYear();
+
+                if (year > 2200) {
+                    year = year - 543;
+                }
+
+                if (month.length < 2) month = '0' + month;
+                if (day.length < 2) day = '0' + day;
+
+                return [year, month, day].join('-');
+            } else {
+                return '';
+            }
+        };
+
+        let fnc_setFormatTime = function (d) {
+            if (typeof d != 'undefined' && d != '' && d != null) {
+                var setDate = d.split(':');
+                if(typeof setDate[1] !== "undefined") {
+                    return d;
+                } else {
+                    return setDate[0] + ':00';
+                }
+            } else {
+                return '00:00';
+            }
+        };
+
+        let fnc_setFormatTimeDB = function (d) {
+            if (typeof d != 'undefined' && d != '' && d != null) {
+                var setDate = d.split(' ');
+                if(typeof setDate[1] !== "undefined") {
+                    var setDate2 = setDate[1].split(':');
+                    if(typeof setDate2[1] !== "undefined") {
+                        return setDate2[0] + ':' + setDate2[1];
+                    } else {
+                        return setDate2[0] + ':00';
+                    }
+                } else {
+                    return '00:00';
+                }
+            } else {
+                return '00:00';
+            }
+        };
+
+        let fnc_formatDate = function (d) {
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            let year = d.getFullYear();
+            year = year + 543;
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+
+            return [day, month, year].join('-');
+        };
+
+        let fnc_formatDateEn = function (d) {
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            let year = d.getFullYear();
+            // year = year + 543;
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+
+            return [day, month, year].join('-');
+        };
+
+        let fnc_formatDateEnd = function (d) {
+
+            let dd = d.getDate() - 1;
+            let end_date = new Date(d.getFullYear(), d.getMonth(), dd);
+
+            let month = '' + (end_date.getMonth() + 1);
+            let day = '' + end_date.getDate();
+            let year = end_date.getFullYear();
+            year = year + 543;
+
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+
+
+            return [day, month, year].join('-');
+        };
+
+        let fnc_formatDateEndEn = function (d) {
+
+            let dd = d.getDate() - 1;
+            let end_date = new Date(d.getFullYear(), d.getMonth(), dd);
+
+            let month = '' + (end_date.getMonth() + 1);
+            let day = '' + end_date.getDate();
+            let year = end_date.getFullYear();
+            // year = year + 543;
+
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+
+
+            return [day, month, year].join('-');
+        };
+
+        let fnc_makeDateObj = function (str) {
+            let res = str.split("-");
+
+            if (res[0] > 2200) {
+                res[0] = parseInt(res[0]) - 543;
+            }
+            return {
+                y: parseInt(res[0]),
+                m: parseInt(res[1]) - 1,
+                d: parseInt(res[2]),
+            };
+        }
+
+        let fnc_makeDate = function (str) {
+            let obj = fnc_makeDateObj(str);
+            return new Date(obj.y, obj.m, obj.d);
+        };
+
+
+        let fnc_makeDateEnd = function (str) {
+            let obj = fnc_makeDateObj(str);
+            obj.d++;
+            return new Date(obj.y, obj.m, obj.d);
+        };
+
+
+        let fnc_fetchEvents = function () {
+
+            // ยิง ajax หา event แล้วมาเก็บใน $scope.db_events
+            $http.post(action_link + 'getData').then(function (res) {
+                $scope.db_events = res.data;
+                for (let k in $scope.db_events) {
+                    // $scope.db_events[k].news_data = $scope.db_events[k].news;
+                    // $scope.db_events[k].news = arrayColumn($scope.db_events[k].news, 'id');
+                    $scope.db_events[k].time_start = fnc_setFormatTimeDB($scope.db_events[k].start);
+                    $scope.db_events[k].time_end = fnc_setFormatTimeDB($scope.db_events[k].end);
+                    calendar.addEvent({
+                        id: $scope.db_events[k].id,
+                        title: $scope.db_events[k].title,
+                        title_en: $scope.db_events[k].title_en,
+                        start: fnc_makeDate($scope.db_events[k].start),
+                        end: fnc_makeDateEnd($scope.db_events[k].end),
+                        allDay: true,
+                        backgroundColor: $scope.db_events[k].color,
+                    });
+
+                }
+            }, function () {
+                alert('การเชื่อมต่อผิดพลาด กรุณาอัพโหลดใหม่อีกครั้ง');
+            });
+        }
+
+        let fnc_fetchCalendarGroup = function () {
+
+            // ยิง ajax หา event แล้วมาเก็บใน $scope.db_events
+            $http.post(action_link + 'getDataGroup').then(function (res) {
+                $scope.calendar_group = res.data;
+            }, function () {
+                alert('การเชื่อมต่อผิดพลาด กรุณาอัพโหลดใหม่อีกครั้ง');
+            });
+        }
+
+        let arrayColumn = function (array, columnName) {
+            return array.map(function(value,index) {
+                return value[columnName];
+            })
+        }
+
+
+        let fnc_init = function () {
+            fnc_createCalendar();
+            fnc_fetchEvents();
+            fnc_fetchCalendarGroup();
+        };
+
+        fnc_init();
+
+    });
+
+    <?php
+    # กำหนดค่า default ให้กับ angularjs
+    $phpData = array(
+        'action_link' => $action_link
+    );
+
+    ?>
+    calApp.value('phpData', <?= json_encode($phpData) ?>);
+</script>

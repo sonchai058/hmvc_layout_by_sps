@@ -1,0 +1,183 @@
+<style>
+    .white{
+        white-space: nowrap;
+    }
+    .input_search {
+        /*width: 89% !important;*/
+        width: 100% !important;
+    }
+    .label_search {
+        min-height: 33px;
+        padding-top: 8px;
+        font-size: 15px;
+        /*width: 10%;*/
+    }
+    .select_search span{
+        min-height: 33px;
+        padding-top: 8px;
+        font-size: 15px;
+        width: 89% !important;
+    }
+    .img_list{
+        width: 245px;
+        max-height:  200px;
+    }
+</style>
+
+<div class="row">
+    <div class="col-md-12">
+
+        <div class="row">
+            <div class="col-md-12">
+                <ol class="breadcrumb">
+                    <li><a href="<?= $action_link.'MainList' ?>">Home</a></li>
+                    <li class="active"><?= $title ?></li>
+
+                    <h1><?= $title_page ?></h1>
+                </ol>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="main-box clearfix">
+                    <!--                    <header class="main-box-header clearfix">
+                                            <h2><?= $title_page ?></h2>
+                                        </header>-->
+                    <div class="main-box-body clearfix" style="margin-top: 10px;">
+                        <div class="col-md-12">
+                            <div class="main-box-body clearfix box_one_search search_list" style="padding-bottom: 5px !important;">
+                                <form class="form-inline text-center" role="form" method="post" action="<?=$action_link?>index/1">
+                                    <div class="form-group col-md-6 col-xs-12 col-sm-6">
+                                        <label class="col-md-2 col-xs-12 col-sm-2 label_search"> ค้นหา :</label>
+                                        <span class=" col-md-10 col-xs-12 col-sm-10"> 
+                                            <input class="form-control input_search" id="stext" placeholder="ค้นหา" type="text"
+                                                   autocomplete="off"
+                                                   name="form_search_element[stext]"
+                                                   value="<?= $form_search_element['stext']; ?>"
+                                                   >
+                                        </span>
+                                    </div>
+                                    <div class="form-group col-md-6 col-xs-12 col-sm-6">
+                                        <label class="col-md-3 col-xs-12 col-sm-3 label_search"> สถานะ :</label>
+                                        <span class="col-md-9 col-xs-12 col-sm-9"> 
+                                            <select id="status" name="form_search_element[status]" class="form-control select_search">
+                                                <option value="all">-- ทั้งหมด --</option>
+                                                <option value="1" <?= $form_search_element['status'] == 1 ? 'selected' : ''?>>เผยแพร่</option>
+                                                <option value="2" <?= $form_search_element['status'] == 2 ? 'selected' : ''?>>ไม่เผยแพร่</option>
+                                            </select>
+                                        </span>
+                                    </div>
+                                    <div class="form-group col-md-12 col-xs-12 col-sm-12 text-center" style="margin: 10px">
+                                        <button type="submit" class="btn btn-info">
+                                            <i class="fa fa-search"></i> ค้นหา
+                                        </button>
+                                        <button type="submit" name="reset" value="clear" class="btn btn-default">
+                                            <i class="fa fa-refresh"></i> ล้างค่า
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="table-responsive">
+                                <table role="grid" id="table-example" class="table table-hover dataTable no-footer">
+                                    <thead >
+                                        <tr role="row" >
+                                            <th class="text-center start_no">
+                                                <span>ลำดับ</span>
+                                            </th>
+                                            <th class="text-center" style="width: 25%;">
+                                                <span>รูปภาพแบนเนอร์</span>
+                                            </th>
+                                            <th class="text-center">
+                                                <span>หัวข้อแบนเนอร์</span>
+                                            </th>
+                                            <th class="text-center" style="width: 10%;">
+                                                <span>สถานะ</span>
+                                            </th>
+                                            <th class="text-center" style="width: 15%;">
+                                                <span>วันที่สร้าง</span>
+                                            </th>
+                                            <th class="text-center" style="width: 20%">
+                                                <a href="<?= $action_link.'form' ?>" title="เพิ่มเมนู">
+                                                    <button type="button" class="btn btn-success">
+                                                        <i class="fa fa-plus"></i> เพิ่มแบนเนอร์
+                                                    </button>
+                                                </a>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php if(!empty($list)): foreach($list as $key => $value): ?>
+                                                <tr id="<?= $value['slide_id'] ?>" order="<?= ++$this->start_no ?>" class="odd" role="row">
+                                                    <td class="text-center"><?= $this->start_no ?></td>                                                    
+                                                    <td class="text-center">
+                                                        <?=$value['slide_image']?>                                                        
+                                                    </td>
+                                                    <td><?= $value['slide_title']?></td>
+                                                    <td class="text-center"><?= $status[$value['show_status']] ?></td>
+                                                    <td class="text-center"><?= General::dayThai($value['time_create']) ?></td>
+                                                    <td class="text-center white">
+                                                        <a href="<?= $action_link.'form/'.$value['slide_id'] ?>" class="table-link " title="แก้ไข">
+                                                            <button type="button" class="btn btn-warning">
+                                                                <i class="fa fa-edit"></i> แก้ไข
+                                                            </button>
+                                                        </a>
+                                                        <a href="<?=$action_link.'delete/'.$value['slide_id']?>" class="table-link " title="ลบ" onclick="return confirm('คุณต้องการลบเมนูนี้')">
+                                                            <button type="button" class="btn btn-danger">
+                                                                <i class="fa fa-trash-o"></i> ลบ
+                                                            </button>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                                <?php
+                                            endforeach;
+                                        else:
+                                            ?>
+                                            <tr class="odd text-center " role="row">
+                                                <td colspan="6"><strong>- ไม่พบข้อมูล -</strong>
+                                                </td>
+                                            </tr>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+<!--            <div class="pagination" style="float:right">
+                <div class="paging">
+                    <?php echo $this->my_pagination; ?>
+                </div>
+            </div>-->
+        </div>
+    </div>
+</div>
+
+<script language="javascript" type="text/javascript">
+    jQuery(document).ready(function ($) {
+        var count_col = $('#table-example tbody tr.odd').attr('order');
+        $('#table-example tbody').tableDnD({
+            onDrop: function (table, row)
+            {
+                var rows = table.rows;
+                for (var i = 0; i < rows.length; i++) {
+                    var slide_id = rows[i].getAttribute('id');
+                    var order = ((parseInt(count_col) + parseInt(i)));
+
+                    $('tr[id=' + slide_id + '] td:first').text(order);
+                    $('tr[id=' + slide_id + ']').attr('order',order);
+                    // console.log('tr[id='+template_id+'] td:first  @'+template_id+'//'+order);
+                    var url = '<?= $action_link ?>updateOrder/' + slide_id + '/' + order;
+                    console.log(url);
+                    $.get(url, function (data) {
+                        console.log(data);
+                        $('.alert').show();
+                        $('.alert p#text_error').text(data);
+                    });
+                }
+            }
+
+        });
+    });
+</script>

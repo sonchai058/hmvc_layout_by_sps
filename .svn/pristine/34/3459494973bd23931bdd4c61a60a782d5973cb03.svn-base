@@ -1,0 +1,1028 @@
+<div itemscope class="blockBannerTop">
+    <div class="bannerTopSearch">
+        <?php $filename = 'file_upload/bg_search/' . $bg_search['file_name']; ?>
+        <?php if (file_exists($filename)): ?>
+            <img class="img-fluid banner-search"
+                 src='<?= base_url() . 'file_upload/bg_search/' . $bg_search['file_name'] ?>'/>
+        <?php else : ?>
+            <img class="img-fluid banner-search" src='<?= base_url() . 'file_upload/default_img/CMUL63-1.jpg' ?>'/>
+        <?php endif ?>
+        <div class="blockSearchInBanner">
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <div class="input-group-text input-group-textSbs">
+                        <select id="optionSearchIndex" class="select2SearchIndex">
+                            <option value="worldcat">Worldwide Search & Request</option>
+                            <option value="eds">EDS</option>
+                            <option value="opac">OPAC</option>
+                            <option value="pulinet">PULINET</option>
+                            <option value="cmudc">Digital Collections</option>
+                            <option value="website"><?= _po('Internal Search') ?></option>
+                        </select>
+                    </div>
+                </div>
+                <input type="text" id="searchIndex" class="form-control form-controlSBS" name="searchIndex" placeholder="Find books, e-Books, Journals, articles, dissertations and ILL">
+                <div class="input-group-append">
+                    <button type="button" class="btn btnPink" id="submitSearch">
+                        <i class="fas fa-search"></i>
+                        <?= _po('Search') ?>
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-3 text-right">
+                <a class="blockSearchingGuide" target="_blank" href="<?= LINK . 'file_upload/' ?>SearchingGuide.pdf">
+                    <?= _po('Searching Guide') ?>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php if (!empty($e_resources)): ?>
+    <div class="blockResources">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <div class="subjectBlock">
+                        <span class="textHighlight">Recommend</span> e-Resources
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+
+                <div class="col-12">
+                    <div class="carouselResources owl-carousel">
+                        <?php foreach ($e_resources as $key => $value): ?>
+                            <div class="blockDataResources">
+                                <a href="<?= $value['rs_link'] ?>" target="_blank" onclick="InsertCounterPageRecommendResource(<?= $value['rs_id'] ?>)">
+                                    <div class="blockImgResources">
+                                        <img src="<?= base_url() . $value['rs_path'] . $value['rs_image'] ?>"
+                                             alt="resourcesImg"/>
+                                    </div>
+                                    <div class="textResources"><?= $value['rs_title'] ?></div>
+                                </a>
+                            </div>
+                        <?php endforeach ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endif ?>
+
+<?php if (!empty($book)): ?>
+    <div class="blockBook">
+        <div class="blockBookLeft">
+        </div>
+        <div class="blockBookRight">
+        </div>
+
+        <div class="blockBookData">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-4 col-md-4 col-sm-12 col-12 mb-4">
+                        <div class="textBookSubject BookTitle">
+                            <span class="textHighlight">NEW</span> Arrival
+                        </div>
+                        <div class="textBookUnderSubject"></div>
+                        <div class="textBookAuthor"></div>
+                        <div class="textBookFormat"></div>
+                        <div class="textBookDetail"></div>
+                    </div>
+                    <div class="col-lg-8 col-md-8 col-sm-12 col-12 pl-lg-0 pl-md-0">
+                        <div class="carouselBook owl-carousel" itemscope itemtype="http://schema.org/Book">
+                            <?php foreach ($book as $key => $value): ?>
+                                <div class="blockBookCarousel">
+                                    <span itemprop="name" class="d-none"><?= $value['book_title'] ?></span>
+                                    <span itemprop="author" class="d-none"><?= $value['author'] ?></span>
+                                    <span itemprop="description" class="d-none"><?= $value['description'] ?></span>
+                                    <a itemprop="url" href="<?= $value['url'] ?>" target="_blank"
+                                       text-detail="<?= htmlentities($value['description']) ?>"
+                                       text-format="<?= $value['call_nmbr'] ?>" text-author="<?= $value['author'] ?>"
+                                       text-under-subject="<?= $value['book_title'] ?>"
+                                       onclick="InsertCounterPageArrival(<?= $value['book_id'] ?>)">
+                                        <img itemprop="image"
+                                             src='<?= base_url() . $value['img_path'] . $value['book_image'] ?>'/>
+                                    </a>
+                                </div>
+                            <?php endforeach ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-right mt-3">
+                <a href="<?= base_url() . 'NewArrival' ?>" class="btn btnPinkAll"><?= _po('View All') ?></a>
+            </div>
+        </div>
+    </div>
+<?php endif ?>
+
+<div class="clearfix"></div>
+
+<div class="blockNewsCategory">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="text-center">
+                    <nav id="myTab" class="tabSbs nav-tabs">
+                        <div class="selectorData"></div>
+                        <?php if (!empty($category_news)): ?>
+                            <?php foreach ($category_news as $key => $value): ?>
+                                <a href="#category_news_<?= $value['category_id'] ?>"
+                                   data-toggle="tab" <?= $key == 0 ? 'class="active"' : '' ?>><?= $value['category_name'] ?></a>
+                            <?php endforeach ?>
+                        <?php endif ?>
+                        <a href="#calendarTab" id="linkCalendarTab" <?= empty($category_news) ? 'class="active"' : '' ?>
+                           data-toggle="tab"><?= _po('Calendar') ?></a>
+                    </nav>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="blockRssFeedIndex">
+                    <a target="_blank" href="<?= base_url() . 'News/RssFeedList' ?>">
+                        <i class="fas fa-rss"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <div class="col-12 mt-5">
+                <div class="tab-content" id="myTabContent">
+                    <?php if (!empty($category_news)): ?>
+                        <?php foreach ($category_news as $key => $value): ?>
+                            <div class="tab-pane fade show <?= $key == 0 ? 'active' : '' ?>"
+                                 id="category_news_<?= $value['category_id'] ?>" role="tabpanel">
+                                <div class="col-12 position-relative">
+                                    <?php if (!empty($value['news'])): ?>
+                                        <div class="blockNews owl-carousel">
+                                            <?php foreach ($value['news'] as $kk => $vv): ?>
+                                                <div itemscope itemtype="http://schema.org/NewsArticle" class="cardSbs">
+                                                    <span itemprop="name" class="d-none"><?= $vv['news_title'] ?></span>
+                                                    <img itemprop="image" class="d-none"
+                                                         src="<?= base_url() . 'file_upload/news/' . $vv['news_image'] ?>"
+                                                         style="width: 20px;"/>
+                                                    <span itemprop="datePublished"
+                                                          class="d-none"><?= $vv['datePublished'] ?></span>
+                                                    <div class="cardInfoHover">
+                                                        <div class="blockShareNews">
+                                                            <a class="iconShareNews iconShareNewsFirst"
+                                                               onclick="shareSocial('facebook', '<?= base_url() . 'News/NewsDetail/' . $vv['news_id'] ?>', '<?= $vv['news_title'] ?>','<?= mb_substr(str_replace('"', '', $this->db->escape_str(strip_tags($vv['news_description']))), 0, 300, "utf-8") ?>', '<?= base_url() . 'file_upload/news/' . $vv['news_image'] ?>')">
+                                                                <i class="fab fa-facebook-square"></i>
+                                                            </a>
+                                                            <a class="iconShareNews"
+                                                               onclick="shareSocial('twitter', '<?= base_url() . 'News/NewsDetail/' . $vv['news_id'] ?>', '<?= $vv['news_title'] ?>','<?= mb_substr(str_replace('"', '', $this->db->escape_str(strip_tags($vv['news_description']))), 0, 300, "utf-8") ?>', '<?= base_url() . 'file_upload/news/' . $vv['news_image'] ?>')">
+                                                                <i class="fab fa-twitter"></i>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                    <a itemprop="url"
+                                                       href="<?= base_url() . 'News/NewsDetail/' . $value['category_id'] .'/' . $vv['news_id'] ?>"
+                                                       class="card_link">
+                                                        <div class="cardImg"
+                                                             style="background-image: url('<?= base_url() . 'file_upload/news/' . $vv['news_image'] ?>')"></div>
+                                                        <div class="cardImgHover"
+                                                             style="background-image: url('<?= base_url() . 'file_upload/news/' . $vv['news_image'] ?>')"></div>
+                                                    </a>
+                                                    <div class="cardInfo">
+                                                        <div class="cardTitle">
+                                                            <a itemprop="url"
+                                                               href="<?= base_url() . 'News/NewsDetail/' . $value['category_id'] .'/' . $vv['news_id'] ?>">
+                                                                <?= str_replace("font-size", "font-size: 'calc(18px + var(--font-size-custom))'; font-sizex", $vv['news_title']) ?>
+                                                            </a>
+                                                        </div>
+                                                        <div class="cardBy">
+                                                            <img src="<?= LAYOUT_PATH . 'images/CMU_WEB/time.png' ?>"
+                                                                 style="width: 20px;"/>
+                                                            <label class="cardTime"><?= $vv['time_update'] ?></label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="clearfix"></div>
+                                        <div class="alert alert-danger text-center" role="alert">
+                                            ไม่พบข้อมูล
+                                        </div>
+                                    <?php endif ?>
+                                    <div class="clearfix"></div>
+                                    <?php if (count($value['news']) == 6): ?>
+                                        <div class="text-right mt-3">
+                                            <a href="<?= base_url() . 'News/NewsList/' . $value['category_id'] ?>"
+                                               class="btn btnPinkAll"><?= _po('Read All') ?></a>
+                                        </div>
+                                    <?php endif ?>
+                                </div>
+                            </div>
+                        <?php endforeach ?>
+                    <?php endif ?>
+                    <div class="tab-pane fade show" id="calendarTab" role="tabpanel">
+                        <div class="d-flex align-items-center flex-wrap justify-content-center">
+                            <div class="container" ng-app="calApp" ng-controller="calController" ng-cloak>
+                                <div class="row align-items-center">
+                                    <div class="col-lg-12 col-md-12">
+                                        <div class="news-detail-box">
+                                            <div class="clearfix"></div>
+                                            <div class="row align-items-center">
+                                                <div class="col-lg-12 col-md-12">
+                                                    <div id='calendar'></div>
+                                                </div>
+
+                                                <div class="col-lg-12 col-md-12">
+                                                    <div class="mt-3">
+                                                        <strong class="text-danger"><?= _po('Annotation') ?> :</strong>
+                                                    </div>
+
+                                                    <?php if (!empty($getCalendarGroup)): foreach ($getCalendarGroup as $key => $value): ?>
+                                                        <div class="mt-2">
+                                                            <strong><?= $value['cg_name'] ?></strong> =
+                                                            <span class="badge badge-pill"
+                                                                  style="background-color: <?= $value['cg_color'] ?>; color: <?= $value['cg_color'] ?>;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                                                        </div>
+                                                    <?php endforeach; endif; ?>
+                                                    <div class="block-table-calendar" ng-show="db_events.length >= 1">
+                                                        <div class="table-responsive mt-3">
+                                                            <table class="table">
+                                                                <thead class="color-pink">
+                                                                    <tr>
+                                                                        <th scope="col" class="text-center" width="50"><?= _po('No.'); ?></th>
+                                                                        <th scope="col" class="text-center" width="300"><?= _po('List'); ?></th>
+                                                                        <th scope="col" class="text-center" width="100"><?= _po('Date'); ?></th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <tr ng-repeat="(key, value) in db_events">
+                                                                      <td class="text-center">{{key + 1}}</td>
+                                                                      <td>{{value.title}}</td>
+                                                                      <td class="text-center">{{value.start_date}} <?= _po('To'); ?> {{value.end_date}}</td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<?php if (!empty($online_lib_course)): ?>
+    <div class="blockBanner">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <div class="subjectBlock">
+                        <span class="textHighlight">Online</span> Library Courses
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+
+                <div class="col-12">
+                    <div class="bannerBottom owl-carousel">
+                        <?php foreach ($online_lib_course as $key => $value): ?>
+                            <div itemscope itemtype="http://schema.org/NewsArticle" class="wrapSbs">
+                                <span itemprop="datePublished" class="d-none"><?= $value['datePublished'] ?></span>
+                                <a href="<?= $value['url'] ?>" target="_blank" onclick="InsertCounterPageOnLineLibCourse(<?= $value['banner_id'] ?>)">
+                                    <div class="titleSbs">
+                                        <img itemprop="image"
+                                             src='<?= base_url() . 'file_upload/module/slide/' . $value['banner_image'] ?>'/>
+                                        <div class="textSbs">
+                                            <div itemprop="name"
+                                                 class="animate-text"><?= $value['banner_title'] ?></div>
+                                            <div class="dotsSbs">
+                                                <span></span>
+                                                <span></span>
+                                                <span></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        <?php endforeach ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-right mt-3">
+                    <a href="<?= base_url() . 'LibraryCourse' ?>" class="btn btnPinkAll"><?= _po('View All') ?></a>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endif ?>
+
+<?php if (!empty($getRelatedAgencies)): ?>
+    <div class="blockAgencies">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <div class="subjectBlock">
+                        <span class="textHighlight"><?= _po('Website')?></span><?= _po('Related')?>
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+
+                <div class="col-12">
+                    <div class="agenciesSlide position-relative owl-carousel mt-2">
+                        <?php foreach ($getRelatedAgencies as $key => $value): ?>
+                            <div class="blockImgAgencies d-flex align-items-center">
+                                <?php if($value['url'] == '#'): ?>
+                                    <img src="<?= APP_HOST_ADDRESS . $value['img_path'] . $value['image'] ?>"
+                                         title="<?= $value['title'] ?>" alt="imgAgencies"/>
+                                <?php else: ?>
+                                    <a href="<?= $value['url'] ?>" <?= $value['url'] == '#' ? "" : "target='_blank'" ?> onclick="InsertCounterPageRelatedAgencies(<?= $value['id'] ?>)">
+                                        <img src="<?= APP_HOST_ADDRESS . $value['img_path'] . $value['image'] ?>"
+                                             title="<?= $value['title'] ?>" alt="imgAgencies"/>
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endif ?>
+
+<form id="formCMUDC" method="post" action="https://cmudc.library.cmu.ac.th/frontend/Search" target="_blank">
+    <input id="input_cmu_dc" name="ex_query[main]" type="hidden">
+    <input type="hidden" name="ex_query[option]" value="all">
+</form>
+<?php if(!empty($getPopUp)):?>
+<div id="initFacncybox">
+    <img src="<?= LINK.'file_upload/pop_up/'.$getPopUp['file_name']?>" style="max-width: 100%; max-height: 100%;">
+</div>
+
+<style>
+  #initFacncybox.fancybox-content {
+    padding:0;
+    margin:50px;
+  }
+</style>
+
+<script>
+    $(document).ready(function() {
+        var url = '<?= $getPopUp['url']?>';
+        $("#initFacncybox").fancybox({
+            'overlayShow': true,
+            'afterShow': function () {
+                if(url != '') {
+                    $("#initFacncybox img").click(function() {
+                        window.open(url, '_blank');
+                    });
+                }
+                $(".fancybox-content").css("background","transparent");
+                $(".fancybox-content").css("cursor","pointer");
+                $(".fancybox-slide--html .fancybox-close-small").css("background-color", "#9a75b2");
+                $(".fancybox-slide--html .fancybox-close-small").css("color", "#ffffff");
+            }, 
+            beforeShow: function () {
+            }
+        }).trigger('click');
+    });
+</script>
+<?php endif; ?>
+<script>
+    $(document).ready(function () {
+        var lang = '<?= $val_lang ?>';
+        var carouselBook = $('.carouselBook');
+        var bookCount = '<?= (!empty($book) ? COUNT($book) : 0)?>';
+        var countRelatedAgencies = '<?= (!empty($getRelatedAgencies) ? COUNT($getRelatedAgencies) : 0)?>';
+        carouselBook.on('initialized.owl.carousel', function (event) {
+            $('.carouselBook .owl-stage .owl-item').removeClass('firstActiveItem');
+            setTimeout(function () {
+                $('.carouselBook .owl-stage .owl-item.active').each(function (index) {
+                    var call_nmbr = $(this).find('.blockBookCarousel a').attr('text-format');
+                    var detail = $(this).find('.blockBookCarousel a').attr('text-detail');
+
+                    if (index === 0) {
+                        $(this).addClass('firstActiveItem');
+                        $('.textBookUnderSubject').text($(this).find('.blockBookCarousel a').attr('text-under-subject'));
+                        $('.textBookAuthor').html('<strong class="f-adell"><?= _po('Author') ?> : </strong> <span class="textHighlight">' + $(this).find('.blockBookCarousel a').attr('text-author') + '</span>');
+                        $('.textBookDetail').html('<strong class="f-adell"><?= _po('Detail') ?> : </strong> <span>' + $(this).find('.blockBookCarousel a').attr('text-detail') + '</span>');
+
+                        if (call_nmbr !== '') {
+                            $('.textBookFormat').show();
+                            $('.textBookFormat').html('<strong class="f-adell"><?= _po('Call Number') ?> : </strong> <span class="textHighlight">' + $(this).find('.blockBookCarousel a').attr('text-format') + '</span>');
+                        } else {
+                            $('.textBookFormat').hide();
+                        }
+
+
+                        if (detail !== '') {
+                            $('.textBookDetail').show();
+                            $('.textBookDetail').html('<strong class="f-adell"><?= _po('Detail') ?> : </strong> <span>' + $(this).find('.blockBookCarousel a').attr('text-detail') + '</span>');
+                        } else {
+                            $('.textBookDetail').hide();
+                        }
+
+                    }
+
+                });
+            }, 50);
+        });
+        carouselBook.owlCarousel({
+            animateOut: 'fadeOut',
+            animateIn: 'fadeIn',
+            dots: false,
+            margin: 20,
+            nav: true,
+            autoplay: true,
+            autoplayTimeout: 5000,
+            autoplayHoverPause: true,
+            autoWidth: false,
+            navText: ['<i class="icon-copy ti-arrow-left"></i>', '<i class="icon-copy ti-arrow-right"></i>'],
+            responsive: {
+                0: {
+                    items: 1,
+                },
+                600: {
+                    items: 2,
+                },
+                1024: {
+                    items: 3,
+                },
+                1200: {
+                    items: 4,
+                    loop: (bookCount < 4 ? false : true),
+
+
+                }
+            }
+        });
+
+        carouselBook.on('changed.owl.carousel', function (event) {
+            $('.carouselBook .owl-stage .owl-item').removeClass('firstActiveItem');
+            setTimeout(function () {
+                $('.carouselBook .owl-stage .owl-item.active').each(function (index) {
+                    var call_nmbr = $(this).find('.blockBookCarousel a').attr('text-format');
+                    var detail = $(this).find('.blockBookCarousel a').attr('text-detail');
+                    if (index === 0) {
+                        $(this).addClass('firstActiveItem');
+                        $('.textBookUnderSubject').text($(this).find('.blockBookCarousel a').attr('text-under-subject'));
+                        $('.textBookAuthor').html('<strong class="f-adell"><?= _po('Author') ?> : </strong> <span class="textHighlight">' + $(this).find('.blockBookCarousel a').attr('text-author') + '</span>');
+
+                        if (call_nmbr !== '') {
+                            $('.textBookFormat').show();
+                            $('.textBookFormat').html('<strong class="f-adell"><?= _po('Call Number') ?> : </strong> <span class="textHighlight">' + $(this).find('.blockBookCarousel a').attr('text-format') + '</span>');
+                        } else {
+                            $('.textBookFormat').hide();
+                        }
+
+                        if (detail !== '') {
+                            $('.textBookDetail').show();
+                            $('.textBookDetail').html('<strong class="f-adell"><?= _po('Detail') ?> : </strong> <span>' + $(this).find('.blockBookCarousel a').attr('text-detail') + '</span>');
+                        } else {
+                            $('.textBookDetail').hide();
+                        }
+                    }
+
+                });
+            }, 50);
+        });
+
+        var carouselResources = $('.carouselResources');
+        carouselResources.owlCarousel({
+            animateOut: 'fadeOut',
+            animateIn: 'fadeIn',
+            loop: false,
+            dots: false,
+            margin: 0,
+            nav: true,
+            autoplay: true,
+            autoplayTimeout: 5000,
+            autoplayHoverPause: true,
+            items: 5,
+            navText: ['<i class="icon-copy ti-angle-left"></i>', '<i class="icon-copy ti-angle-right"></i>'],
+            responsive: {
+                0: {
+                    items: 1,
+                },
+                600: {
+                    items: 2,
+                },
+                1024: {
+                    items: 4,
+                },
+                1200: {
+                    items: 5,
+                }
+            }
+        });
+
+        var bannerBottom = $('.bannerBottom');
+        bannerBottom.owlCarousel({
+            animateOut: 'fadeOut',
+            animateIn: 'fadeIn',
+            loop: false,
+            dots: false,
+            margin: 0,
+            nav: true,
+            autoplay: true,
+            autoplayTimeout: 5000,
+            autoplayHoverPause: true,
+            items: 4,
+            navText: ['<i class="icon-copy ti-angle-left"></i>', '<i class="icon-copy ti-angle-right"></i>'],
+            responsive: {
+                0: {
+                    items: 1,
+                },
+                600: {
+                    items: 2,
+                },
+                1024: {
+                    items: 3,
+                },
+                1200: {
+                    items: 4,
+                }
+            }
+        });
+
+        var blockNews = $('.blockNews');
+        blockNews.owlCarousel({
+            animateOut: 'fadeOut',
+            animateIn: 'fadeIn',
+            loop: false,
+            dots: false,
+            margin: 30,
+            nav: true,
+            autoplay: false,
+            autoplayTimeout: 5000,
+            autoplayHoverPause: true,
+            items: 3,
+            navText: ['<i class="icon-copy ti-angle-left"></i>', '<i class="icon-copy ti-angle-right"></i>'],
+            responsive: {
+                0: {
+                    items: 1,
+                },
+                600: {
+                    items: 2,
+                },
+                1024: {
+                    items: 3,
+                },
+                1200: {
+                    items: 3,
+                }
+            }
+        });
+
+        var agenciesSlide = $('.agenciesSlide');
+        agenciesSlide.owlCarousel({
+            animateOut: 'slideOutRight',
+            animateIn: 'slideInLeft',
+            dots: false,
+            margin: 10,
+            nav: false,
+            autoplay: true,
+            autoplayTimeout: 5000,
+            autoplayHoverPause: true,
+            responsiveClass: true,
+            responsive: {
+                0: {
+                    items: (countRelatedAgencies > 2 ? 2 : countRelatedAgencies),
+                    loop: (countRelatedAgencies > 2 ? true : false)
+                },
+                600: {
+                    items: (countRelatedAgencies > 4 ? 4 : countRelatedAgencies),
+                    loop: (countRelatedAgencies > 4 ? true : false)
+                },
+                1024: {
+                    items: (countRelatedAgencies > 6 ? 6 : countRelatedAgencies),
+                    loop: (countRelatedAgencies > 6 ? true : false)
+                },
+                1200: {
+                    items: (countRelatedAgencies > 8 ? 8 : countRelatedAgencies),
+                    loop: (countRelatedAgencies > 8 ? true : false)
+                }
+            }
+        });
+
+        var tabs = $('.tabSbs');
+        var selector = $('.tabSbs').find('a').length;
+        var activeItem = tabs.find('.active');
+        var activeWidth = activeItem.innerWidth();
+        if ($(window).width() < 500) {
+            $(".selectorData").css({
+                "top": activeItem.position.top + "px",
+                "width": activeWidth + "px"
+            });
+        } else {
+            $(".selectorData").css({
+                "left": activeItem.position.left + "px",
+                "width": activeWidth + "px"
+            });
+        }
+
+        $(".tabSbs").on("click", "a", function (e) {
+            e.preventDefault();
+            $('.tabSbs a').removeClass("active");
+            $(this).addClass('active');
+            resizeTabSbs(0);
+        });
+
+        $(".select2SearchIndex").select2({
+            width: "200px",
+            escapeMarkup: function (m) {
+                return m;
+            }
+        });
+
+        $('#myTab a').on('click', function (e) {
+            e.preventDefault()
+            $(this).tab('show')
+        });
+
+        $('#searchIndex').keypress(function (e) {
+            if (e.which == 13) {
+                var optionSearchIndex = $('#optionSearchIndex').val();
+                var valueSearchIndex = $('#searchIndex').val();
+                if (optionSearchIndex == 'worldcat') {
+                    window.open('https://cmu.on.worldcat.org/search?queryString=' + valueSearchIndex + '&lang=' + lang + '&scope=&changedFacet=scope');
+                } else if (optionSearchIndex == 'eds') {
+                    window.open('https://search.ebscohost.com/login.aspx?bquery=' + valueSearchIndex + '&option=1&action=&direct=true&scope=site&site=eds-live&authtype=ip%2Cguest&custid=s5150876&groupid=main&profile=eds&defaultdb=');
+                } else if (optionSearchIndex == 'opac') {
+                    window.open('https://search.library.cmu.ac.th/search~S0/?searchtype=Y&searcharg=' + valueSearchIndex + '&sortdropdown=-&SORT=+Z&extended=0&SUBMIT=Search&searchlimits=&searchorigarg=Y%7Bu0E01%7D%7Bu0E32%7D%7Bu0E23%7D');
+                } else if (optionSearchIndex == 'pulinet') {
+                    window.open('https://search.ebscohost.com/login.aspx?bquery=' + valueSearchIndex + '&submit=Search&direct=true&scope=site&site=eds-live&authtype=ip%2Cguest&custid=s5150876&groupid=main&profile=ill&defaultdb=&option=1');
+                } else if (optionSearchIndex == 'cmudc') {
+                    $('#input_cmu_dc').val(valueSearchIndex);
+                    $('#formCMUDC').submit();
+                }  else {
+                    window.open('<?= base_url() . 'Search?searchIndex='?>' + valueSearchIndex);
+                }
+                return false;
+            }
+        });
+
+        $('#submitSearch').click(function () {
+            var optionSearchIndex = $('#optionSearchIndex').val();
+            var valueSearchIndex = $('#searchIndex').val();
+            if (optionSearchIndex == 'worldcat') {
+                window.open('https://cmu.on.worldcat.org/search?queryString=' + valueSearchIndex + '&lang=' + lang + '&scope=&changedFacet=scope');
+            } else if (optionSearchIndex == 'eds') {
+                window.open('https://search.ebscohost.com/login.aspx?bquery=' + valueSearchIndex + '&option=1&action=&direct=true&scope=site&site=eds-live&authtype=ip%2Cguest&custid=s5150876&groupid=main&profile=eds&defaultdb=');
+            } else if (optionSearchIndex == 'opac') {
+                window.open('https://search.library.cmu.ac.th/search~S0/?searchtype=Y&searcharg=' + valueSearchIndex + '&sortdropdown=-&SORT=+Z&extended=0&SUBMIT=Search&searchlimits=&searchorigarg=Y%7Bu0E01%7D%7Bu0E32%7D%7Bu0E23%7D');
+            } else if (optionSearchIndex == 'pulinet') {
+                window.open('https://search.ebscohost.com/login.aspx?bquery=' + valueSearchIndex + '&submit=Search&direct=true&scope=site&site=eds-live&authtype=ip%2Cguest&custid=s5150876&groupid=main&profile=ill&defaultdb=&option=1');
+            } else if (optionSearchIndex == 'cmudc') {
+                $('#input_cmu_dc').val(valueSearchIndex);
+                $('#formCMUDC').submit();
+            } else {
+                window.open('<?= base_url() . 'Search?searchIndex='?>' + valueSearchIndex);
+            }
+            return false;
+        });
+
+        $(document).on('mouseleave', '.popover', function () {
+            $('.popover').popover('hide');
+        });
+
+        $('#optionSearchIndex').change(function() {
+            if($(this).val() != 'website') {
+                $('.blockSearchingGuide').css('visibility', 'inherit');
+                $('#searchIndex').attr('placeholder', 'Find books, e-Books, Journals, articles, dissertations and ILL');
+                if($(this).val() == 'worldcat') {
+                    $('.blockSearchingGuide').attr('href', '<?= LINK . 'file_upload/' ?>SearchingGuide.pdf');
+                    if(lang == 'th') {
+                        $('.blockSearchingGuide').text('คู่มือการสืบค้น');
+                    } else {
+                        $('.blockSearchingGuide').text('Searching Guide');
+
+                    }
+                } else if($(this).val() == 'eds') {
+                    $('.blockSearchingGuide').attr('href', '<?= LINK . 'file_upload/' ?>EDS2021.pdf');
+                    if(lang == 'th') {
+                        $('.blockSearchingGuide').text('คู่มือ EDS');
+                    } else {
+                        $('.blockSearchingGuide').text('Searching Guide EDS');
+                    }
+
+                } else if($(this).val() == 'opac') {
+                    $('.blockSearchingGuide').attr('href', '<?= LINK . 'file_upload/' ?>OPAC.pdf');
+                    if(lang == 'th') {
+                        $('.blockSearchingGuide').text('คู่มือ OPAC');
+                    } else {
+                        $('.blockSearchingGuide').text('Searching Guide OPAC');
+                    }
+                } else if($(this).val() == 'cmudc') {
+                    $('.blockSearchingGuide').css('visibility', 'hidden');
+                    if(lang == 'th') {
+                        $('#searchIndex').attr('placeholder', 'ค้นหาทรัพยากรสารสนเทศ...');
+                    } else {
+                        $('#searchIndex').attr('placeholder', 'Enter any words...');
+                    }
+                } else {
+                    $('.blockSearchingGuide').css('visibility', 'hidden');
+                }
+
+            } else {
+                $('.blockSearchingGuide').css('visibility', 'hidden');
+                $('#searchIndex').attr('placeholder', null);
+            }
+        });
+
+    });
+    
+    function InsertCounterPageRecommendResource($rs_id) {
+      var rs_id =  $rs_id ;
+      $.ajax({
+          type: 'post',
+          url: '<?= $action_link.'CounterRecommendResource/' ?>' + rs_id,
+          data: {
+              rs_id: rs_id,
+          },
+          success: function (data) {
+              
+          }
+      });
+    }
+
+    function InsertCounterPageArrival($book_id) {
+      var book_id =  $book_id ;
+      $.ajax({
+          type: 'post',
+          url: '<?= $action_link.'CounterArrival/' ?>' + book_id,
+          data: {
+              book_id: book_id,
+          },
+          success: function (data) {
+              
+          }
+      });
+    }
+
+    function InsertCounterPageOnLineLibCourse($banner_id) {
+      var banner_id =  $banner_id ;
+      $.ajax({
+          type: 'post',
+          url: '<?= $action_link.'CounterOnlineLibCourse/' ?>' + banner_id,
+          data: {
+              banner_id: banner_id,
+          },
+          success: function (data) {
+              
+          }
+      });
+    }
+
+    function InsertCounterPageRelatedAgencies($id) {
+      var id =  $id ;
+      $.ajax({
+          type: 'post',
+          url: '<?= $action_link.'CounterRelatedAgencies/' ?>' + id,
+          data: {
+              id: id,
+          },
+          success: function (data) {
+              
+          }
+      });
+    }
+    
+</script>
+
+<script>
+    let calApp = angular.module("calApp", []);
+
+    calApp.controller('calController', function ($scope, $http, $filter, phpData, $timeout) {
+        let proto = {
+            id: 0,
+            title: '',
+            start: '',
+            end: '',
+            detail: ''
+        };
+
+        $scope.cur_event = {};
+
+        $scope.db_events = [];
+        $scope.eventsDetail = [];
+
+        let calendar;
+
+        let fnc_createCalendar = function () {
+
+            let calendarEl = document.getElementById('calendar');
+            var heightCalendar = 650;
+            if (window.matchMedia("(max-width: 767px)").matches) {
+                heightCalendar = 'auto';
+            }
+
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                locale: '<?= $val_lang == 'en' ? 'en' : 'th' ?>',
+                plugins: ['interaction', 'dayGrid', 'timeGrid'],
+                header: {
+                    left: 'prev,next today',
+                    right: 'title'
+                },
+                height: heightCalendar,
+                navLinks: false,
+                selectable: true,
+                selectMirror: true,
+                eventClick: function (info) {
+                    let id = info.event.id;
+                    let filter = $filter('filter')($scope.db_events, {'id': id});
+                    if (filter.length > 0) {
+                        $scope.cur_event = filter[0];
+                        $scope.$apply();
+                    }
+
+                    window.open('<?= $action_link . 'detail/' ?>' + id, '_blank');
+                },
+                eventMouseEnter: function (info) {
+                    let id = info.event.id;
+                    let filter = $filter('filter')($scope.db_events, {'id': id});
+                    if (filter[0].detail != '') {
+                        var content = [
+                            '<div class="detailPopoverContent">' + filter[0].detail + '</div>',
+                            '<div class="datePopoverContent">' + fnc_setDateThai(filter[0].start) + ' - ' + fnc_setDateThai(filter[0].end) + '</div>',
+                        ].join('');
+                    } else {
+                        var content = [
+                            '<div class="datePopoverContent">' + fnc_setDateThai(filter[0].start) + ' - ' + fnc_setDateThai(filter[0].end) + '</div>',
+                        ].join('');
+                    }
+
+                    $(info.el).popover({
+                        content: filter[0].title,
+                        placement: 'left',
+                        html: true,
+                        trigger: 'click',
+                        animation: true,
+                        container: 'body'
+                    }).popover('show');
+                },
+                eventMouseLeave: function (info) {
+                    $('.popover').not(this).popover('hide');
+                },
+                editable: false,
+                eventLimit: true,
+                events: {
+                    url: '<?php echo base_url(); ?>Index/getCalendarPerMonth',
+                    success: function(response) { 
+                        $scope.db_events = response;
+                        $scope.$apply();
+                        var events = [];
+                        $.each(response,function(index,value){
+                            events.push({
+                                id: value.id,
+                                title: value.title,
+                                start: fnc_makeDate(value.start),
+                                end: fnc_makeDateEnd(value.end),
+                                allDay: true,
+                                backgroundColor: value.color
+                            });
+                        });
+                        
+                        return events; 
+                    }
+                }
+            });
+
+            calendar.render();
+
+        };
+
+        let fnc_formatDate = function (d) {
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            let year = d.getFullYear();
+
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+
+            return [year, month, day].join('-');
+        };
+
+        let fnc_formatDateEnd = function (d) {
+
+            let dd = d.getDate() - 1;
+            let end_date = new Date(d.getFullYear(), d.getMonth(), dd);
+
+            let month = '' + (end_date.getMonth() + 1);
+            let day = '' + end_date.getDate();
+            let year = end_date.getFullYear();
+
+
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+
+
+            return [year, month, day].join('-');
+        };
+
+
+        let fnc_makeDateObj = function (str) {
+            let res = str.split("-");
+            return {
+                y: parseInt(res[0]),
+                m: parseInt(res[1]) - 1,
+                d: parseInt(res[2]),
+            };
+        }
+
+        let fnc_makeDate = function (str) {
+            let obj = fnc_makeDateObj(str);
+            return new Date(obj.y, obj.m, obj.d);
+        };
+
+
+        let fnc_makeDateEnd = function (str) {
+            let obj = fnc_makeDateObj(str);
+            obj.d++;
+            return new Date(obj.y, obj.m, obj.d);
+        };
+
+
+        // let fnc_fetchEvents = function () {
+        //     $scope.db_events = JSON.parse(phpData.getCalendar);
+        //     for (let k in $scope.db_events) {
+        //         calendar.addEvent({
+        //             id: $scope.db_events[k].id,
+        //             title: $scope.db_events[k].title,
+        //             start: fnc_makeDate($scope.db_events[k].start),
+        //             end: fnc_makeDateEnd($scope.db_events[k].end),
+        //             allDay: true,
+        //             backgroundColor: $scope.db_events[k].color
+        //         });
+        //     }
+        // }
+
+        let fnc_setDateThai = function (date) {
+
+            var lang = '<?= $val_lang == 'en' ? 'en' : 'th' ?>';
+
+            if (lang == 'en') {
+                return fnc_setDateEng(date);
+            }
+
+            if (date != '' && date != null) {
+                var setDateMain = date.split(' ');
+                var setDate = setDateMain[0].split('-');
+                if (typeof setDate[2] !== 'undefined') {
+                    var monthNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+                    return parseInt(setDate[2]) + ' ' + monthNames[parseInt(setDate[1]) - 1] + ' ' + (parseInt(setDate[0]) + 543) + ' ' + setDateMain[1].substring(0, 5) + 'น.';
+                } else {
+                    return date;
+                }
+            } else {
+                return date;
+            }
+        }
+
+        let fnc_setDateEng = function (date) {
+            if (date != '' && date != null) {
+                var setDateMain = date.split(' ');
+                var setDate = setDateMain[0].split('-');
+                if (typeof setDate[2] !== 'undefined') {
+                    var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    return parseInt(setDate[2]) + ' ' + monthNames[parseInt(setDate[1]) - 1] + ' ' + (parseInt(setDate[0])) + '/' + setDateMain[1].substring(0, 5);
+                } else {
+                    return date;
+                }
+            } else {
+                return date;
+            }
+        }
+
+        let fnc_init = function () {
+            fnc_createCalendar();
+            // fnc_fetchEvents();
+        };
+
+        fnc_init();
+    });
+
+    <?php
+    $phpData = array(
+        // 'getCalendar' => json_encode($getCalendar)
+        // 'getCalendarDetail' => json_encode($getCalendarTable)
+    );
+
+    ?>
+    calApp.value('phpData', <?= json_encode($phpData) ?>);
+</script>

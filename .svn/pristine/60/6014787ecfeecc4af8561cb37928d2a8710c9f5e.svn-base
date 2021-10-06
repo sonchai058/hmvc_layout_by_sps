@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="cf3dc698-1d78-49c1-aee8-9deda892f780" name="ftp_km_mssql" url="http://103.22.181.148">
+        <fileTransfer host="103.22.181.148" port="23421">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" />
+          </advancedOptions>
+          <option name="port" value="23421" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

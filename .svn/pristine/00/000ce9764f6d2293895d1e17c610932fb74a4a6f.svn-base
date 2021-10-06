@@ -1,0 +1,62 @@
+<div class="d-flex align-items-center flex-wrap justify-content-center">
+	<div class="container">
+		<div class="row align-items-center">
+			<div class="col-lg-12 col-md-12">
+				<div class="news-detail-box position-relative" itemscope itemtype="http://schema.org/Event">
+					<div class="row">
+						<div class="col-lg-9 col-md-8">
+							<h2 class="title-html-detail" itemprop="name"><?= $getCalendarDateail['title'] ?></h2>
+							<span class="d-none" itemprop="startDate"><?= $getCalendarDateail['start'] ?></span>
+							<span class="d-none" itemprop="location" itemscope itemtype="https://schema.org/Place">
+								<span itemprop="address">มหาวิทยาลัยเชียงใหม่</span>
+							</span>
+						</div>
+						<div class="col-lg-3 col-md-3">
+							<div class="row mt-sm-30  pull-right">
+								<div class="col-lg-4 col-md-4 col-4">
+									<div class="social-icon cursor-point">
+										<a onclick="shareSocial('facebook', '<?= base_url().'Calendar/detail/'.$getCalendarDateail['id'] ?>', '<?= mb_substr($this->db->escape_str(strip_tags($getCalendarDateail['detail'])), 0, 300, "utf-8")?>', '<?= $getCalendarDateail['title']?>', '')">
+		                                	<i class="fab fa-facebook-square"></i>
+		                                </a>
+									</div>
+								</div>
+								<div class="col-lg-4 col-md-4 col-4">
+									<div class="social-icon cursor-point">
+										<a onclick="shareSocial('twitter', '<?= base_url().'Calendar/detail/'.$getCalendarDateail['id'] ?>', '<?= mb_substr($this->db->escape_str(strip_tags($getCalendarDateail['detail'])), 0, 300, "utf-8")?>', '<?= $getCalendarDateail['title']?>', '')">
+		                                    <i class="fab fa-twitter"></i>
+		                                </a>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="clearfix"></div>
+					<!-- <div class="row align-items-center mt-5">
+						<div class="col-lg-12 col-md-12">
+							<div class="img-news-detail">
+								<img src="<?= base_url().'file_upload/news/'.$getCalendarDateail['news_image'] ?>" alt="">
+							</div>
+						</div>
+					</div> -->
+					<div class="clearfix"></div>
+					<div class="row align-items-center mt-4 mb-3">
+						<div class="col-lg-12 col-md-12">
+							<div class="news-detail divFontChangeData">
+								<?= str_replace("font-family", "font-family: 'KanitLight'; font-familyx", $getCalendarDateail['detail']) ?>
+								<br><br><br><?= $getCalendarDateail['StartAndEnd'] ?>
+							</div>
+						</div>
+					</div>
+					<!-- <div class="clearfix"></div>
+					<div class="row position-absolute block-time-detail">
+						<div class="col-lg-12 col-md-12">
+							<div class="row mt-sm-30  pull-right">
+								<span class="time-box"><img class="time-icon" src="<?= LAYOUT_PATH.'images/CMU_WEB/time.png' ?>" alt=""> &nbsp;&nbsp;<?= General::dayThai($getCalendarDateail['time_update']) ?></span>
+							</div>
+						</div>
+					</div> -->
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
